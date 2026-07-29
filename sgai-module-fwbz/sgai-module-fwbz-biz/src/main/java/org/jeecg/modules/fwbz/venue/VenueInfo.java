@@ -70,4 +70,9 @@ public class VenueInfo implements Serializable {
     @Excel(name = "可施工", width = 15)
     @ApiModelProperty(value = "可施工 1=是 0=否")
     private Integer buildable;
+
+    /**楼层*/
+    @Excel(name = "楼层", width = 15)
+    @ApiModelProperty(value = "楼层")
+    private String floors;
 }
