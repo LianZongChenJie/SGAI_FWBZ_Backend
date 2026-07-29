@@ -8,16 +8,26 @@ import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
 import org.jeecg.modules.fwbz.activeMeet.service.IActiveMeetInfoService;
+import org.jeecg.modules.fwbz.activeMeet.vo.WeekActivityVO;
+import org.jeecg.modules.fwbz.venue.VenueInfo;
+import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper, ActiveMeetInfo> implements IActiveMeetInfoService {
 
+    private final IVenueInfoService venueInfoService;
+
+    public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService) {
+        this.venueInfoService = venueInfoService;
+    }
+
     @Override
     public IPage<ActiveMeetInfo> listPage(ActiveMeetInfo params) {
-        return page(
+        IPage<ActiveMeetInfo> result = page(
                 new Page<ActiveMeetInfo>(params.getPageNo(), params.getPageSize()),
                 new LambdaQueryWrapper<ActiveMeetInfo>()
                         .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
@@ -25,13 +35,17 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
                         .orderByDesc(ActiveMeetInfo::getStartDate)
                         .orderByAsc(ActiveMeetInfo::getStartTime)
         );
+        fillVenueName(result.getRecords());
+        return result;
     }
 
     @Override
     public List<ActiveMeetInfo> listAll() {
-        return list(new LambdaQueryWrapper<ActiveMeetInfo>()
+        List<ActiveMeetInfo> result = list(new LambdaQueryWrapper<ActiveMeetInfo>()
                 .orderByDesc(ActiveMeetInfo::getStartDate)
                 .orderByAsc(ActiveMeetInfo::getStartTime));
+        fillVenueName(result);
+        return result;
     }
 
     @Override
@@ -62,8 +76,68 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
         checkTimeConflict(entity);
     }
 
+    @Override
+    public List<WeekActivityVO> listThisWeek() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        Date weekStart = cal.getTime();
+
+        cal.add(Calendar.DAY_OF_WEEK, 6);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        Date weekEnd = cal.getTime();
+
+        List<ActiveMeetInfo> all = list(new LambdaQueryWrapper<ActiveMeetInfo>()
+                .ge(ActiveMeetInfo::getStartDate, weekStart)
+                .le(ActiveMeetInfo::getStartDate, weekEnd)
+                .orderByAsc(ActiveMeetInfo::getStartDate)
+                .orderByAsc(ActiveMeetInfo::getStartTime));
+        fillVenueName(all);
+
+        Map<Date, List<ActiveMeetInfo>> grouped = all.stream()
+                .collect(Collectors.groupingBy(ActiveMeetInfo::getStartDate,
+                        () -> new TreeMap<>(),
+                        Collectors.toList()));
+
+        List<WeekActivityVO> result = new ArrayList<>();
+        for (Map.Entry<Date, List<ActiveMeetInfo>> entry : grouped.entrySet()) {
+            WeekActivityVO vo = new WeekActivityVO();
+            vo.setDate(entry.getKey());
+            vo.setList(entry.getValue());
+            result.add(vo);
+        }
+        return result;
+    }
+
     /**
-     * 校验时间冲突：同一场馆同一天，新增活动的开始时间不能落在已有活动的开始时间~结束时间之间
+     * 批量填充场馆名称
+     */
+    private void fillVenueName(List<ActiveMeetInfo> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        Set<Long> venueIds = list.stream()
+                .map(ActiveMeetInfo::getVenueId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (venueIds.isEmpty()) {
+            return;
+        }
+        Map<Long, String> venueNameMap = venueInfoService.listByIds(venueIds).stream()
+                .collect(Collectors.toMap(VenueInfo::getId, VenueInfo::getVenueName));
+        for (ActiveMeetInfo item : list) {
+            item.setVenueName(venueNameMap.get(item.getVenueId()));
+        }
+    }
+
+    /**
+     * 校验时间冲突
      */
     private void checkTimeConflict(ActiveMeetInfo entity) {
         if (entity.getVenueId() == null || entity.getStartDate() == null || entity.getStartTime() == null) {

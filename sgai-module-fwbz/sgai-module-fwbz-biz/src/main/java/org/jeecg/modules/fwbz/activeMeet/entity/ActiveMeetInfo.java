@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.activeMeet.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,4 +55,10 @@ public class ActiveMeetInfo extends BaseEntity {
      * 预计人数
      */
     private Long peopleQuantity;
+
+    /**
+     * 场馆名称（非数据库字段）
+     */
+    @TableField(exist = false)
+    private String venueName;
 }

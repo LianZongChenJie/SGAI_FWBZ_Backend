@@ -7,6 +7,7 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.service.IActiveMeetInfoService;
+import org.jeecg.modules.fwbz.activeMeet.vo.WeekActivityVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class ActiveMeetInfoController {
     private final IActiveMeetInfoService service;
 
     @PostMapping("/add")
-    @RequiresPermissions("fwbz:activeMeetInfo:add")
+    //@RequiresPermissions("fwbz:activeMeetInfo:add")
     @AutoLog(value = "活动信息-添加")
     public Result<String> add(@RequestBody ActiveMeetInfo param) {
         service.save(param);
@@ -50,5 +51,10 @@ public class ActiveMeetInfoController {
     @GetMapping("/list")
     public Result<List<ActiveMeetInfo>> list() {
         return Result.ok(service.listAll());
+    }
+
+    @GetMapping("/thisWeek")
+    public Result<List<WeekActivityVO>> thisWeek() {
+        return Result.ok(service.listThisWeek());
     }
 }
