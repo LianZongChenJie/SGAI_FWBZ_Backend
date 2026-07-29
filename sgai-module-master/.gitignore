@@ -1,0 +1,5 @@
+# OpenSpec / Comet 本地规划工作区（proposal/design/tasks/specs/.comet.yaml），不入库
+openspec/
+
+# superpowers 本地规划工作区（sdd/progress 等），不入库
+.superpowers/

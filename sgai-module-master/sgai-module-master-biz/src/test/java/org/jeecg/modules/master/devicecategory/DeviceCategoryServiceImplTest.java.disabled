@@ -1,0 +1,154 @@
+package org.jeecg.module.master.devicecategory;
+
+import org.jeecg.common.exception.JeecgBootException;
+import org.jeecg.module.master.devicecategory.entity.DeviceCategory;
+import org.jeecg.module.master.devicecategory.mapper.DeviceCategoryMapper;
+import org.jeecg.module.master.devicecategory.service.impl.DeviceCategoryServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+/**
+ * DeviceCategoryServiceImpl 内存表 mock 测试：覆盖根/非根 full_name、同级唯一、改名级联、移动防环、删除约束。
+ */
+@ExtendWith(MockitoExtension.class)
+class DeviceCategoryServiceImplTest {
+
+    @Mock
+    DeviceCategoryMapper mapper;
+    @InjectMocks
+    DeviceCategoryServiceImpl service;
+
+    final Map<String, DeviceCategory> db = new LinkedHashMap<>();
+
+    @BeforeEach
+    void setup() {
+        db.clear();
+        when(mapper.selectChildIdsByPid(anyString())).thenAnswer(inv -> db.values().stream()
+                .filter(c -> inv.getArgument(0).equals(c.getPid())).map(DeviceCategory::getId).toList());
+        when(mapper.countByPidAndName(anyString(), anyString(), any())).thenAnswer(inv -> {
+            String pid = inv.getArgument(0), name = inv.getArgument(1), excl = inv.getArgument(2);
+            return (int) db.values().stream().filter(c -> c.getPid().equals(pid) && c.getName().equals(name)
+                    && (excl == null || !excl.equals(c.getId()))).count();
+        });
+        when(mapper.countByPid(anyString())).thenAnswer(inv -> db.values().stream()
+                .filter(c -> inv.getArgument(0).equals(c.getPid())).count());
+        when(mapper.insert(any())).thenAnswer(inv -> {
+            DeviceCategory c = inv.getArgument(0);
+            db.put(c.getId(), c);
+            return 1;
+        });
+        when(mapper.updateById(any())).thenAnswer(inv -> {
+            DeviceCategory c = inv.getArgument(0);
+            db.put(c.getId(), c);
+            return 1;
+        });
+        when(mapper.updateFullNameById(anyString(), anyString())).thenAnswer(inv -> {
+            DeviceCategory c = db.get(inv.getArgument(0));
+            if (c != null) {
+                c.setFullName(inv.getArgument(1));
+            }
+            return 1;
+        });
+        when(mapper.selectById(anyString())).thenAnswer(inv -> db.get(inv.getArgument(0)));
+        when(mapper.selectList(any())).thenAnswer(inv -> new ArrayList<>(db.values()));
+        when(mapper.deleteById(anyString())).thenAnswer(inv -> {
+            db.remove(inv.getArgument(0));
+            return 1;
+        });
+    }
+
+    @Test
+    void add_root_fullNameEqualsName() {
+        DeviceCategory c = new DeviceCategory();
+        c.setName("楼");
+        c.setPid("0");
+        c.setSort(1);
+        service.add(c);
+        assertEquals("楼", c.getFullName());
+        assertEquals(32, c.getId().length());
+    }
+
+    @Test
+    void add_child_fullNameParentDashName() {
+        DeviceCategory root = new DeviceCategory();
+        root.setId("R");
+        root.setPid("0");
+        root.setName("楼");
+        root.setFullName("楼");
+        db.put("R", root);
+        DeviceCategory c = new DeviceCategory();
+        c.setName("1F");
+        c.setPid("R");
+        service.add(c);
+        assertEquals("楼-1F", c.getFullName());
+    }
+
+    @Test
+    void add_duplicateNameUnderSamePid_throws() {
+        DeviceCategory a = new DeviceCategory();
+        a.setId("A");
+        a.setPid("0");
+        a.setName("楼");
+        a.setFullName("楼");
+        db.put("A", a);
+        DeviceCategory c = new DeviceCategory();
+        c.setName("楼");
+        c.setPid("0");
+        assertThrows(JeecgBootException.class, () -> service.add(c));
+    }
+
+    @Test
+    void edit_rename_cascadeRecomputeFullName() {
+        DeviceCategory r = cat("R", "0", "楼", "楼");
+        DeviceCategory f = cat("F", "R", "1F", "楼-1F");
+        DeviceCategory a = cat("A", "F", "房间A", "楼-1F-房间A");
+        db.put("R", r);
+        db.put("F", f);
+        db.put("A", a);
+        f.setName("2F");
+        service.edit(f);
+        assertEquals("楼-2F", db.get("F").getFullName());
+        assertEquals("楼-2F-房间A", db.get("A").getFullName());
+    }
+
+    @Test
+    void edit_moveIntoOwnSubtree_throws() {
+        DeviceCategory r = cat("R", "0", "楼", "楼");
+        DeviceCategory f = cat("F", "R", "1F", "楼-1F");
+        db.put("R", r);
+        db.put("F", f);
+        r.setPid("F");
+        assertThrows(JeecgBootException.class, () -> service.edit(r));
+    }
+
+    @Test
+    void remove_withChildren_throws() {
+        DeviceCategory r = cat("R", "0", "楼", "楼");
+        DeviceCategory f = cat("F", "R", "1F", "楼-1F");
+        db.put("R", r);
+        db.put("F", f);
+        assertThrows(JeecgBootException.class, () -> service.removeByIdWithCheck("R"));
+    }
+
+    private DeviceCategory cat(String id, String pid, String name, String fullName) {
+        DeviceCategory c = new DeviceCategory();
+        c.setId(id);
+        c.setPid(pid);
+        c.setName(name);
+        c.setFullName(fullName);
+        return c;
+    }
+}

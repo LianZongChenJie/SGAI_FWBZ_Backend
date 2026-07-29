@@ -1,0 +1,35 @@
+﻿server:
+  port: 7010
+spring:
+  application:
+    name: sgai-fwbz
+  config:
+    import:
+      - optional:nacos:jeecg.yaml
+      - optional:nacos:fwbz-dev.yaml
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+        namespace: public
+        username:
+        password:
+      discovery:
+        server-addr: ${spring.cloud.nacos.config.server-addr}
+        namespace: public
+        username:
+        password:
+        group: DEFAULT_GROUP
+fwbz:
+  integration:
+    enabled: true
+    token:
+      meter: fwbz_energy
+      equipment: fwbz_building
+    source: sgai-fwbz
+    master:
+      base-url: http://10.77.16.5/jeecgboot
+      receive-path: /master/integration/receive
+    push:
+      timeout-seconds: 5

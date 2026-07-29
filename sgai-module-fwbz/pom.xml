@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sgai-boot-parent</artifactId>
+        <groupId>org.jeecgframework.boot</groupId>
+        <version>3.7.0</version>
+        <relativePath/>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sgai-module-fwbz</artifactId>
+    <version>3.7.3</version>
+    <packaging>pom</packaging>
+
+    <!--项目子模块-->
+    <modules>
+        <module>sgai-module-fwbz-api</module>
+        <module>sgai-module-fwbz-biz</module>
+        <module>sgai-module-fwbz-start</module>
+    </modules>
+
+</project>
+

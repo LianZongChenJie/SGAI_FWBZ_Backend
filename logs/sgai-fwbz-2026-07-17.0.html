@@ -1,0 +1,2391 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 11:08:19 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 11:08:46,031</td>
+<td class="Message">Application run failed</td>
+<td class="MethodOfCaller">reportFailure</td>
+<td class="FileOfCaller">SpringApplication.java</td>
+<td class="LineOfCaller">818</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.beans.factory.BeanCreationException: Error creating bean with name &#39;initQueue&#39; defined in class path resource [org/jeecg/boot/starter/rabbitmq/client/RabbitMqClient.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [void]: Factory method &#39;initQueue&#39; threw exception; nested exception is org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:481)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1352)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1195)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:955)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:929)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:591)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:732)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:409)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:1300)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:1289)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.JeecgFwbzCloudApplication.main(JeecgFwbzCloudApplication.java:23)
+<br />Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [void]: Factory method &#39;initQueue&#39; threw exception; nested exception is org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:185)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:648)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 19 common frames omitted
+<br />Caused by: org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:70)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient.createQueue(RabbitMqClient.java:96)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient.initQueue(RabbitMqClient.java:77)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$713642f9.CGLIB$initQueue$9(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$713642f9$$FastClassBySpringCGLIB$$60875d3a.invoke(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:244)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:331)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$713642f9.initQueue(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 20 common frames omitted
+<br />Caused by: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress$CachedAddresses.get(InetAddress.java:801)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1533)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName(InetAddress.java:1385)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName(InetAddress.java:1306)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.DnsRecordIpAddressResolver.resolveIpAddresses(DnsRecordIpAddressResolver.java:83)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.DnsRecordIpAddressResolver.getAddresses(DnsRecordIpAddressResolver.java:73)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1230)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 39 common frames omitted
+</td></tr></table>
+</body></html><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 11:23:06 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 11:23:35,399</td>
+<td class="Message">Application run failed</td>
+<td class="MethodOfCaller">reportFailure</td>
+<td class="FileOfCaller">SpringApplication.java</td>
+<td class="LineOfCaller">818</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.beans.factory.BeanCreationException: Error creating bean with name &#39;initQueue&#39; defined in class path resource [org/jeecg/boot/starter/rabbitmq/client/RabbitMqClient.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [void]: Factory method &#39;initQueue&#39; threw exception; nested exception is org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:481)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1352)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1195)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:955)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:929)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:591)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:147)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:732)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:409)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:1300)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.boot.SpringApplication.run(SpringApplication.java:1289)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.JeecgFwbzCloudApplication.main(JeecgFwbzCloudApplication.java:23)
+<br />Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [void]: Factory method &#39;initQueue&#39; threw exception; nested exception is org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:185)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:648)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 19 common frames omitted
+<br />Caused by: org.springframework.amqp.AmqpIOException: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:70)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient.createQueue(RabbitMqClient.java:96)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient.initQueue(RabbitMqClient.java:77)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$f0c4a4a.CGLIB$initQueue$9(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$f0c4a4a$$FastClassBySpringCGLIB$$67bcafc7.invoke(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:244)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:331)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.jeecg.boot.starter.rabbitmq.client.RabbitMqClient$$EnhancerBySpringCGLIB$$f0c4a4a.initQueue(&lt;generated&gt;)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 20 common frames omitted
+<br />Caused by: java.net.UnknownHostException: jeecg-boot-rabbitmq
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress$CachedAddresses.get(InetAddress.java:801)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1533)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName(InetAddress.java:1385)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.InetAddress.getAllByName(InetAddress.java:1306)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.DnsRecordIpAddressResolver.resolveIpAddresses(DnsRecordIpAddressResolver.java:83)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.DnsRecordIpAddressResolver.getAddresses(DnsRecordIpAddressResolver.java:73)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1230)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 39 common frames omitted
+</td></tr></table>
+</body></html><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 11:27:11 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 11:27:27,085</td>
+<td class="Message">Shutdown Signal: channel error; protocol method: #method&lt;channel.close&gt;(reply-code=404, reply-text=NOT_FOUND - no exchange &#39;device_data_delay&#39; in vhost &#39;/&#39;, class-id=50, method-id=20)</td>
+<td class="MethodOfCaller">log</td>
+<td class="FileOfCaller">AbstractConnectionFactory.java</td>
+<td class="LineOfCaller">752</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 11:27:27,107</td>
+<td class="Message">Shutdown Signal: channel error; protocol method: #method&lt;channel.close&gt;(reply-code=404, reply-text=NOT_FOUND - no exchange &#39;patterning.strategy.delay.exchange&#39; in vhost &#39;/&#39;, class-id=50, method-id=20)</td>
+<td class="MethodOfCaller">log</td>
+<td class="FileOfCaller">AbstractConnectionFactory.java</td>
+<td class="LineOfCaller">752</td>
+</tr>
+</table>
+</body></html><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 13:03:30 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 13:13:09 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+</table>
+</body></html><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 13:14:56 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 13:27:15 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Logback Log Messages</title>
+<style  type="text/css">
+table { margin-left: 2em; margin-right: 2em; border-left: 2px solid #AAA; }
+TR.even { background: #FFFFFF; }
+TR.odd { background: #EAEAEA; }
+TR.warn TD.Level, TR.error TD.Level, TR.fatal TD.Level {font-weight: bold; color: #FF4040 }
+TD { padding-right: 1ex; padding-left: 1ex; border-right: 2px solid #AAA; }
+TD.Time, TD.Date { text-align: right; font-family: courier, monospace; font-size: smaller; }
+TD.Thread { text-align: left; }
+TD.Level { text-align: right; }
+TD.Logger { text-align: left; }
+TR.header { background: #596ED5; color: #FFF; font-weight: bold; font-size: larger; }
+TD.Exception { background: #A2AEE8; font-family: courier, monospace;}
+</style>
+
+  </head>
+<body>
+<hr/>
+<p>Log session start time Fri Jul 17 13:34:21 GMT+08:00 2026</p><p></p>
+
+<table cellspacing="0">
+<tr class="header">
+<td class="Level">Level</td>
+<td class="Date">Date</td>
+<td class="Message">Message</td>
+<td class="MethodOfCaller">MethodOfCaller</td>
+<td class="FileOfCaller">FileOfCaller</td>
+<td class="LineOfCaller">LineOfCaller</td>
+</tr>
+
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,517</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,584</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,584</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,606</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,639</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,639</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,650</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,661</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,672</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,683</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,694</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,716</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,727</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,792</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,792</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,792</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:13,814</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1971</td>
+</tr>
+<tr><td class="Exception" colspan="6">org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:603)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:725)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:252)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2210)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2183)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2163)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:469)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:453)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1995)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1963)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1381)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1223)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.lang.Thread.run(Thread.java:840)
+<br />Caused by: java.net.ConnectException: Connection refused: getsockopt
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at java.base/java.net.Socket.connect(Socket.java:633)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:62)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1234)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1184)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:641)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:616)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:566)
+<br />&nbsp;&nbsp;&nbsp;&nbsp;	... 12 common frames omitted
+</td></tr>
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,621</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,645</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,657</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,676</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,730</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,751</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,761</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,773</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,794</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,794</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,805</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,828</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,849</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,849</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,870</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,881</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:18,913</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,666</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,677</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,677</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,721</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,758</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,789</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,800</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,811</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,832</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,843</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,876</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,888</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,899</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,932</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,943</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,954</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:23,965</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,714</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,717</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,726</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,756</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,794</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,838</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,868</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,879</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,890</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,922</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,926</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,946</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,969</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,969</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:28,991</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:29,002</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:29,024</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,733</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,744</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,744</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,774</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,824</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,873</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,911</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,917</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,927</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,952</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,962</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,983</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:33,996</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:34,008</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:34,030</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:34,063</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:34,074</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,770</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,770</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,770</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,787</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,863</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,891</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,938</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,949</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,960</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,978</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:38,978</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,011</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,023</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,037</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,077</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,092</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:39,099</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,808</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,808</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,819</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,830</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,920</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,941</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:43,994</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,005</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,016</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,027</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,038</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,038</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,124</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,146</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,157</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,135</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:44,243</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,933</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,933</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,944</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,944</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,972</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:48,972</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,133</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,144</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,159</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,159</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,174</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,174</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,190</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,322</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,343</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,354</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:49,365</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,001</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,017</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,037</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,027</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,037</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,074</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,233</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,233</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,234</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,234</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,239</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,257</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,343</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,374</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,528</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,542</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:54,571</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,088</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,320</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,320</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,321</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,321</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,321</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,321</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,321</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,322</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,322</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,344</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,380</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,409</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,522</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,570</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error even">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,609</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
+
+<tr class="error odd">
+<td class="Level">ERROR</td>
+<td class="Date">2026-07-17 15:10:59,634</td>
+<td class="Message">Failed to check/redeclare auto-delete queue(s).</td>
+<td class="MethodOfCaller">redeclareElementsIfNecessary</td>
+<td class="FileOfCaller">AbstractMessageListenerContainer.java</td>
+<td class="LineOfCaller">1974</td>
+</tr>
