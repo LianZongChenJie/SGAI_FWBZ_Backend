@@ -7,8 +7,12 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.dataInterface.entity.InterfaceInfo;
 import org.jeecg.modules.fwbz.dataInterface.service.IInterfaceInfoService;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,6 +24,12 @@ import java.util.List;
 public class InterfaceInfoController {
 
     private final IInterfaceInfoService service;
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(Date.class,
+                new CustomDateEditor(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"), true));
+    }
 
     /**
      * 添加
@@ -55,22 +65,22 @@ public class InterfaceInfoController {
     }
 
     /**
-     * 启用
+     * 启用监控
      */
     @PostMapping("/enable")
-    @RequiresPermissions("fwbz:interfaceInfo:enable")
-    @AutoLog(value = "接口信息-启用")
+    //@RequiresPermissions("fwbz:interfaceInfo:enable")
+    @AutoLog(value = "接口信息-启用监控")
     public Result<String> enable(@RequestParam(name = "id") Long id) {
         service.enable(id);
         return Result.ok();
     }
 
     /**
-     * 停用
+     * 停用监控
      */
     @PostMapping("/disable")
-    @RequiresPermissions("fwbz:interfaceInfo:disable")
-    @AutoLog(value = "接口信息-停用")
+    //@RequiresPermissions("fwbz:interfaceInfo:disable")
+    @AutoLog(value = "接口信息-停用监控")
     public Result<String> disable(@RequestParam(name = "id") Long id) {
         service.disable(id);
         return Result.ok();

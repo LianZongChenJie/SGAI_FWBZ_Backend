@@ -36,14 +36,14 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
     @Override
     public void enable(Long id) {
         update(new LambdaUpdateWrapper<InterfaceInfo>()
-                .set(InterfaceInfo::getState, InterfaceInfo.STATE_ENABLE)
+                .set(InterfaceInfo::getState, InterfaceInfo.STATE_OFFLINE)
                 .eq(InterfaceInfo::getId, id));
     }
 
     @Override
     public void disable(Long id) {
         update(new LambdaUpdateWrapper<InterfaceInfo>()
-                .set(InterfaceInfo::getState, InterfaceInfo.STATE_DISABLE)
+                .set(InterfaceInfo::getState, InterfaceInfo.STATE_OFFLINE)
                 .eq(InterfaceInfo::getId, id));
     }
 
@@ -51,7 +51,7 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
     public boolean save(InterfaceInfo entity) {
         entity.setId(null);
         check(entity);
-        entity.setState(Integer.valueOf(InterfaceInfo.STATE_ENABLE));
+        entity.setState(InterfaceInfo.STATE_OFFLINE);
         return super.save(entity);
     }
 
@@ -65,8 +65,13 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
     @Override
     public List<InterfaceInfo> list() {
         return list(new LambdaQueryWrapper<InterfaceInfo>()
-                .eq(InterfaceInfo::getState, InterfaceInfo.STATE_ENABLE)
+                .ne(InterfaceInfo::getState, InterfaceInfo.STATE_OFFLINE)
                 .orderByDesc(InterfaceInfo::getCreateTime));
+    }
+
+    @Override
+    public List<InterfaceInfo> listAll() {
+        return super.list();
     }
 
     /**
@@ -82,7 +87,7 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
     }
 
     /**
-     * 状态校验：已启用的记录不允许编辑/删除
+     * 状态校验：在线/异常状态的记录不允许编辑/删除
      */
     private void checkStatus(Long id) {
         if (id == null) {
@@ -92,8 +97,9 @@ public class InterfaceInfoServiceImpl extends ServiceImpl<InterfaceInfoMapper, I
         if (byId == null) {
             throw new JeecgBootException("接口信息不存在");
         }
-        if (InterfaceInfo.STATE_ENABLE.equals(String.valueOf(byId.getState()))) {
-            throw new JeecgBootException("该记录已启用，禁止操作");
+        if (InterfaceInfo.STATE_ONLINE.equals(byId.getState())
+                || InterfaceInfo.STATE_ABNORMAL.equals(byId.getState())) {
+            throw new JeecgBootException("该接口正在监控中，请先停用后再操作");
         }
     }
 }

@@ -16,13 +16,38 @@ import java.util.Date;
 public class InterfaceInfo extends BaseEntity {
 
     /**
-     * 状态。启用
+     * 状态。在线
      */
-    public static final String STATE_ENABLE = "1";
+    public static final Integer STATE_ONLINE = 1;
     /**
-     * 状态。禁用
+     * 状态。离线
      */
-    public static final String STATE_DISABLE = "0";
+    public static final Integer STATE_OFFLINE = 0;
+    /**
+     * 状态。异常
+     */
+    public static final Integer STATE_ABNORMAL = 2;
+
+    /**
+     * 协议类型：HTTP API
+     */
+    public static final Long PROTOCOL_TYPE_HTTP = 1L;
+    /**
+     * 协议类型：MQTT
+     */
+    public static final Long PROTOCOL_TYPE_MQTT = 2L;
+    /**
+     * 协议类型：BACnet
+     */
+    public static final Long PROTOCOL_TYPE_BACNET = 3L;
+    /**
+     * 协议类型：Modbus TCP
+     */
+    public static final Long PROTOCOL_TYPE_MODBUS = 4L;
+    /**
+     * 协议类型：OPC UA
+     */
+    public static final Long PROTOCOL_TYPE_OPC_UA = 5L;
 
     /**
      * 系统名称
@@ -40,7 +65,7 @@ public class InterfaceInfo extends BaseEntity {
     private Long protocolTypeId;
 
     /**
-     * 状态。启用：1；禁用：0
+     * 状态。在线：1；离线：0；异常：2
      */
     private Integer state;
 
