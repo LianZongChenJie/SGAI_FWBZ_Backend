@@ -8,6 +8,8 @@ import org.jeecg.modules.fwbz.venue.mapper.VenueInfoMapper;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @Description: 场馆基本信息
  * @Author: jeecg-boot
@@ -35,5 +37,10 @@ public class VenueInfoServiceImpl extends ServiceImpl<VenueInfoMapper, VenueInfo
             throw new JeecgBootException("场馆名称重复！");
         }
         return super.updateById(entity);
+    }
+
+    @Override
+    public List<VenueInfo> getAllVenueList() {
+        return list();
     }
 }

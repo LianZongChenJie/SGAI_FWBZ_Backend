@@ -20,6 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.List;
 
  /**
  * @Description: 场馆基本信息
@@ -132,6 +133,19 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
             return Result.error("未找到对应数据");
         }
         return Result.OK(venueInfo);
+    }
+
+    /**
+     * 查询全部场馆（下拉列表）
+     *
+     * @return
+     */
+    //@AutoLog(value = "场馆基本信息-下拉列表查询")
+    @ApiOperation(value="场馆基本信息-下拉列表查询", notes="场馆基本信息-下拉列表查询")
+    @GetMapping(value = "/listAll")
+    public Result<List<VenueInfo>> queryAllList() {
+        List<VenueInfo> list = venueInfoService.getAllVenueList();
+        return Result.OK(list);
     }
 
     /**
