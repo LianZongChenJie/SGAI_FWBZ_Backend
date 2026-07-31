@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
+package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import cn.hutool.core.util.StrUtil;
 import io.swagger.annotations.Api;

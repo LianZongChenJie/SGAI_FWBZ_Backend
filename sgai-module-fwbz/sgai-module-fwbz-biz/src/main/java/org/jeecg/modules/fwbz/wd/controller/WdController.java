@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.wd.controller;
+package org.jeecg.modules.fwbz.wd.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;

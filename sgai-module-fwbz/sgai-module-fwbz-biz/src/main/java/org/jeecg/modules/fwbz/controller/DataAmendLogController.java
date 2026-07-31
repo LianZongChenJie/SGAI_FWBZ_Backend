@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.controller;
+package org.jeecg.modules.fwbz.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;

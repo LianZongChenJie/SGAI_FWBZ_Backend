@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.mdm.controller;
+package org.jeecg.modules.fwbz.mdm.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.modules.fwbz.entity.SpaceInfo;

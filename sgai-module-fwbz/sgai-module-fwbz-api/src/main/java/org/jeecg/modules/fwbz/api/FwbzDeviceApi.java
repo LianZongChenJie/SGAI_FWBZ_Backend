@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.api;
+package org.jeecg.modules.fwbz.api;
 
 import org.jeecg.modules.fwbz.api.fallback.FwbzDeviceFallback;
 import org.jeecg.modules.fwbz.entity.DeviceEntity;

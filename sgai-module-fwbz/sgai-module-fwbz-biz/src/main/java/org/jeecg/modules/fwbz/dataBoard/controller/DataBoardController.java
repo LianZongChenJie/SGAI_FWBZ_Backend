@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.dataBoard.controller;
+package org.jeecg.modules.fwbz.dataBoard.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;

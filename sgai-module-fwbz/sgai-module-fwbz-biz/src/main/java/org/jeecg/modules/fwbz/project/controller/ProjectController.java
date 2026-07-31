@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.project.controller;
+package org.jeecg.modules.fwbz.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;

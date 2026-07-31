@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.activeMeet.controller;
+package org.jeecg.modules.fwbz.activeMeet.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;

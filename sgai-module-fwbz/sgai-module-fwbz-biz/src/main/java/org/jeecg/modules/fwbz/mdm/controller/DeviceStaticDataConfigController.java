@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.mdm.controller;
+package org.jeecg.modules.fwbz.mdm.controller;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.mdm.controller;
+package org.jeecg.modules.fwbz.mdm.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;

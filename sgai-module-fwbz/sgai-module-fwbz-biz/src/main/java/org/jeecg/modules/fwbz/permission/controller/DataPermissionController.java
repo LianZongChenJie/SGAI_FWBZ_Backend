@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.permission.controller;
+package org.jeecg.modules.fwbz.permission.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
