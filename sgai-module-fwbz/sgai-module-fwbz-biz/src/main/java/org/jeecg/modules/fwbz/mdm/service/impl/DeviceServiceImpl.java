@@ -209,7 +209,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public DeviceRunStateStatisticsDto statisticsRunState(Long categoryId) {
-        List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState).eq(categoryId != null, Device::getCategoryId, categoryId));
+        List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId).eq(categoryId != null, Device::getCategoryId, categoryId));
         Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
         Map<Long, Long> collect2 = list.stream().filter(item -> item.getSpaceId() != null).collect(Collectors.groupingBy(Device::getSpaceId, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
