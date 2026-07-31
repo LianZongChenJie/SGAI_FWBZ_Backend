@@ -39,16 +39,13 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         implements ICameraResourceService {
 
     /** 海康摄像头查询API路径 */
-    private static final String CAMERA_SEARCH_API = "/api/resource/v2/camera/advance/cameraList";
+    private static final String CAMERA_SEARCH_API = "/api/resource/v1/cameras";
 
     /** 海康获取摄像头播放地址API路径 */
     private static final String CAMERA_PREVIEW_URL_API = "/api/video/v1/cameras/previewURLs";
 
-    /** 固定分页大小 */
-    private static final int PAGE_SIZE = 500;
-
-    /** 固定权限码：只读 */
-    private static final List<String> AUTH_CODES = Collections.singletonList("view");
+    /** 固定分页大小（最大1000） */
+    private static final int PAGE_SIZE = 1000;
 
     /** 日期解析格式（兼容多种） */
     private static final String[] DATE_PATTERNS = {
@@ -154,68 +151,70 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
 
     /**
      * 构建固定的查询请求参数
-     * <p>只传必要分页参数和权限码，拉取全部摄像头。</p>
+     * <p>只传 pageNo 和 pageSize，拉取全部摄像头。</p>
      */
     private CameraSearchRequest buildFixedRequest(int pageNo) {
         CameraSearchRequest request = new CameraSearchRequest();
         request.setPageNo(pageNo);
         request.setPageSize(PAGE_SIZE);
-        request.setAuthCodes(AUTH_CODES);
         return request;
     }
 
     /**
-     * 将海康返回的摄像头数据转换为数据库实体
+     * 将海康返回的摄像头数据（v1接口）转换为数据库实体
      */
     private CameraResource convertToEntity(CameraSearchResponse.CameraItem item) {
         CameraResource entity = new CameraResource();
-        entity.setIndexCode(item.getIndexCode());
-        entity.setResourceType(item.getResourceType());
-        entity.setExternalIndexCode(item.getExternalIndexCode());
-        entity.setName(item.getName());
-        entity.setChanNum(item.getChanNum());
-        entity.setCascadeCode(item.getCascadeCode());
-        entity.setParentIndexCode(item.getParentIndexCode());
-
-        // 经纬度转换
-        if (item.getLongitude() != null && !item.getLongitude().isEmpty()) {
-            try {
-                entity.setLongitude(new BigDecimal(item.getLongitude()));
-            } catch (NumberFormatException e) {
-                log.warn("经度转换失败: {}", item.getLongitude());
-            }
-        }
-        if (item.getLatitude() != null && !item.getLatitude().isEmpty()) {
-            try {
-                entity.setLatitude(new BigDecimal(item.getLatitude()));
-            } catch (NumberFormatException e) {
-                log.warn("纬度转换失败: {}", item.getLatitude());
-            }
-        }
-
-        entity.setElevation(item.getElevation());
+        entity.setIndexCode(item.getCameraIndexCode());
+        entity.setName(item.getCameraName());
         entity.setCameraType(item.getCameraType());
-        entity.setCapability(item.getCapability());
-        entity.setRecordLocation(item.getRecordLocation());
+        entity.setCapability(item.getCapabilitySet());
         entity.setChannelType(item.getChannelType());
+        entity.setInstallLocation(item.getInstallLocation());
+        entity.setRecordLocation(item.getRecordLocation());
         entity.setRegionIndexCode(item.getRegionIndexCode());
-        entity.setRegionPath(item.getRegionPath());
         entity.setTransType(item.getTransType());
         entity.setTreatyType(item.getTreatyType());
-        entity.setInstallLocation(item.getInstallLocation());
+        entity.setExternalIndexCode(item.getGbIndexCode());
+
+        // 通道号转换（String -> Integer）
+        String channelNoStr = item.getChannelNo();
+        if (channelNoStr != null && !channelNoStr.isEmpty() && !"null".equals(channelNoStr)) {
+            try {
+                entity.setChanNum(Integer.parseInt(channelNoStr));
+            } catch (NumberFormatException e) {
+                log.warn("通道号转换失败: {}", channelNoStr);
+            }
+        }
+
+        // 经纬度转换（过滤"null"字符串）
+        entity.setLongitude(parseBigDecimal(item.getLongitude()));
+        entity.setLatitude(parseBigDecimal(item.getLatitude()));
+
+        // 海拔（过滤"null"字符串）
+        String altitude = item.getAltitude();
+        entity.setElevation(altitude != null && !"null".equals(altitude) ? altitude : null);
 
         // 日期解析
         entity.setCreateTime(parseDate(item.getCreateTime()));
         entity.setUpdateTime(parseDate(item.getUpdateTime()));
 
-        entity.setDisOrder(item.getDisOrder());
-        entity.setResourceIndexCode(item.getResourceIndexCode());
-        entity.setDecodeTag(item.getDecodeTag());
-        entity.setCameraRelateTalk(item.getCameraRelateTalk());
-        entity.setRegionName(item.getRegionName());
-        entity.setRegionPathName(item.getRegionPathName());
-
         return entity;
+    }
+
+    /**
+     * 安全解析BigDecimal（过滤"null"字符串）
+     */
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isEmpty() || "null".equals(value)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException e) {
+            log.warn("BigDecimal转换失败: {}", value);
+            return null;
+        }
     }
 
     /**
