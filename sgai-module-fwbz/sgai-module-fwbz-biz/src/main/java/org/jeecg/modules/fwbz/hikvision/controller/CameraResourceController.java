@@ -67,4 +67,22 @@ public class CameraResourceController {
             return Result.error("获取摄像头播放地址失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 同步监控点在线状态
+     * <p>从海康逐页拉取全部监控点在线状态，根据唯一编码更新表中 online 字段。</p>
+     *
+     * @return 同步结果（包含更新条数）
+     */
+    @PostMapping("/syncOnlineStatus")
+    @ApiOperation(value = "同步监控点在线状态", notes = "从海康平台拉取在线状态并更新到本地数据库")
+    public Result<Integer> syncOnlineStatus() {
+        try {
+            int count = cameraResourceService.syncOnlineStatus();
+            return Result.ok(count);
+        } catch (Exception e) {
+            log.error("同步监控点在线状态失败", e);
+            return Result.error("同步监控点在线状态失败: " + e.getMessage());
+        }
+    }
 }

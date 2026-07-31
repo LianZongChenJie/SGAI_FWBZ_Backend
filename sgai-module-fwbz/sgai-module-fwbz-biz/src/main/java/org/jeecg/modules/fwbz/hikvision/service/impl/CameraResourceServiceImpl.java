@@ -2,10 +2,13 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
@@ -24,7 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 摄像头资源同步服务实现
@@ -43,6 +48,9 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
 
     /** 海康获取摄像头播放地址API路径 */
     private static final String CAMERA_PREVIEW_URL_API = "/api/video/v1/cameras/previewURLs";
+
+    /** 海康监控点在线状态查询API路径 */
+    private static final String CAMERA_ONLINE_API = "/api/nms/v1/online/camera/get";
 
     /** 固定分页大小（最大1000） */
     private static final int PAGE_SIZE = 1000;
@@ -290,5 +298,115 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         request.setExpand("transcode=0");
         request.setStreamform("ps");
         return request;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int syncOnlineStatus() {
+        log.info("开始从海康平台同步监控点在线状态...");
+
+        // 1. 逐页从海康拉取全部在线状态数据
+        Map<String, Integer> onlineStatusMap = fetchAllOnlineStatus();
+
+        if (onlineStatusMap.isEmpty()) {
+            log.warn("海康未返回任何在线状态数据，跳过同步");
+            return 0;
+        }
+
+        // 2. 查询数据库中全部摄像头
+        List<CameraResource> allCameras = list(new LambdaQueryWrapper<CameraResource>()
+                .select(CameraResource::getId, CameraResource::getIndexCode, CameraResource::getOnline));
+
+        // 3. 根据海康返回的在线状态更新
+        int updatedCount = 0;
+        List<CameraResource> toUpdate = new ArrayList<>();
+        for (CameraResource camera : allCameras) {
+            Integer onlineStatus = onlineStatusMap.get(camera.getIndexCode());
+            if (onlineStatus != null) {
+                // 只有状态变化时才更新
+                if (!onlineStatus.equals(camera.getOnline())) {
+                    camera.setOnline(onlineStatus);
+                    camera.setGmtModified(new Date());
+                    toUpdate.add(camera);
+                }
+            }
+        }
+
+        // 4. 批量更新
+        if (!toUpdate.isEmpty()) {
+            updateBatchById(toUpdate);
+            updatedCount = toUpdate.size();
+        }
+
+        log.info("监控点在线状态同步完成, 海康返回{}条, 更新{}条, 库中共{}条",
+                onlineStatusMap.size(), updatedCount, allCameras.size());
+        return updatedCount;
+    }
+
+    /**
+     * 逐页从海康拉取全部监控点在线状态
+     *
+     * @return indexCode -> online 的映射
+     */
+    private Map<String, Integer> fetchAllOnlineStatus() {
+        Map<String, Integer> statusMap = new HashMap<>();
+        int pageNo = 1;
+        boolean hasMore = true;
+
+        while (hasMore) {
+            CameraOnlineRequest request = new CameraOnlineRequest();
+            request.setPageNo(pageNo);
+            request.setPageSize(PAGE_SIZE);
+
+            try {
+                String requestBody = JSON.toJSONString(request);
+                log.info("请求海康监控点在线状态, pageNo={}, pageSize={}", pageNo, PAGE_SIZE);
+
+                String responseBody = hikvisionUtil.doPostJson(CAMERA_ONLINE_API, requestBody);
+
+                if (!hikvisionUtil.isSuccess(responseBody)) {
+                    log.error("海康在线状态查询失败: {}", responseBody);
+                    throw new RuntimeException("海康在线状态查询失败: " + responseBody);
+                }
+
+                JSONObject dataJson = hikvisionUtil.getResponseData(responseBody);
+                if (dataJson == null) {
+                    log.warn("海康返回的data为空");
+                    break;
+                }
+
+                CameraOnlineResponse response = dataJson.toJavaObject(CameraOnlineResponse.class);
+                List<CameraOnlineResponse.OnlineItem> onlineList = response.getList();
+
+                if (onlineList == null || onlineList.isEmpty()) {
+                    log.info("海康在线状态列表为空，拉取结束");
+                    break;
+                }
+
+                for (CameraOnlineResponse.OnlineItem item : onlineList) {
+                    if (item.getIndexCode() != null && item.getOnline() != null) {
+                        statusMap.put(item.getIndexCode(), item.getOnline());
+                    }
+                }
+
+                log.info("第{}页在线状态拉取完成, 本页{}条, 累计{}条",
+                        pageNo, onlineList.size(), statusMap.size());
+
+                // 判断是否还有下一页
+                int total = response.getTotal() != null ? response.getTotal() : 0;
+                if (pageNo * PAGE_SIZE >= total) {
+                    hasMore = false;
+                } else {
+                    pageNo++;
+                }
+
+            } catch (Exception e) {
+                log.error("拉取海康在线状态异常, pageNo={}", pageNo, e);
+                throw new RuntimeException("拉取海康在线状态失败: " + e.getMessage(), e);
+            }
+        }
+
+        log.info("海康在线状态拉取完成, 共获取{}条", statusMap.size());
+        return statusMap;
     }
 }

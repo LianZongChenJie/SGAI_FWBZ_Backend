@@ -152,4 +152,8 @@ public class CameraResource implements Serializable {
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @ApiModelProperty(value = "记录更新时间")
     private Date gmtModified;
+
+    /** 在线状态，0-离线，1-在线 */
+    @ApiModelProperty(value = "在线状态，0-离线，1-在线")
+    private Integer online;
 }

@@ -28,4 +28,12 @@ public interface ICameraResourceService extends IService<CameraResource> {
      * @return 每个摄像头的播放地址列表
      */
     List<CameraPlayUrlVO> getPlayUrls(List<String> cameraIndexCodes);
+
+    /**
+     * 从海康平台查询监控点在线状态并更新到数据库
+     * <p>逐页拉取海康在线状态数据，根据 indexCode 匹配更新 table_camera_resource 的 online 字段。</p>
+     *
+     * @return 更新的记录数
+     */
+    int syncOnlineStatus();
 }
