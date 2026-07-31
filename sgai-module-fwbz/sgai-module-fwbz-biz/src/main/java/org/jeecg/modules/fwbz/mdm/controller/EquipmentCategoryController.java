@@ -311,7 +311,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-设备添加")
     @ApiOperation(value = "设备类别-设备添加", notes = "设备类别-设备添加")
-    @RequiresPermissions("Fwbz:equipment_category:equipment:add")
+//    @RequiresPermissions("Fwbz:equipment_category:equipment:add")
     @PostMapping(value = "/equipment/add")
     public Result<String> addForEquipment(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategory.setType(EquipmentCategory.TYPE_EQUIPMENT);
@@ -321,7 +321,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
 
     @AutoLog(value = "设备类别-仪表添加")
     @ApiOperation(value = "设备类别-仪表添加", notes = "设备类别-仪表添加")
-    @RequiresPermissions("Fwbz:equipment_category:measuring:add")
+//    @RequiresPermissions("Fwbz:equipment_category:measuring:add")
     @PostMapping("/measuring/add")
     public Result<String> addForMeasuring(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategory.setType(EquipmentCategory.TYPE_MEASURING);
@@ -337,7 +337,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-编辑")
     @ApiOperation(value = "设备类别-编辑", notes = "设备类别-编辑")
-    @RequiresPermissions("Fwbz:equipment_category:edit")
+//    @RequiresPermissions("Fwbz:equipment_category:edit")
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST})
     public Result<String> edit(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategoryService.updateEquipmentCategory(equipmentCategory);
@@ -352,7 +352,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-通过id删除")
     @ApiOperation(value = "设备类别-通过id删除", notes = "设备类别-通过id删除")
-    @RequiresPermissions("Fwbz:equipment_category:delete")
+//    @RequiresPermissions("Fwbz:equipment_category:delete")
     @DeleteMapping(value = "/delete")
     public Result<String> delete(@RequestParam(name = "id", required = true) String id) {
         equipmentCategoryService.deleteEquipmentCategory(id);
@@ -367,7 +367,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-批量删除")
     @ApiOperation(value = "设备类别-批量删除", notes = "设备类别-批量删除")
-    @RequiresPermissions("Fwbz:equipment_category:deleteBatch")
+//    @RequiresPermissions("Fwbz:equipment_category:deleteBatch")
     @DeleteMapping(value = "/deleteBatch")
     public Result<String> deleteBatch(@RequestParam(name = "ids", required = true) String ids) {
         this.equipmentCategoryService.removeByIds(Arrays.asList(ids.split(",")));

@@ -31,7 +31,7 @@ public class DeviceModelController {
 
     @AutoLog(value = "设备模型-添加")
     @ApiOperation(value = "设备模型-添加", notes = "设备模型-添加")
-    @RequiresPermissions("Fwbz:deviceModel:add")
+//    @RequiresPermissions("Fwbz:deviceModel:add")
     @PostMapping("/add")
     public Result<String> add(@RequestBody DeviceModel data){
         service.save(data);
@@ -40,7 +40,7 @@ public class DeviceModelController {
 
     @AutoLog(value = "设备模型-编辑")
     @ApiOperation(value = "设备模型-编辑", notes = "设备模型-编辑")
-    @RequiresPermissions("Fwbz:deviceModel:edit")
+//    @RequiresPermissions("Fwbz:deviceModel:edit")
     @PostMapping("/edit")
     public Result<String> edit(@RequestBody DeviceModel data){
         service.updateById(data);
@@ -49,7 +49,7 @@ public class DeviceModelController {
 
     @AutoLog(value = "设备模型-删除")
     @ApiOperation(value = "设备模型-删除", notes = "设备模型-删除")
-    @RequiresPermissions("Fwbz:deviceModel:delete")
+//    @RequiresPermissions("Fwbz:deviceModel:delete")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam(name = "id")Long id){
         service.removeById(id);
@@ -58,7 +58,7 @@ public class DeviceModelController {
 
     @AutoLog(value = "设备模型-批量删除")
     @ApiOperation(value = "设备模型-批量删除", notes = "设备模型-批量删除")
-    @RequiresPermissions("Fwbz:deviceModel:deleteBatch")
+//    @RequiresPermissions("Fwbz:deviceModel:deleteBatch")
     @DeleteMapping("/deleteBatch")
     public Result<String> deleteBatch(@RequestParam(name = "ids")String ids){
         Set<Long> idList = Arrays.stream(ids.split(","))// 转换为List<Long>

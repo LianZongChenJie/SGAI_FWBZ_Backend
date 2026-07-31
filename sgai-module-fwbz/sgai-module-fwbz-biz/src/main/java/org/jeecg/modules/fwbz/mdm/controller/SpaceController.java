@@ -291,7 +291,7 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 	 */
 	@AutoLog(value = "空间位置-添加")
 	@ApiOperation(value="空间位置-添加", notes="空间位置-添加")
-    @RequiresPermissions("Fwbz:space:add")
+//    @RequiresPermissions("Fwbz:space:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody Space space) {
 		spaceService.addSpace(space);
@@ -306,7 +306,7 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 	 */
 	@AutoLog(value = "空间位置-编辑")
 	@ApiOperation(value="空间位置-编辑", notes="空间位置-编辑")
-    @RequiresPermissions("Fwbz:space:edit")
+//    @RequiresPermissions("Fwbz:space:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody Space space) {
 		spaceService.updateSpace(space);
@@ -321,7 +321,7 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 	 */
 	@AutoLog(value = "空间位置-通过id删除")
 	@ApiOperation(value="空间位置-通过id删除", notes="空间位置-通过id删除")
-    @RequiresPermissions("Fwbz:space:delete")
+//    @RequiresPermissions("Fwbz:space:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		spaceService.deleteSpace(id);
@@ -336,7 +336,7 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 	 */
 	@AutoLog(value = "空间位置-批量删除")
 	@ApiOperation(value="空间位置-批量删除", notes="空间位置-批量删除")
-    @RequiresPermissions("Fwbz:space:deleteBatch")
+//    @RequiresPermissions("Fwbz:space:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.spaceService.removeByIds(Arrays.asList(ids.split(",")));

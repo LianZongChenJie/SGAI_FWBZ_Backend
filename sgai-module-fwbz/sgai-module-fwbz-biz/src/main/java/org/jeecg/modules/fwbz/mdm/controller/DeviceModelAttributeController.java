@@ -27,7 +27,7 @@ public class DeviceModelAttributeController {
     private final IDeviceModelAttributeService service;
 
     @ApiOperation(value = "设备模型属性-添加", notes = "设备模型属性-添加")
-    @RequiresPermissions("Fwbz:deviceModelAttribute:add")
+//    @RequiresPermissions("Fwbz:deviceModelAttribute:add")
     @AutoLog(value = "设备模型属性-添加")
     @PostMapping("/add")
     public Result<String> add(@RequestBody List<DeviceModelAttribute> data) {
@@ -36,7 +36,7 @@ public class DeviceModelAttributeController {
     }
 
     @ApiOperation(value = "设备模型属性-编辑", notes = "设备模型属性-编辑")
-    @RequiresPermissions("Fwbz:deviceModelAttribute:edit")
+//    @RequiresPermissions("Fwbz:deviceModelAttribute:edit")
     @AutoLog(value = "设备模型属性-编辑")
     @PostMapping("/edit")
     public Result<String> edit(@RequestBody DeviceModelAttribute data) {
@@ -45,7 +45,7 @@ public class DeviceModelAttributeController {
     }
 
     @ApiOperation(value = "设备模型属性-通过id删除", notes = "设备模型属性-通过id删除")
-    @RequiresPermissions("Fwbz:deviceModelAttribute:delete")
+//    @RequiresPermissions("Fwbz:deviceModelAttribute:delete")
     @AutoLog(value = "设备模型属性-通过id删除")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam(name = "id")Long id){
