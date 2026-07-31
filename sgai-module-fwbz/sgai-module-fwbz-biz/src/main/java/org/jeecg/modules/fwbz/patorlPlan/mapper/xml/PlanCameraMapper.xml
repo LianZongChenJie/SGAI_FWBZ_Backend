@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.fwbz.patorlPlan.mapper.PlanCameraMapper">
+
+    <!-- 根据计划ID删除关联摄像头 -->
+    <delete id="deleteByPlanId">
+        DELETE FROM table_plan_camera WHERE plan_id = #{planId}
+    </delete>
+
+    <!-- 根据计划ID查询关联摄像头 -->
+    <select id="selectByPlanId" resultType="org.jeecg.modules.fwbz.patorlPlan.entity.PlanCamera">
+        SELECT id, plan_id, index_code FROM table_plan_camera WHERE plan_id = #{planId}
+    </select>
+
+</mapper>
