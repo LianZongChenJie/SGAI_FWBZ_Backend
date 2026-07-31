@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.homePage.controller;
+package org.jeecg.modules.fwbz.homePage.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;

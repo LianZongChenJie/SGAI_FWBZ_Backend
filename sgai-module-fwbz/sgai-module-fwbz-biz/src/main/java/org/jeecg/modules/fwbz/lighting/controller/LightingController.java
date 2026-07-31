@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.lighting.controller;
+package org.jeecg.modules.fwbz.lighting.controller;
 
 import org.jeecg.common.api.vo.Result;
 import org.springframework.web.bind.annotation.PostMapping;

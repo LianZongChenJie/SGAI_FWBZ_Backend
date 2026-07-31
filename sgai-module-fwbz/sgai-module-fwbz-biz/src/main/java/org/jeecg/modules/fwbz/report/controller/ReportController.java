@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.report.controller;
+package org.jeecg.modules.fwbz.report.controller;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;

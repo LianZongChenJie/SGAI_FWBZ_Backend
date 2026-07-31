@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.lighting.controller;
+package org.jeecg.modules.fwbz.lighting.controller;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;

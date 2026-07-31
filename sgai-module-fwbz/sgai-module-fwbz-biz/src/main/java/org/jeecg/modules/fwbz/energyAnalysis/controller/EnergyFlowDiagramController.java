@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
+package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;

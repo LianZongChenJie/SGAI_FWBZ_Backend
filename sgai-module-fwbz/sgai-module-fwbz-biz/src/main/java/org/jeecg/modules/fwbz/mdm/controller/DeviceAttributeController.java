@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.mdm.controller;
+package org.jeecg.modules.fwbz.mdm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;

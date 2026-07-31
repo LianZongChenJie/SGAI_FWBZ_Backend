@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.controller;
+package org.jeecg.modules.fwbz.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import lombok.AllArgsConstructor;

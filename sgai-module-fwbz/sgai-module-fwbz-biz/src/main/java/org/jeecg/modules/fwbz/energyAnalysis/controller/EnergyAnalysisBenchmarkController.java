@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
+package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.shiro.authz.annotation.RequiresPermissions;

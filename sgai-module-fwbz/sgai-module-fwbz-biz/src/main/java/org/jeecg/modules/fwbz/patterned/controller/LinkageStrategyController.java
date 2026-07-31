@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.patterned.controller;
+package org.jeecg.modules.fwbz.patterned.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.event.controller;
+package org.jeecg.modules.fwbz.event.controller;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-﻿package org.jeecg.modules.fwbz.alarm.controller;
+package org.jeecg.modules.fwbz.alarm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
