@@ -211,10 +211,12 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     public DeviceRunStateStatisticsDto statisticsRunState(Long categoryId) {
         List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState).eq(categoryId != null, Device::getCategoryId, categoryId));
         Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        Map<Long, Long> collect2 = list.stream().filter(item -> item.getSpaceId() != null).collect(Collectors.groupingBy(Device::getSpaceId, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
         dto.setCount((long) list.size());
         dto.setOnline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setOffline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+        dto.setSpaceCount((long) collect2.size());
         return dto;
     }
 

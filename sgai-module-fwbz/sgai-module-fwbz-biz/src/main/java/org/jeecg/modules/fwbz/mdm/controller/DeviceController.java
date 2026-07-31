@@ -34,7 +34,7 @@ import static org.jeecgframework.poi.excel.ExcelExportUtil.exportExcel;
 
 @Api(tags="设备基础信息")
 @RestController
-@RequestMapping("/fwbz/device")
+@RequestMapping("/Fwbz/device")
 @Slf4j
 public class DeviceController extends JeecgController<Device, IDeviceService> {
 
@@ -72,6 +72,17 @@ public class DeviceController extends JeecgController<Device, IDeviceService> {
         deviceService.addDevice(device);
         return Result.OK("添加成功！");
     }
+
+
+    @AutoLog(value = "设备基础信息-设备添加")
+    @ApiOperation(value="设备基础信息-设备添加", notes="设备基础信息-设备添加")
+//    @RequiresPermissions("Fwbz:device:equipment:add")
+    @PostMapping("/add")
+    public Result<String> addDevice(@RequestBody Device device){
+        deviceService.addDevice(device);
+        return Result.OK("添加成功！");
+    }
+
 
     /**
      *   编辑

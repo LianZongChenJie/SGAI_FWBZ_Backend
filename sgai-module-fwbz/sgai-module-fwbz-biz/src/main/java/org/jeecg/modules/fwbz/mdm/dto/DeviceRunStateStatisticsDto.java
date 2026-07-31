@@ -22,4 +22,9 @@ public class DeviceRunStateStatisticsDto {
      * 离线
      */
     private Long offline;
+
+    /**
+     * 区域数量
+     */
+    private Long spaceCount;
 }
