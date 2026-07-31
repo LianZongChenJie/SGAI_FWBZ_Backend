@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/Fwbz/device/other")
+@RequestMapping("/fwbz/device/other")
 @AllArgsConstructor
 public class DeviceOtherController {
 

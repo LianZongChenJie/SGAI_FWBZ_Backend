@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import cn.hutool.core.util.StrUtil;
 import io.swagger.annotations.Api;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Api(tags = "计量点位数据信息")
 @RestController
-@RequestMapping("/Fwbz/meterPointData")
+@RequestMapping("/fwbz/meterPointData")
 @AllArgsConstructor
 public class MeteringPointDataController {
 

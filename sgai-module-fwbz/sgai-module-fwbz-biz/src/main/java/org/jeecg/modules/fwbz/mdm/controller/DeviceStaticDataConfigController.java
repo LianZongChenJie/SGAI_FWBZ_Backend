@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/Fwbz/deviceStaticDataConfig")
+@RequestMapping("/fwbz/deviceStaticDataConfig")
 public class DeviceStaticDataConfigController {
 
     private final IDeviceStaticDataConfigService service;

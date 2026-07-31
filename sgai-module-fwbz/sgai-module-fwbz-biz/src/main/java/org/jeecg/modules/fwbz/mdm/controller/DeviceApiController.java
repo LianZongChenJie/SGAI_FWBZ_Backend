@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.AllArgsConstructor;
@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/Fwbz/device/api")
+@RequestMapping("/fwbz/device/api")
 @AllArgsConstructor
 public class DeviceApiController {
 

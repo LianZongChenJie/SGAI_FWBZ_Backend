@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.api;
+﻿package org.jeecg.modules.fwbz.api;
 
 import org.jeecg.modules.fwbz.api.fallback.FwbzDeviceFallback;
 import org.jeecg.modules.fwbz.entity.DeviceEntity;
@@ -15,7 +15,7 @@ public interface FwbzDeviceApi {
      * 获取设备基本信息
      * @return 设备id、设备编码、设备类型
      */
-    @GetMapping(value = "/Fwbz/device/api/deviceList")
+    @GetMapping(value = "/fwbz/device/api/deviceList")
     List<DeviceEntity> deviceList();
 
     /**
@@ -23,6 +23,6 @@ public interface FwbzDeviceApi {
      * @param deviceIds 设备id
      * @return 设备详细信息
      */
-    @GetMapping(value = "/Fwbz/device/api/deviceInfoList")
+    @GetMapping(value = "/fwbz/device/api/deviceInfoList")
     List<DeviceInfo> deviceInfoList(@RequestParam String deviceIds);
 }

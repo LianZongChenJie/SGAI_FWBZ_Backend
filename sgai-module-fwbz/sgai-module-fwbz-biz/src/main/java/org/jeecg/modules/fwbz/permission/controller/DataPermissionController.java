@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.permission.controller;
+﻿package org.jeecg.modules.fwbz.permission.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -26,7 +26,7 @@ import java.util.List;
  */
 @Api(tags="数据权限管理")
 @RestController
-@RequestMapping("/Fwbz/dataPermission")
+@RequestMapping("/fwbz/dataPermission")
 @Slf4j
 public class DataPermissionController {
 

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/Fwbz/lighting/screen")
+@RequestMapping("/fwbz/lighting/screen")
 public class LightingScreenController {
 
     private final ILightingCircuitService circuitService;

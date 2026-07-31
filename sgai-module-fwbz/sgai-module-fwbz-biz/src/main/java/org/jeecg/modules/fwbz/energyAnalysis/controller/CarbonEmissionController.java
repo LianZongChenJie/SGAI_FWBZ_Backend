@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * 碳排放分析
  */
 @RestController
-@RequestMapping("/Fwbz/carbonEmission")
+@RequestMapping("/fwbz/carbonEmission")
 @AllArgsConstructor
 public class CarbonEmissionController {
 

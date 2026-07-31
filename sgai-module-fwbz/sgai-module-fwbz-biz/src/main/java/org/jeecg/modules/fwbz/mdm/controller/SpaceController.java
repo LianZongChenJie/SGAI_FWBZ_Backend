@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 @Api(tags="空间位置")
 @RestController
-@RequestMapping("/Fwbz/space")
+@RequestMapping("/fwbz/space")
 @Slf4j
 public class SpaceController extends JeecgController<Space, ISpaceService>{
 	@Autowired

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.List;
  * 能源价格配置
  */
 @RestController
-@RequestMapping("/Fwbz/energyPricingConfig")
+@RequestMapping("/fwbz/energyPricingConfig")
 @AllArgsConstructor
 public class EnergyPricingConfigController{
 

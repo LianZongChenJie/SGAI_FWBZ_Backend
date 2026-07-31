@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.api;
+﻿package org.jeecg.modules.fwbz.api;
 import org.jeecg.modules.fwbz.api.fallback.FwbzHelloFallback;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +12,6 @@ public interface FwbzHelloApi {
      * @param
      * @return
      */
-    @GetMapping(value = "/Fwbz/hello")
+    @GetMapping(value = "/fwbz/hello")
     String callHello();
 }

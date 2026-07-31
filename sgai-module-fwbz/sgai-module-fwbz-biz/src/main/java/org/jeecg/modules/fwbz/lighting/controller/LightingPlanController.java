@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @AllArgsConstructor
-@RequestMapping("/Fwbz/lighting/plan")
+@RequestMapping("/fwbz/lighting/plan")
 public class LightingPlanController {
 
     private final ILightingPlanService service;

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -12,7 +12,7 @@ import java.util.List;
  * 业务配置
  */
 @RestController
-@RequestMapping("/Fwbz/businessConfig")
+@RequestMapping("/fwbz/businessConfig")
 @AllArgsConstructor
 public class BusinessConfigController {
 

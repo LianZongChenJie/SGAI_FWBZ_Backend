@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * 泛光照明-区域
  */
 @RestController
-@RequestMapping("/Fwbz/lighting/area")
+@RequestMapping("/fwbz/lighting/area")
 @AllArgsConstructor
 public class LightingAreaController {
 

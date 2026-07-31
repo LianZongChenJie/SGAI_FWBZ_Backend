@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -29,7 +29,7 @@ import java.util.Arrays;
  */
 @Api(tags="碳排放因子管理")
 @RestController
-@RequestMapping("/Fwbz/carbonEmissionFactor")
+@RequestMapping("/fwbz/carbonEmissionFactor")
 @Slf4j
 public class CarbonEmissionFactorController extends JeecgController<CarbonEmissionFactor, ICarbonEmissionFactorService> {
 	@Autowired

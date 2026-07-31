@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.patterned.controller;
+﻿package org.jeecg.modules.fwbz.patterned.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  * 联动控制
  */
 @RestController
-@RequestMapping("/Fwbz/linkageStrategy")
+@RequestMapping("/fwbz/linkageStrategy")
 @AllArgsConstructor
 public class LinkageStrategyController {
 

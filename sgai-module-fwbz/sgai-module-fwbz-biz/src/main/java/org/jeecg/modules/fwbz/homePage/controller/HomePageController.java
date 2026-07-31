@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.homePage.controller;
+﻿package org.jeecg.modules.fwbz.homePage.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/Fwbz/homePage")
+@RequestMapping("/fwbz/homePage")
 @AllArgsConstructor
 @Slf4j
 public class HomePageController {

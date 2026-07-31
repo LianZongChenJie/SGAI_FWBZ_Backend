@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 照明控制记录
  */
 @RestController
-@RequestMapping("/Fwbz/lighting/operationLog")
+@RequestMapping("/fwbz/lighting/operationLog")
 @AllArgsConstructor
 public class LightingOperationLogController {
 

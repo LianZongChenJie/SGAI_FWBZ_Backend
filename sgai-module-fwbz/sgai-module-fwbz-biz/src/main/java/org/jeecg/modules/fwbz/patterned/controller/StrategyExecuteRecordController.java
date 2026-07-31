@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.patterned.controller;
+﻿package org.jeecg.modules.fwbz.patterned.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/Fwbz/strategyExecuteRecord")
+@RequestMapping("/fwbz/strategyExecuteRecord")
 @AllArgsConstructor
 public class StrategyExecuteRecordController {
     private final IStrategyExecuteRecordService service;

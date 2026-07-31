@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Api(tags="能源价格管理")
 @RestController
-@RequestMapping("/Fwbz/energyPrice")
+@RequestMapping("/fwbz/energyPrice")
 @Slf4j
 public class EnergyPriceController extends JeecgController<EnergyPrice, IEnergyPriceService> {
 	@Autowired

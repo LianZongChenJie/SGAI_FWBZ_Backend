@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.api;
+﻿package org.jeecg.modules.fwbz.api;
 
 import org.jeecg.modules.fwbz.api.fallback.FwbzDeviceFallback;
 import org.jeecg.modules.fwbz.entity.SpaceInfo;
@@ -16,6 +16,6 @@ public interface FwbzSpaceApi {
      * @param spaceIds 空间id
      * @return 空间详细信息
      */
-    @GetMapping(value = "/Fwbz/space/api/spaceInfoList")
+    @GetMapping(value = "/fwbz/space/api/spaceInfoList")
     List<SpaceInfo> spaceInfoList(@RequestParam String spaceIds);
 }

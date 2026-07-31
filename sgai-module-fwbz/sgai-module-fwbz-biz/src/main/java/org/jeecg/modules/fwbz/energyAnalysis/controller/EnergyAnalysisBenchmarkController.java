@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -13,7 +13,7 @@ import java.util.List;
  * 能效分析-基准配置
  */
 @RestController
-@RequestMapping("/Fwbz/energyAnalysis/benchmark")
+@RequestMapping("/fwbz/energyAnalysis/benchmark")
 @AllArgsConstructor
 public class EnergyAnalysisBenchmarkController {
     private final IEnergyAnalysisBenchmarkService service;

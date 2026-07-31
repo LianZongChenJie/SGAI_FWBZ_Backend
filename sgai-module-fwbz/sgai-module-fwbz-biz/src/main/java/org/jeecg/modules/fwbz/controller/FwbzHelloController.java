@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Api(tags = "Fwbz示例")
 @RestController
-@RequestMapping("/Fwbz")
+@RequestMapping("/fwbz")
 @Slf4j
 public class FwbzHelloController {
 

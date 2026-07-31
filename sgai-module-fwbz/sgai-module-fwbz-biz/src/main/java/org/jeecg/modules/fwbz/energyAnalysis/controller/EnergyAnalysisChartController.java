@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -13,7 +13,7 @@ import java.util.List;
  * 能效分析-图表配置
  */
 @RestController
-@RequestMapping("/Fwbz/energyAnalysis/chart")
+@RequestMapping("/fwbz/energyAnalysis/chart")
 @AllArgsConstructor
 public class EnergyAnalysisChartController {
 

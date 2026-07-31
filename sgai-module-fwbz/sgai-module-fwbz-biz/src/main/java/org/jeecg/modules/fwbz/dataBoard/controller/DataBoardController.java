@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.dataBoard.controller;
+﻿package org.jeecg.modules.fwbz.dataBoard.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -16,7 +16,7 @@ import java.util.List;
  * 数据看板
  */
 @RestController
-@RequestMapping("/Fwbz/dataBoard")
+@RequestMapping("/fwbz/dataBoard")
 @AllArgsConstructor
 public class DataBoardController {
 

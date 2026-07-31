@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.List;
  * 成本中心配置
  */
 @RestController
-@RequestMapping("/Fwbz/cost/center")
+@RequestMapping("/fwbz/cost/center")
 @AllArgsConstructor
 public class CostCenterController {
 

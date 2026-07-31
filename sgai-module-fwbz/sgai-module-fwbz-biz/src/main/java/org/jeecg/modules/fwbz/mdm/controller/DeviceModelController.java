@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * 设备模型
  */
 @RestController
-@RequestMapping("/Fwbz/deviceModel")
+@RequestMapping("/fwbz/deviceModel")
 @AllArgsConstructor
 @Api(tags="设备模型")
 @Slf4j

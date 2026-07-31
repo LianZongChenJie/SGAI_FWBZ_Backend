@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -29,7 +29,7 @@ import java.util.Arrays;
  */
 @Api(tags="折标煤系数管理")
 @RestController
-@RequestMapping("/Fwbz/standardCoalCoefficient")
+@RequestMapping("/fwbz/standardCoalCoefficient")
 @Slf4j
 public class 	StandardCoalCoefficientController extends JeecgController<StandardCoalCoefficient, IStandardCoalCoefficientService> {
 	@Autowired

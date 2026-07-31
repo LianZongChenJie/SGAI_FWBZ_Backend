@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.alarm.controller;
+﻿package org.jeecg.modules.fwbz.alarm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.List;
  * 告警记录
  */
 @RestController
-@RequestMapping("/Fwbz/alarm/record")
+@RequestMapping("/fwbz/alarm/record")
 @AllArgsConstructor
 public class AlarmRecordController {
 

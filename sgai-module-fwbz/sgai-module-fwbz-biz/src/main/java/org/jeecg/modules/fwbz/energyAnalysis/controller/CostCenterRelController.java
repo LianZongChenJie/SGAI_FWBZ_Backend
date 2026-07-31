@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * 成本中心关联关系
  */
 @RestController
-@RequestMapping("/Fwbz/cost/center/rel")
+@RequestMapping("/fwbz/cost/center/rel")
 @AllArgsConstructor
 public class CostCenterRelController {
 

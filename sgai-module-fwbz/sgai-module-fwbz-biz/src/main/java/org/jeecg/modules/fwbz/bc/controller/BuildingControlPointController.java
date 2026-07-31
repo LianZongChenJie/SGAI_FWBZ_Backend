@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.bc.controller;
+﻿package org.jeecg.modules.fwbz.bc.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 楼控点位数据
  */
 @RestController
-@RequestMapping("/Fwbz/bc/buildingControlPoint")
+@RequestMapping("/fwbz/bc/buildingControlPoint")
 @AllArgsConstructor
 public class BuildingControlPointController {
 

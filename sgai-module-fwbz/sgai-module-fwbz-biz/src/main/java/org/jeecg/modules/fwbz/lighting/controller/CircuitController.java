@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * 泛光照明-回路
  */
 @RestController
-@RequestMapping("/Fwbz/lighting/circuit")
+@RequestMapping("/fwbz/lighting/circuit")
 @AllArgsConstructor
 public class CircuitController {
 

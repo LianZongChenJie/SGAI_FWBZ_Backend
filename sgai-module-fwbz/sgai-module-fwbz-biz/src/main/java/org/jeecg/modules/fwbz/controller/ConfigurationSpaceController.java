@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/configurationSpace")
+@RequestMapping("/fwbz/configurationSpace")
 @AllArgsConstructor
 public class ConfigurationSpaceController {
 

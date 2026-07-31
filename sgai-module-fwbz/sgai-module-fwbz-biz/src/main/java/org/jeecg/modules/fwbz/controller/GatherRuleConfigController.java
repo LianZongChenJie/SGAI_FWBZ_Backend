@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @Api(tags="采集管理-规则标准")
 @RestController
-@RequestMapping("/Fwbz/gatherRuleConfig")
+@RequestMapping("/fwbz/gatherRuleConfig")
 @Slf4j
 public class GatherRuleConfigController extends JeecgController<GatherRuleConfig, IGatherRuleConfigService> {
 	@Autowired

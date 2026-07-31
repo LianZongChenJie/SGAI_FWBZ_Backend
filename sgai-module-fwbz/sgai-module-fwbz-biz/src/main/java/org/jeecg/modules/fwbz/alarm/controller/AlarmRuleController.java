@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.alarm.controller;
+﻿package org.jeecg.modules.fwbz.alarm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  * 告警规则
  */
 @RestController
-@RequestMapping("/Fwbz/alarm/rule")
+@RequestMapping("/fwbz/alarm/rule")
 @AllArgsConstructor
 public class AlarmRuleController {
 
