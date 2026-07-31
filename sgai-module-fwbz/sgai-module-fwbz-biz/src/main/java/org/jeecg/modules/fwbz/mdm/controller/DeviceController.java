@@ -34,7 +34,7 @@ import static org.jeecgframework.poi.excel.ExcelExportUtil.exportExcel;
 
 @Api(tags="设备基础信息")
 @RestController
-@RequestMapping("/Fwbz/device")
+@RequestMapping("/fwbz/device")
 @Slf4j
 public class DeviceController extends JeecgController<Device, IDeviceService> {
 
