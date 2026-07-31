@@ -6,22 +6,13 @@ import com.hikvision.artemis.sdk.ArtemisHttpUtil;
 import com.hikvision.artemis.sdk.Response;
 import com.hikvision.artemis.sdk.config.ArtemisConfig;
 import com.hikvision.artemis.sdk.constant.Constants;
-import com.hikvision.artemis.sdk.constant.SystemHeader;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hikvision.artemis.sdk.util.HttpUtil.wrapClient;
 
 /**
  * 海康威视OpenAPI接口请求工具类
@@ -53,37 +44,36 @@ public class HikvisionUtil {
      * 平台地址，格式为 IP:Port
      * 使用https协议时填nginx的IP:Port，使用http协议时填artemis服务的IP:Port（默认9016）
      */
-    @Value("${hikvision.host}")
+
     private String host;
 
     /**
      * 合作方Key
      */
-    @Value("${hikvision.app-key}")
+
     private String appKey;
 
     /**
      * 合作方Secret
      */
-    @Value("${hikvision.app-secret}")
+
     private String appSecret;
 
     /**
      * 连接超时时间(ms)
      */
-    @Value("${hikvision.connect-timeout:10000}")
+
     private int connectTimeout;
 
     /**
      * 读取超时时间(ms)
      */
-    @Value("${hikvision.socket-timeout:60000}")
+
     private int socketTimeout;
 
     /**
      * 初始化超时配置
      */
-    @PostConstruct
     public void init() {
         Constants.DEFAULT_TIMEOUT = connectTimeout;
         Constants.SOCKET_TIMEOUT = socketTimeout;
@@ -157,7 +147,7 @@ public class HikvisionUtil {
     }
 
     /**
-     * POST JSON请求（通过代理场景，自定义x-ca-path）
+     * POST JSON请求（通过代理场景，自定义x-ca-path头）
      *
      * @param proxyApiPath 代理层API路径
      * @param realApiPath  Artemis真实API路径（设置到x-ca-path头）
@@ -167,7 +157,7 @@ public class HikvisionUtil {
     public String doPostJsonByProxy(String proxyApiPath, String realApiPath, String body) throws Exception {
         Map<String, String> path = buildPath(proxyApiPath);
         Map<String, String> headers = new HashMap<>(2);
-        headers.put(SystemHeader.X_CA_PATH, ARTEMIS_PATH + realApiPath);
+        headers.put("x-ca-path", ARTEMIS_PATH + realApiPath);
         log.debug("海康代理POST请求: proxyPath={}, realPath={}, body={}", proxyApiPath, realApiPath, body);
         return ArtemisHttpUtil.doPostStringArtemis(buildConfig(), path, body, null, null, "application/json", headers);
     }
@@ -220,9 +210,8 @@ public class HikvisionUtil {
      * @return 响应字符串
      */
     public String doGetString(String apiPath, Map<String, Object> query) throws Exception {
-        Map<String, String> path = buildPath(apiPath);
-        log.debug("海康GET请求(String): path={}, query={}", path, query);
-        return ArtemisHttpUtil.doGetArtemis(buildConfig(), path, query, null, null, null);
+        Response response = doGetResponse(apiPath, query, null, true);
+        return response.getBody();
     }
 
     // ==================== 图片下载 ====================
