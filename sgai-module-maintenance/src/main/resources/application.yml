@@ -1,0 +1,31 @@
+server:
+  port: 7201
+
+spring:
+  application:
+    name: sgai-maintenance
+  cloud:
+    nacos:
+      config:
+        server-addr: 10.168.56.101:8848
+        group: DEFAULT_GROUP
+        namespace: public
+        username:
+        password:
+      discovery:
+        server-addr: ${spring.cloud.nacos.config.server-addr}
+        group: ${spring.cloud.nacos.config.group}
+        namespace: ${spring.cloud.nacos.config.namespace}
+        username:
+        password:
+  config:
+    import:
+      - optional:nacos:jeecg.yaml
+      - optional:nacos:maintenance-dev.yaml
+  main:
+    allow-bean-definition-overriding: true
+
+mybatis-plus:
+  #  configuration:
+  #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-handlers-package: org.jeecg.module.maintenance.handler
