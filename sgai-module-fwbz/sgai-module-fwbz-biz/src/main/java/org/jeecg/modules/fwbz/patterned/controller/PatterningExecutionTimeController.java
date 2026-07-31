@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.patterned.controller;
+﻿package org.jeecg.modules.fwbz.patterned.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/Fwbz/patterningExecutionTime")
+@RequestMapping("/fwbz/patterningExecutionTime")
 @AllArgsConstructor
 public class PatterningExecutionTimeController {
 

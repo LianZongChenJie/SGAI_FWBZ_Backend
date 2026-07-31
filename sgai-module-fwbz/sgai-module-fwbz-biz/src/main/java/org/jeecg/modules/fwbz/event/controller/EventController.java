@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.event.controller;
+﻿package org.jeecg.modules.fwbz.event.controller;
 
 import com.alibaba.cloud.commons.lang.StringUtils;
 import lombok.AllArgsConstructor;
@@ -16,7 +16,7 @@ import java.util.List;
  */
 @AllArgsConstructor
 @RestController
-@RequestMapping("/Fwbz/event")
+@RequestMapping("/fwbz/event")
 public class EventController {
     private final EventService eventService;
 

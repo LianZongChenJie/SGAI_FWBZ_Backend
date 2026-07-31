@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.patterned.controller;
+﻿package org.jeecg.modules.fwbz.patterned.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/pointExecuteRecord")
+@RequestMapping("/fwbz/pointExecuteRecord")
 @AllArgsConstructor
 public class PointExecuteRecordController {
     private final IPointExecuteRecordService service;

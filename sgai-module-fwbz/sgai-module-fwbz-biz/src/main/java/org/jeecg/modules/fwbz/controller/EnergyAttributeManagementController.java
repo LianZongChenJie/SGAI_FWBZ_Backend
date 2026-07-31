@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -29,7 +29,7 @@ import java.util.Arrays;
  */
 @Api(tags="能源属性管理")
 @RestController
-@RequestMapping("/Fwbz/energyAttributeManagement")
+@RequestMapping("/fwbz/energyAttributeManagement")
 @Slf4j
 public class EnergyAttributeManagementController extends JeecgController<EnergyAttributeManagement, IEnergyAttributeManagementService> {
 	@Autowired

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.project.controller;
+﻿package org.jeecg.modules.fwbz.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -36,7 +36,7 @@ import java.util.Map;
  */
 @Api(tags="项目管理")
 @RestController
-@RequestMapping("/Fwbz/project")
+@RequestMapping("/fwbz/project")
 @Slf4j
 public class ProjectController extends JeecgController<Project, IProjectService> {
 	@Autowired

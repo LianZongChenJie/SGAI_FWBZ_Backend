@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * 计量仪表小时数据修正
  */
 @RestController
-@RequestMapping("/Fwbz/dataAmendLog")
+@RequestMapping("/fwbz/dataAmendLog")
 @AllArgsConstructor
 public class DataAmendLogController {
 

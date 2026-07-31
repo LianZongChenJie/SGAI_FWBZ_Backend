@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.bc.controller;
+﻿package org.jeecg.modules.fwbz.bc.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 楼控点位历史值
  */
 @RestController
-@RequestMapping("/Fwbz/bc/buildingControlPointHistory")
+@RequestMapping("/fwbz/bc/buildingControlPointHistory")
 @AllArgsConstructor
 public class BuildingControlPointHistoryController {
 

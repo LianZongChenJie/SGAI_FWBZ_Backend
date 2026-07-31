@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -15,7 +15,7 @@ import java.util.List;
  * 成本核算
  */
 @RestController
-@RequestMapping("/Fwbz/cost/accounting")
+@RequestMapping("/fwbz/cost/accounting")
 @AllArgsConstructor
 public class CostAccountingController {
 

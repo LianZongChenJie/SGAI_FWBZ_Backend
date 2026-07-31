@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.wd.controller;
+﻿package org.jeecg.modules.fwbz.wd.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/Fwbz/wd")
+@RequestMapping("/fwbz/wd")
 public class WdController {
 
     private final WdService service;

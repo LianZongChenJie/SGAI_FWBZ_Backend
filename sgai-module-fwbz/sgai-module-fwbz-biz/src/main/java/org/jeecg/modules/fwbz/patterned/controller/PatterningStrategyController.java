@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.patterned.controller;
+﻿package org.jeecg.modules.fwbz.patterned.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * 场景控制
  */
 @RestController
-@RequestMapping("/Fwbz/patterningStrategy")
+@RequestMapping("/fwbz/patterningStrategy")
 @AllArgsConstructor
 public class PatterningStrategyController {
 

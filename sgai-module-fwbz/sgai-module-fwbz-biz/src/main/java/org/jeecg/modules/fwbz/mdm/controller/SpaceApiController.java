@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.modules.fwbz.entity.SpaceInfo;
@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/space/api")
+@RequestMapping("/fwbz/space/api")
 @AllArgsConstructor
 public class SpaceApiController {
 

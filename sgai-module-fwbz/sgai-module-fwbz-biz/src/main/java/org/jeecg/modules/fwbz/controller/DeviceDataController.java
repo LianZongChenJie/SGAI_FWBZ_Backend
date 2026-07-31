@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/Fwbz/deviceData")
+@RequestMapping("/fwbz/deviceData")
 public class DeviceDataController {
 
     private final IDeviceDataService service;

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.report.controller;
+﻿package org.jeecg.modules.fwbz.report.controller;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * 报表导出
  */
 @RestController
-@RequestMapping("/Fwbz/report")
+@RequestMapping("/fwbz/report")
 @AllArgsConstructor
 public class ReportController {
 

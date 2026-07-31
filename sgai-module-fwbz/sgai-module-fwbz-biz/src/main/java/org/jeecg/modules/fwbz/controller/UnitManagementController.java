@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,7 +30,7 @@ import java.util.List;
  */
 @Api(tags="计量单位管理")
 @RestController
-@RequestMapping("/Fwbz/unitManagement")
+@RequestMapping("/fwbz/unitManagement")
 @Slf4j
 public class UnitManagementController extends JeecgController<UnitManagement, IUnitManagementService> {
 	@Autowired

@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.ApiOperation;
@@ -19,7 +19,7 @@ import java.util.List;
  * 设备属性历史值
  */
 @RestController
-@RequestMapping("/Fwbz/deviceAttributeHistory")
+@RequestMapping("/fwbz/deviceAttributeHistory")
 @AllArgsConstructor
 @Slf4j
 public class DeviceAttributeHistoryController {

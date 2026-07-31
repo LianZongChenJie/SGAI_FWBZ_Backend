@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.controller;
+﻿package org.jeecg.modules.fwbz.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -32,7 +32,7 @@ import java.util.List;
  */
 @Api(tags="能介管理")
 @RestController
-@RequestMapping("/Fwbz/energyMediumManage")
+@RequestMapping("/fwbz/energyMediumManage")
 @Slf4j
 public class EnergyMediumManageController extends JeecgController<EnergyMediumManage, IEnergyMediumManageService>{
 	@Autowired

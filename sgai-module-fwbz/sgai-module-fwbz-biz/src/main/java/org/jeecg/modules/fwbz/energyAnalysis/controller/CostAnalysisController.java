@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * 成本分析
  */
 @RestController
-@RequestMapping("/Fwbz/costAnalysis")
+@RequestMapping("/fwbz/costAnalysis")
 @AllArgsConstructor
 public class CostAnalysisController {
     private final ICostAnalysisService service;

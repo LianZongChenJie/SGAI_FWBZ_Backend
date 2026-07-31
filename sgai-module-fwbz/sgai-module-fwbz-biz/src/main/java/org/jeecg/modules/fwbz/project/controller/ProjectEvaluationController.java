@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.project.controller;
+﻿package org.jeecg.modules.fwbz.project.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -19,7 +19,7 @@ import java.util.List;
  * 项目评价相关接口
  */
 @RestController
-@RequestMapping("/Fwbz/project/evaluation")
+@RequestMapping("/fwbz/project/evaluation")
 @AllArgsConstructor
 public class ProjectEvaluationController {
 

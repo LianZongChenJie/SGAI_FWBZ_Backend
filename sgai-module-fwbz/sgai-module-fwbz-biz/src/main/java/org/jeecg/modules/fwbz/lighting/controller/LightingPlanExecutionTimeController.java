@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/Fwbz/lighting/planExecutionTime")
+@RequestMapping("/fwbz/lighting/planExecutionTime")
 @AllArgsConstructor
 public class LightingPlanExecutionTimeController {
 

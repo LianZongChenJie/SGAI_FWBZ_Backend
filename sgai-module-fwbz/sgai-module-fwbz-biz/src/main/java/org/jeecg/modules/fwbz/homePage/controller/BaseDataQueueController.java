@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.homePage.controller;
+﻿package org.jeecg.modules.fwbz.homePage.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -38,7 +38,7 @@ import java.util.stream.IntStream;
  * 通用数据查询
  */
 @RestController
-@RequestMapping("/Fwbz/dataQueue")
+@RequestMapping("/fwbz/dataQueue")
 @AllArgsConstructor
 public class BaseDataQueueController {
 

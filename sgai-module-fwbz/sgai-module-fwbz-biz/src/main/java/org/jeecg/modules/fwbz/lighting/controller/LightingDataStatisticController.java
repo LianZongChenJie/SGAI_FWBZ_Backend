@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.lighting.controller;
+﻿package org.jeecg.modules.fwbz.lighting.controller;
 
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/Fwbz/lighting/dataStatistic")
+@RequestMapping("/fwbz/lighting/dataStatistic")
 @AllArgsConstructor
 public class LightingDataStatisticController {
 

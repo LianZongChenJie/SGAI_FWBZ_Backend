@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.alarm.controller;
+﻿package org.jeecg.modules.fwbz.alarm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/alarm/category")
+@RequestMapping("/fwbz/alarm/category")
 @AllArgsConstructor
 public class AlarmCategoryController {
 

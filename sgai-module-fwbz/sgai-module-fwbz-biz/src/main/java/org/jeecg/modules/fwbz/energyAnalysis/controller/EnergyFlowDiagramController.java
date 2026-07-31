@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.energyAnalysis.controller;
+﻿package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/energyFlowDiagram")
+@RequestMapping("/fwbz/energyFlowDiagram")
 @AllArgsConstructor
 public class EnergyFlowDiagramController {
 

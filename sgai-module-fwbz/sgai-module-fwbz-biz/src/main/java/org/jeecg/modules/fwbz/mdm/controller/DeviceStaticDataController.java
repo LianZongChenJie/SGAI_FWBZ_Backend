@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.mdm.controller;
+﻿package org.jeecg.modules.fwbz.mdm.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Fwbz/deviceStaticData")
+@RequestMapping("/fwbz/deviceStaticData")
 @Api(tags="设备静态数据")
 @AllArgsConstructor
 public class DeviceStaticDataController {
