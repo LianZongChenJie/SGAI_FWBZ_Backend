@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -72,6 +73,14 @@ public class DeviceDataController {
         return Result.ok(service.findListWithMouth(params));
     }
 
+    @GetMapping("/venueElectricityMouth")
+    public Result<Map<Long, BigDecimal>> venueElectricityMouth(DeviceDataFindDto params) {
+        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
+        LocalDateTime now = LocalDateTime.now();
+        params.setStartTime(now.truncatedTo(ChronoUnit.DAYS));
+        params.setEndTime(now);
+        return Result.ok(service.venueElectricityMouth(params));
+    }
 
 
 

@@ -11,6 +11,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
 import org.jeecg.modules.fwbz.energyAnalysis.util.Jexl3Util;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
@@ -654,14 +655,21 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
 
     @Override
     public MeteringPointDataStatisticsDto statistics() {
-//        List<MeteringPoint> list = super.list(new LambdaQueryWrapper<MeteringPoint>().select(MeteringPoint::getId,MeteringPoint::getFormula));
+
+
+//        monthDataService.findByDateAndPointIds()
+//        List<MeteringPointDataMonth> list = monthDataService.
+//
+//
+//
+//        (new LambdaQueryWrapper<MeteringPointDataMonth>().select(MeteringPoint::getId,MeteringPoint::getFormula));
 //        Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
-        MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
-        dto.setElectricCount(198456L);
-        dto.setWaterCount(5234L);
-        dto.setElectricAvg(22050L);
-        dto.setMom(8.5);
-        return dto;
+//        MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
+//        dto.setElectricCount(198456L);
+//        dto.setWaterCount(5234L);
+//        dto.setElectricAvg(22050L);
+//        dto.setMom(8.5);
+        return null;
     }
 
 }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 @Service
@@ -85,6 +86,24 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
 
         return listPage;
     }
+
+
+    @Override
+    public  Map<Long, BigDecimal> venueElectricityMouth(DeviceDataFindDto params) {
+        List<DeviceDataVo> listPage = deviceService.findAll(params.convertToDevice())
+                .stream().map(DeviceDataVo::convert).collect(toList());
+        List<MonthData> monthData = monthDataService.findByTime(params.getStartTime());
+
+        supplementMouthTotal(listPage, monthData);
+
+
+        return listPage.stream()
+                .filter(item -> item.getVenueId() != null)
+                .collect(groupingBy(DeviceDataVo::getVenueId,
+                        Collectors.reducing(BigDecimal.ZERO, DeviceDataVo::getValue, BigDecimal::add)));
+    }
+
+
 
 
 

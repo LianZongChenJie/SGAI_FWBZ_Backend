@@ -8,6 +8,7 @@ import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface IDeviceDataService {
 
@@ -15,6 +16,7 @@ public interface IDeviceDataService {
     List<DeviceDataVo> findAll(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params);
+    Map<Long, BigDecimal> venueElectricityMouth(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> findList1(DeviceDataFindDto params);
 
