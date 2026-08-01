@@ -127,15 +127,15 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
 
     @Override
     public List<PermissionMeteringPointTreeModel> getPermissionTree(String type) {
-        // 1. 获取当前登录用户的数据权限范围
-        UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
-        Set<Long> categoryIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_CATEGORY);
-        Set<Long> spaceIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE);
-
-        // 3. 如果没有任何权限，返回空树
-        if ((categoryIds == null || categoryIds.isEmpty()) && (spaceIds == null || spaceIds.isEmpty())) {
-            return Collections.emptyList();
-        }
+//        // 1. 获取当前登录用户的数据权限范围
+//        UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
+//        Set<Long> categoryIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_CATEGORY);
+//        Set<Long> spaceIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE);
+//
+//        // 3. 如果没有任何权限，返回空树
+//        if ((categoryIds == null || categoryIds.isEmpty()) && (spaceIds == null || spaceIds.isEmpty())) {
+//            return Collections.emptyList();
+//        }
 
         // 4. 查询所有计量点节点（支持按 type 过滤）
         LambdaQueryWrapper<MeteringPoint> wrapper = new LambdaQueryWrapper<MeteringPoint>()
@@ -149,12 +149,12 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         // 6. 收集有权限的节点ID及其所有父节点ID（非递归）
         Set<Long> permissionPointIds = new HashSet<>();
         for (MeteringPoint point : allPoints) {
-            boolean hasPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
-                    && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
-            if (hasPermission) {
+//            boolean hasPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
+//                    && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
+//            if (hasPermission) {
                 // 收集有权限的节点及其所有祖先节点
                 collectNodeAndAncestors(point.getId(), pointMap, permissionPointIds);
-            }
+//            }
         }
 
         // 7. 如果没有权限节点，返回空树
@@ -172,10 +172,10 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
                     model.setTitle(point.getNodeName());
                     model.setParentId(point.getParentId() == null ? "0" : point.getParentId().toString());
                     model.setValue(point.getNodeCode());
-                    // 标记复选框状态：无直接权限的节点禁用复选框
-                    boolean hasDirectPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
-                            && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
-                    model.setDisableCheckbox(!hasDirectPermission);  // 取反：无权限时禁用
+//                     标记复选框状态：无直接权限的节点禁用复选框
+//                    boolean hasDirectPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
+//                            && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
+//                    model.setDisableCheckbox(!hasDirectPermission);  // 取反：无权限时禁用
                     return model;
                 })
                 .collect(Collectors.toList());
@@ -197,6 +197,78 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         // 11. 返回根节点列表（parentId=0）
         return listMap.getOrDefault("0", Collections.emptyList());
     }
+//    @Override
+//    public List<PermissionMeteringPointTreeModel> getPermissionTree(String type) {
+//        // 1. 获取当前登录用户的数据权限范围
+//        UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
+//        Set<Long> categoryIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_CATEGORY);
+//        Set<Long> spaceIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE);
+//
+//        // 3. 如果没有任何权限，返回空树
+//        if ((categoryIds == null || categoryIds.isEmpty()) && (spaceIds == null || spaceIds.isEmpty())) {
+//            return Collections.emptyList();
+//        }
+//
+//        // 4. 查询所有计量点节点（支持按 type 过滤）
+//        LambdaQueryWrapper<MeteringPoint> wrapper = new LambdaQueryWrapper<MeteringPoint>()
+//                .eq(StringUtils.isNotEmpty(type), MeteringPoint::getType, type);
+//        List<MeteringPoint> allPoints = list(wrapper);
+//
+//        // 5. 构建ID->MeteringPoint的映射
+//        Map<Long, MeteringPoint> pointMap = allPoints.stream()
+//                .collect(Collectors.toMap(MeteringPoint::getId, p -> p));
+//
+//        // 6. 收集有权限的节点ID及其所有父节点ID（非递归）
+//        Set<Long> permissionPointIds = new HashSet<>();
+//        for (MeteringPoint point : allPoints) {
+//            boolean hasPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
+//                    && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
+//            if (hasPermission) {
+//                // 收集有权限的节点及其所有祖先节点
+//                collectNodeAndAncestors(point.getId(), pointMap, permissionPointIds);
+//            }
+//        }
+//
+//        // 7. 如果没有权限节点，返回空树
+//        if (permissionPointIds.isEmpty()) {
+//            return Collections.emptyList();
+//        }
+//
+//        // 8. 过滤并转换为 PermissionMeteringPointTreeModel，同时标记权限
+//        List<PermissionMeteringPointTreeModel> filteredModels = allPoints.stream()
+//                .filter(p -> permissionPointIds.contains(p.getId()))
+//                .sorted(Comparator.comparing(MeteringPoint::getSort))
+//                .map(point -> {
+//                    PermissionMeteringPointTreeModel model = new PermissionMeteringPointTreeModel();
+//                    model.setKey(point.getId().toString());
+//                    model.setTitle(point.getNodeName());
+//                    model.setParentId(point.getParentId() == null ? "0" : point.getParentId().toString());
+//                    model.setValue(point.getNodeCode());
+//                    // 标记复选框状态：无直接权限的节点禁用复选框
+//                    boolean hasDirectPermission = (categoryIds != null && point.getCategoryId() != null && categoryIds.contains(point.getCategoryId()))
+//                            && (spaceIds != null && point.getSpaceId() != null && spaceIds.contains(point.getSpaceId()));
+//                    model.setDisableCheckbox(!hasDirectPermission);  // 取反：无权限时禁用
+//                    return model;
+//                })
+//                .collect(Collectors.toList());
+//
+//        // 9. 按parentId分组
+//        Map<String, List<PermissionMeteringPointTreeModel>> listMap = filteredModels.stream()
+//                .collect(Collectors.groupingBy(PermissionMeteringPointTreeModel::getParentId, Collectors.toList()));
+//
+//        // 10. 设置children（非递归）
+//        listMap.values().forEach(children -> {
+//            for (PermissionMeteringPointTreeModel item : children) {
+//                @SuppressWarnings("unchecked")
+//                List<org.jeecg.common.system.vo.SelectTreeModel> itemChildren =
+//                        (List<org.jeecg.common.system.vo.SelectTreeModel>) (List<?>) listMap.getOrDefault(item.getKey(), Collections.emptyList());
+//                item.setChildren(itemChildren);
+//            }
+//        });
+//
+//        // 11. 返回根节点列表（parentId=0）
+//        return listMap.getOrDefault("0", Collections.emptyList());
+//    }
 
     /**
      * 收集节点及其所有祖先节点（非递归实现）
