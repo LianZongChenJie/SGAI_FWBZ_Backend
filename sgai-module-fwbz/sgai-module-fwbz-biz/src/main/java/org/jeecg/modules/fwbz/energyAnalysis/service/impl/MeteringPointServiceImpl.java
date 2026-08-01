@@ -164,7 +164,7 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
 
         // 8. 过滤并转换为 PermissionMeteringPointTreeModel，同时标记权限
         List<PermissionMeteringPointTreeModel> filteredModels = allPoints.stream()
-                .filter(p -> permissionPointIds.contains(p.getId()))
+//                .filter(p -> permissionPointIds.contains(p.getId()))
                 .sorted(Comparator.comparing(MeteringPoint::getSort))
                 .map(point -> {
                     PermissionMeteringPointTreeModel model = new PermissionMeteringPointTreeModel();
