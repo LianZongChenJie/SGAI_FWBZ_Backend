@@ -10,7 +10,7 @@ import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/fwbz/meteringPoint")
+@RequestMapping("/fwbz/energyMetering")
 @AllArgsConstructor
 @Api(tags="能源计量-概览")
 @Slf4j
@@ -18,12 +18,14 @@ public class EnergyMeteringController {
 
     private final IEenergyMeteringService service;
 
-//    @AutoLog(value = "设备基础信息-设备添加")
-    @ApiOperation(value="能源计量-计量表计数据", notes="能源计量-计量表计数据")
-    @PostMapping("/deviceMeterData/list")
-    public Result<String> deviceMeterDataList(@RequestBody Device device){
-        service.deviceMeterDataList(device);
-        return Result.OK("添加成功！");
+
+    /**
+     * 状态统计
+     * @return 统计结果
+     */
+    @GetMapping("/statistics")
+    public Result<?> deviceRunStateStatistics(){
+        return Result.ok(service.statistics());
     }
 
 

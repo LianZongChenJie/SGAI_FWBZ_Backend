@@ -28,6 +28,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
+
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -57,6 +59,17 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
         supplementStartAndEndData(listPage.getRecords(),startData,endData);
         return listPage;
     }
+    public List<DeviceDataVo> findAll(DeviceDataFindDto params) {
+        List<DeviceDataVo> listPage = deviceService.findAll(params.convertToDevice())
+                .stream().map(DeviceDataVo::convert).collect(toList());
+        List<RealData> startData = realDataService.findFirstByTimeRangeAsc(params.getStartTime(), params.getEndTime());
+        List<RealData> endData = realDataService.findFirstByTimeRangeDesc(params.getStartTime(), params.getEndTime());
+
+        // 计算值
+        supplementStartAndEndData(listPage,startData,endData);
+        return listPage;
+    }
+
 
 
     @Override

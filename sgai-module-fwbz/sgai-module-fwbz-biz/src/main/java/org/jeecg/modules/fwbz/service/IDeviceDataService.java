@@ -7,12 +7,12 @@ import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface IDeviceDataService {
 
     IPage<DeviceDataVo> findList(DeviceDataFindDto params);
-
-
+    List<DeviceDataVo> findAll(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params);
 

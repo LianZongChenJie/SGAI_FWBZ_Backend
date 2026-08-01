@@ -33,6 +33,8 @@ public interface IDeviceService extends IService<Device> {
 
     IPage<Device> find(Device device);
 
+    List<Device> findAll(Device device);
+
     List<Device> findByDeviceIds(Collection<Long> deviceIds);
 
     List<Device> findMeasurementBySpaceIdAndCategoryId(String deviceName,String deviceCode,List<Long> spaceIds,List<Long> categoryIds);

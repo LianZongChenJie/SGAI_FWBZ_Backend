@@ -17,6 +17,8 @@ public class DeviceDataFindDto {
 
     private String deviceCode;
 
+    private String deviceType;
+
     private Long categoryId;
 
     private Long spaceId;
@@ -74,6 +76,7 @@ public class DeviceDataFindDto {
         Device device = new Device();
         device.setDeviceName(deviceName);
         device.setDeviceCode(deviceCode);
+        device.setDeviceType(deviceType);
         device.setCategoryId(categoryId);
         device.setSpaceId(spaceId);
         device.setRunState(runState);

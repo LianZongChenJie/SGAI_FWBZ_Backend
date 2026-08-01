@@ -130,6 +130,14 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         LambdaQueryWrapper<Device> wrapper = getQueryWrapper(device);
         IPage<Device> page = new Page<>(device.getPageNo(), device.getPageSize());
         return page(page, wrapper);
+
+    }
+
+    @Override
+    public List<Device> findAll(Device device) {
+        LambdaQueryWrapper<Device> wrapper = getQueryWrapper(device);
+        return list(wrapper);
+
     }
 
     @Override
