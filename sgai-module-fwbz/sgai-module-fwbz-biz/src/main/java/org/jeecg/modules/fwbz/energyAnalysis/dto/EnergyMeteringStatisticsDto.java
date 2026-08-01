@@ -18,7 +18,7 @@ public class EnergyMeteringStatisticsDto {
     /**
      * 表计在线率
      */
-    private Long onlineRate;
+    private String onlineRate;
 
     /**
      * 今日用电量
