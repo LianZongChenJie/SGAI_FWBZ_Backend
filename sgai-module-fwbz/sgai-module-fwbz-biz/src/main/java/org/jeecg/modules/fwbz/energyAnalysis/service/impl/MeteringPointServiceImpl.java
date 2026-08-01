@@ -15,6 +15,7 @@ import org.jeecg.common.system.vo.DictModel;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.MeteringPointConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeasureRuleDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointRel;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointMapper;
@@ -23,6 +24,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointTreeVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.PermissionMeteringPointTreeModel;
+import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
 import org.jeecg.modules.fwbz.permission.service.RoleDataPermissionService;
 import org.jeecg.modules.fwbz.permission.vo.UserDataScope;
@@ -615,4 +617,18 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         return parentId + "_" + entity.getCategoryId() + "_" + entity.getSpaceId() + "_" + entity.getMeteringUnit() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0,5);
     }
 
+
+
+
+    @Override
+    public MeteringPointStatisticsDto statistics() {
+        List<MeteringPoint> list = super.list(new LambdaQueryWrapper<MeteringPoint>().select(MeteringPoint::getId,MeteringPoint::getFormula));
+        Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
+        MeteringPointStatisticsDto dto = new MeteringPointStatisticsDto();
+        dto.setCount((long) list.size());
+        dto.setFormulaCount((long) collect.size());
+        dto.setElectricCount((long) list.size());
+        dto.setWaterCount(0L);
+        return dto;
+    }
 }

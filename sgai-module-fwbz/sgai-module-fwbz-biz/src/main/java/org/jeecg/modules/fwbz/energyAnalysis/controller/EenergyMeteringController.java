@@ -7,7 +7,6 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeasureRuleDto;
@@ -17,7 +16,6 @@ import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointTreeVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.PermissionMeteringPointTreeModel;
-import org.jeecg.modules.fwbz.permission.annotation.DataPermission;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,9 +23,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/fwbz/meteringPoint")
 @AllArgsConstructor
-@Api(tags="计量点位")
+@Api(tags="能源计量-概览")
 @Slf4j
-public class MeteringPointController {
+public class EenergyMeteringController {
 
     private final IMeteringPointService service;
 

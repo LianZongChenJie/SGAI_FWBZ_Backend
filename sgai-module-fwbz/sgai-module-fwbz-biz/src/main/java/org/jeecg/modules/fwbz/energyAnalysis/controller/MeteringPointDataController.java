@@ -53,7 +53,7 @@ public class MeteringPointDataController {
 
     @ApiOperation(value = "重新计算", notes = "重新计算")
     @AutoLog(value = "计量点位-重新计算")
-    @RequiresPermissions("Fwbz:meterPointData:calculateValue")
+//    @RequiresPermissions("Fwbz:meterPointData:calculateValue")
     @PostMapping("/calculateValue")
     public Result<String> calculateValue(@RequestBody MeteringPointDataDto param){
         service.calculateValue(param.getHour());
@@ -108,5 +108,17 @@ public class MeteringPointDataController {
     public Result<Chat> findStackedColumnChart(MeteringPointChatDto param){
         return Result.ok(service.findStackedColumnChart(param));
     }
+
+
+    /**
+     * 计量分析数据统计
+     * @return 统计结果
+     */
+    @GetMapping("/statistics")
+    public Result<?> statistics(){
+        return Result.ok(service.statistics());
+    }
+
+
 
 }

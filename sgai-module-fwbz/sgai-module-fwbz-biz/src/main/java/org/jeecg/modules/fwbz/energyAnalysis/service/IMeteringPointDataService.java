@@ -1,6 +1,8 @@
 package org.jeecg.modules.fwbz.energyAnalysis.service;
 
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
@@ -61,5 +63,11 @@ public interface IMeteringPointDataService {
      * 查询堆叠柱状图数据
      */
     Chat findStackedColumnChart(MeteringPointChatDto param);
+
+    /**
+     * 计量分析数据统计
+     * @return
+     */
+    MeteringPointDataStatisticsDto statistics();
 
 }
