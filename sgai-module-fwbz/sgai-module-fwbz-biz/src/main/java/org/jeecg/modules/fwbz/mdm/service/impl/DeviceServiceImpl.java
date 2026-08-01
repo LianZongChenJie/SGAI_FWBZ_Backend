@@ -311,6 +311,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .eq(device.getCategoryId() != null,Device::getCategoryId, device.getCategoryId())
                 .eq(device.getSpaceId() != null,Device::getSpaceId, device.getSpaceId())
                 .eq(device.getVenueId() != null,Device::getVenueId, device.getVenueId())
+                .eq(device.getDeviceType() != null,Device::getDeviceType, device.getDeviceType())
                 .eq(StringUtils.isNotEmpty(device.getRunState()),Device::getRunState, device.getRunState())
                 .orderByAsc(Device::getSort);
     }

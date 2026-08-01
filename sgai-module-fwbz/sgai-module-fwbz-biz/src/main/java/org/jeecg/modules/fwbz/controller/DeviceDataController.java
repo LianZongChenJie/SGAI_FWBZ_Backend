@@ -14,6 +14,7 @@ import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.dto.DeviceHourDataAmendDto;
 import org.jeecg.modules.fwbz.entity.*;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.entity.Space;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
@@ -30,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,8 +63,12 @@ public class DeviceDataController {
     }
 
     //    @DataPermission
-    @GetMapping("/listWithMouth")
+    @GetMapping("/measuringListWithMouth")
     public Result<IPage<DeviceDataVo>> listWithMouth(DeviceDataFindDto params) {
+        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
+        LocalDateTime now = LocalDateTime.now();
+        params.setStartTime(now.truncatedTo(ChronoUnit.DAYS));
+        params.setEndTime(now);
         return Result.ok(service.findListWithMouth(params));
     }
 

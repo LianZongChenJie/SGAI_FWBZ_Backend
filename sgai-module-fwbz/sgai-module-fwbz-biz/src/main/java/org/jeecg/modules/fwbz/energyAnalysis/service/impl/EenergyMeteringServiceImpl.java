@@ -74,7 +74,10 @@ public class EenergyMeteringServiceImpl implements IEenergyMeteringService {
 
         EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
         dto.setCount((long) list.size());
-        dto.setOnlineRate(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L)/list.size());
+        dto.setOnlineRate(new BigDecimal(
+                (double) collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L) / list.size() * 100
+        ).setScale(2, RoundingMode.HALF_UP)
+                .toString());
         dto.setElectricCount(collect1.getOrDefault(DeviceConstant.CATEGORY_ELECTRICITY,  BigDecimal.ZERO));
         dto.setWaterCount(collect1.getOrDefault(DeviceConstant.CATEGORY_WATER, BigDecimal.ZERO));
         return dto;
