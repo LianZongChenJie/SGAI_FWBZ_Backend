@@ -44,11 +44,11 @@ public class Device extends BaseEntity implements Serializable {
     private String deviceName;
 
     @ApiModelProperty(value = "设备类别id")
-    @DataPermissionField(type = RoleDataPermission.TYPE_CATEGORY, value = "category_id")
+//    @DataPermissionField(type = RoleDataPermission.TYPE_CATEGORY, value = "category_id")
     private Long categoryId;
 
     @ApiModelProperty(value = "空间位置id")
-    @DataPermissionField(type = RoleDataPermission.TYPE_SPACE, value = "space_id")
+//    @DataPermissionField(type = RoleDataPermission.TYPE_SPACE, value = "space_id")
     private Long spaceId;
 
     /**
