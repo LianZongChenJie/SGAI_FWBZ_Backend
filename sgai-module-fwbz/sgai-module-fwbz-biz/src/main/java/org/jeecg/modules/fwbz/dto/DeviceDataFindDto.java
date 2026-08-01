@@ -29,6 +29,14 @@ public class DeviceDataFindDto {
 
     private List<Long> categoryIdList;
 
+    private Long venueId;
+
+    private String venueIds;
+
+    private List<Long> venueIdList;
+
+
+
     /**
      * 运行状态
      */

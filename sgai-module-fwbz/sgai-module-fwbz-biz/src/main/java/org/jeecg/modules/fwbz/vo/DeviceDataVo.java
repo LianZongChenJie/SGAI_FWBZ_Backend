@@ -31,6 +31,9 @@ public class DeviceDataVo {
 
     private Long spaceId;
 
+    private Long venueId;
+
+
     @Excel(name = "设备类型",orderNum = "2")
     private String categoryName;
     @Excel(name = "空间位置",orderNum = "3")
@@ -79,6 +82,13 @@ public class DeviceDataVo {
      * 电池电压
      */
     private String colVoltage;
+
+    /**
+     * 本月累计
+     */
+    private BigDecimal mouthTotal;
+
+
 
     public static DeviceDataVo convert(Device device){
         if(device == null){

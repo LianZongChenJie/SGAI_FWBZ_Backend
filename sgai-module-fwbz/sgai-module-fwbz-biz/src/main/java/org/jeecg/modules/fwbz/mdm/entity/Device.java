@@ -89,10 +89,19 @@ public class Device extends BaseEntity implements Serializable {
      */
     private String deviceType;
 
+
+
+
     /**
      * 最后采集时间
      */
     private LocalDateTime lastGatherTime;
+
+
+    @ApiModelProperty(value = "场馆id")
+    private Long venueId;
+
+
 
     @TableField(exist = false)
     private List<DeviceAttribute> attributes;

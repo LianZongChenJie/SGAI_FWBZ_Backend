@@ -12,6 +12,10 @@ public interface IDeviceDataService {
 
     IPage<DeviceDataVo> findList(DeviceDataFindDto params);
 
+
+
+    IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params);
+
     IPage<DeviceDataVo> findList1(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> deviceStatusList(DeviceDataFindDto params);

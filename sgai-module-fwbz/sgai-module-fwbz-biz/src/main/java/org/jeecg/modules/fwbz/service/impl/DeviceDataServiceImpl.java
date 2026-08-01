@@ -52,10 +52,28 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
         IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
         List<RealData> startData = realDataService.findFirstByTimeRangeAsc(params.getStartTime(), params.getEndTime());
         List<RealData> endData = realDataService.findFirstByTimeRangeDesc(params.getStartTime(), params.getEndTime());
+
         // 计算值
         supplementStartAndEndData(listPage.getRecords(),startData,endData);
         return listPage;
     }
+
+
+    @Override
+    public IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params) {
+        IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
+        List<RealData> startData = realDataService.findFirstByTimeRangeAsc(params.getStartTime(), params.getEndTime());
+        List<RealData> endData = realDataService.findFirstByTimeRangeDesc(params.getStartTime(), params.getEndTime());
+        List<MonthData> monthData = monthDataService.findByTime(params.getStartTime());
+
+        // 计算值
+        supplementStartAndEndData(listPage.getRecords(),startData,endData);
+        supplementMouthTotal(listPage.getRecords(), monthData);
+
+        return listPage;
+    }
+
+
 
     /**
      * 状态数据
@@ -433,5 +451,20 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
             deviceDataVo.setValue(end == null ? BigDecimal.ZERO : deviceDataVo.getEndValue().subtract(deviceDataVo.getStartValue()));
         }
     }
+
+
+    private  void supplementMouthTotal(List<DeviceDataVo> records, List<MonthData> monthData) {
+        for (DeviceDataVo deviceDataVo : records) {
+            // 获取开始时间
+            MonthData start = monthData.stream().filter(realData -> realData.getDeviceId().equals(deviceDataVo.getDeviceId())).findFirst().orElse(null);
+            // 计算值
+            if(deviceDataVo.getMouthTotal() == null){
+                deviceDataVo.setMouthTotal(start == null ? BigDecimal.ZERO : start.getValue());
+//                deviceDataVo.setMouthTotal(start == null ? BigDecimal.ZERO : start.getValue().setScale(2, RoundingMode.HALF_UP));
+            }
+        }
+    }
+
+
 
 }

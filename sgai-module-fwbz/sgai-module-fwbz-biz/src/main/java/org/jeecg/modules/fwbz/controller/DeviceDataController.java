@@ -53,11 +53,20 @@ public class DeviceDataController {
     private final IEquipmentCategoryService equipmentCategoryService;
     private final ISpaceService spaceService;
 
-    @DataPermission
+//    @DataPermission
     @GetMapping("/list")
     public Result<IPage<DeviceDataVo>> list(DeviceDataFindDto params) {
         return Result.ok(service.findList(params));
     }
+
+    //    @DataPermission
+    @GetMapping("/listWithMouth")
+    public Result<IPage<DeviceDataVo>> listWithMouth(DeviceDataFindDto params) {
+        return Result.ok(service.findListWithMouth(params));
+    }
+
+
+
 
     @DataPermission
     @GetMapping("/deviceStatusList")
