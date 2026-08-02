@@ -15,7 +15,7 @@ public interface IDeviceDataService {
     IPage<DeviceDataVo> findList(DeviceDataFindDto params);
     List<DeviceDataVo> findAll(DeviceDataFindDto params);
 
-    IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params);
+    IPage<DeviceDataVo> measuringList(DeviceDataFindDto params);
     Map<Long, BigDecimal> venueElectricityMouth(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> findList1(DeviceDataFindDto params);

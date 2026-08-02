@@ -64,13 +64,9 @@ public class DeviceDataController {
     }
 
     //    @DataPermission
-    @GetMapping("/measuringListWithMouth")
-    public Result<IPage<DeviceDataVo>> listWithMouth(DeviceDataFindDto params) {
-        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
-        LocalDateTime now = LocalDateTime.now();
-        params.setStartTime(now.truncatedTo(ChronoUnit.DAYS));
-        params.setEndTime(now);
-        return Result.ok(service.findListWithMouth(params));
+    @GetMapping("/measuringList")
+    public Result<IPage<DeviceDataVo>> measuringList(DeviceDataFindDto params) {
+        return Result.ok(service.measuringList(params));
     }
 
     @GetMapping("/venueElectricityMouth")

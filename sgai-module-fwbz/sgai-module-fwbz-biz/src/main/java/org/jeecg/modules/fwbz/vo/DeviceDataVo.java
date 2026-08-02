@@ -84,6 +84,10 @@ public class DeviceDataVo {
     private String colVoltage;
 
     /**
+     * 今日用量
+     */
+    private BigDecimal dayTotal;
+    /**
      * 本月累计
      */
     private BigDecimal mouthTotal;

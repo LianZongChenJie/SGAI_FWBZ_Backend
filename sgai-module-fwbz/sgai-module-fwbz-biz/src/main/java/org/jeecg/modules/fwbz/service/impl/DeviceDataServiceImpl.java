@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.RedisUtil;
@@ -22,8 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,6 +54,13 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
 
     private final IDataAmendLogService dataAmendLogService;
 
+
+    /**
+     * 设备最新值缓存key
+     */
+    private static final String CACHE_KEY_PREFIX_MAX = "device_energy_data_real_max:";
+
+
     @Override
     public IPage<DeviceDataVo> findList(DeviceDataFindDto params) {
         IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
@@ -60,6 +71,8 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
         supplementStartAndEndData(listPage.getRecords(),startData,endData);
         return listPage;
     }
+
+
     public List<DeviceDataVo> findAll(DeviceDataFindDto params) {
         List<DeviceDataVo> listPage = deviceService.findAll(params.convertToDevice())
                 .stream().map(DeviceDataVo::convert).collect(toList());
@@ -72,18 +85,46 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     }
 
 
-
     @Override
-    public IPage<DeviceDataVo> findListWithMouth(DeviceDataFindDto params) {
+    public IPage<DeviceDataVo> measuringList(DeviceDataFindDto params) {
+        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
+
         IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
-        List<RealData> startData = realDataService.findFirstByTimeRangeAsc(params.getStartTime(), params.getEndTime());
-        List<RealData> endData = realDataService.findFirstByTimeRangeDesc(params.getStartTime(), params.getEndTime());
-        List<MonthData> monthData = monthDataService.findByTime(params.getStartTime());
+        List<DeviceDataVo> records = listPage.getRecords();
+        if (CollectionUtils.isNotEmpty(records)) {
+            List<Long> deviceIds = records.stream().map(DeviceDataVo::getDeviceId).toList();
+            LocalDateTime now = LocalDate.now().atStartOfDay();
+            LocalDateTime firstDayOfMonth = now.with(TemporalAdjusters.firstDayOfMonth())
+                    .truncatedTo(ChronoUnit.DAYS);
 
-        // 计算值
-        supplementStartAndEndData(listPage.getRecords(),startData,endData);
-        supplementMouthTotal(listPage.getRecords(), monthData);
+            Map<Long, List<DayData>> day = dayDataService.findByDeviceIdsAndTime(deviceIds, now)
+                    .stream().collect(groupingBy(DayData::getDeviceId));
 
+            Map<Long, List<MonthData>> mouth = monthDataService.findByDeviceIdsAndTime(deviceIds, firstDayOfMonth)
+                    .stream().collect(groupingBy(MonthData::getDeviceId));
+
+            for (DeviceDataVo record : records) {
+                //从缓存中获取今日读数
+                RealData realData = (RealData) redisUtil.get(CACHE_KEY_PREFIX_MAX + record.getDeviceId());
+                if (realData != null) {
+                    record.setValue(realData.getValue());
+                }
+
+                List<DayData> dayData = day.get(record.getDeviceId());
+                if (CollectionUtils.isNotEmpty(dayData)) {
+                    record.setDayTotal(dayData.get(0).getValue());
+                } else {
+                    record.setDayTotal(BigDecimal.ZERO);
+                }
+                List<MonthData> mouthData = mouth.get(record.getDeviceId());
+                if (CollectionUtils.isNotEmpty(dayData)) {
+                    record.setMouthTotal(mouthData.get(0).getValue());
+                } else {
+                    record.setMouthTotal(BigDecimal.ZERO);
+
+                }
+            }
+        }
         return listPage;
     }
 
