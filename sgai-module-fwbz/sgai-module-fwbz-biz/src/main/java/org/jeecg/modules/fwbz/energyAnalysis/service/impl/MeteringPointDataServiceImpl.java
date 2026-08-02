@@ -688,7 +688,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
 //        Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
         MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
         dto.setElectricCount(198456L);
-        dto.setWaterCountMoM("5.2%");
+        dto.setElectricCountMoM("5.2%");
         dto.setWaterCount(5234L);
         dto.setWaterCountMoM("3.1%");
         dto.setElectricAvg(22050L);
