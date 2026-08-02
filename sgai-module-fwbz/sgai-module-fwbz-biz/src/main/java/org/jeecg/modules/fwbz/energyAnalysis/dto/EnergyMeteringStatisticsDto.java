@@ -16,6 +16,11 @@ public class EnergyMeteringStatisticsDto {
     private Long count;
 
     /**
+     * 计量表计新增数
+     */
+    private String addCount;
+
+    /**
      * 表计在线率
      */
     private String onlineRate;
@@ -24,9 +29,27 @@ public class EnergyMeteringStatisticsDto {
      * 今日用电量
      */
     private BigDecimal electricCount;
+    /**
+     * 用电量环比
+     */
+
+
+    private String  electricCountDoD;
+
+
 
     /**
      * 今日用水量
      */
     private BigDecimal waterCount;
+
+
+
+
+    /**
+     * 用水量环比
+     */
+
+
+    private String  waterCountDoD;
 }

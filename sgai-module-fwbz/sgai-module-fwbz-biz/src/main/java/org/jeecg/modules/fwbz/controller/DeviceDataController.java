@@ -33,6 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,15 +67,13 @@ public class DeviceDataController {
     //    @DataPermission
     @GetMapping("/measuringList")
     public Result<IPage<DeviceDataVo>> measuringList(DeviceDataFindDto params) {
-        return Result.ok(service.measuringList(params));
+        return Result.ok(service.measuringListWithDayMouth(params));
     }
 
     @GetMapping("/venueElectricityMouth")
     public Result<Map<Long, BigDecimal>> venueElectricityMouth(DeviceDataFindDto params) {
         params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
-        LocalDateTime now = LocalDateTime.now();
-        params.setStartTime(now.truncatedTo(ChronoUnit.DAYS));
-        params.setEndTime(now);
+        params.setStartTime(YearMonth.now().atDay(1).atStartOfDay());
         return Result.ok(service.venueElectricityMouth(params));
     }
 

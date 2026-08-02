@@ -13,9 +13,9 @@ import java.util.Map;
 public interface IDeviceDataService {
 
     IPage<DeviceDataVo> findList(DeviceDataFindDto params);
-    List<DeviceDataVo> findAll(DeviceDataFindDto params);
+    List<DeviceDataVo> findListWithDay(DeviceDataFindDto params);
 
-    IPage<DeviceDataVo> measuringList(DeviceDataFindDto params);
+    IPage<DeviceDataVo> measuringListWithDayMouth(DeviceDataFindDto params);
     Map<Long, BigDecimal> venueElectricityMouth(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> findList1(DeviceDataFindDto params);

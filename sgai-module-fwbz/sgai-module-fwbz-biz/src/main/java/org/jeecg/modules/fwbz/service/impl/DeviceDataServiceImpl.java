@@ -20,6 +20,9 @@ import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.jeecg.modules.fwbz.service.*;
+import org.jeecg.modules.fwbz.venue.VenueInfo;
+import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
+import org.jeecg.modules.fwbz.venue.service.impl.VenueInfoServiceImpl;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +55,7 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     private final IDayDataService dayDataService;
     private final IMonthDataService monthDataService;
     private final IYearDataService yearDataService;
+    private final IVenueInfoService venueInfoService;
 
     private final MqSendService mqSendService;
 
@@ -76,22 +80,31 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     }
 
 
-    public List<DeviceDataVo> findAll(DeviceDataFindDto params) {
+    public List<DeviceDataVo> findListWithDay(DeviceDataFindDto params) {
         List<DeviceDataVo> listPage = deviceService.findAll(params.convertToDevice())
                 .stream().map(DeviceDataVo::convert).collect(toList());
-        List<RealData> startData = realDataService.findFirstByTimeRangeAsc(params.getStartTime(), params.getEndTime());
-        List<RealData> endData = realDataService.findFirstByTimeRangeDesc(params.getStartTime(), params.getEndTime());
 
-        // 计算值
-        supplementStartAndEndData(listPage,startData,endData);
+        if (CollectionUtils.isNotEmpty(listPage)) {
+            Map<Long, List<DayData>> day = dayDataService.findByTime(params.getStartTime())
+                    .stream().collect(groupingBy(DayData::getDeviceId));
+
+            for (DeviceDataVo record : listPage) {
+                List<DayData> dayData = day.get(record.getDeviceId());
+                if (CollectionUtils.isNotEmpty(dayData)) {
+                    record.setDayTotal(dayData.get(0).getValue());
+                } else {
+                    record.setDayTotal(BigDecimal.ZERO);
+                }
+            }
+        }
         return listPage;
     }
 
 
     @Override
-    public IPage<DeviceDataVo> measuringList(DeviceDataFindDto params) {
+    public IPage<DeviceDataVo> measuringListWithDayMouth(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
-                .eq(StringUtils.isNotEmpty(params.getDeviceType()),  Device::getDeviceType, Device.DEVICE_TYPE_MEASURING )
+                .eq(StringUtils.isNotEmpty(params.getDeviceType()),  Device::getDeviceType, Device.DEVICE_TYPE_MEASURING)
                 .eq(params.getVenueId() != null,  Device::getVenueId, params.getVenueId())
                 .orderByDesc(Device::getSort);
 
@@ -150,11 +163,28 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
 
         supplementMouthTotal(listPage, monthData);
 
-
-        return listPage.stream()
+        Map<Long, List<DeviceDataVo>> collect1 = listPage.stream()
                 .filter(item -> item.getVenueId() != null)
-                .collect(groupingBy(DeviceDataVo::getVenueId,
-                        Collectors.reducing(BigDecimal.ZERO, DeviceDataVo::getValue, BigDecimal::add)));
+                .collect(groupingBy(DeviceDataVo::getVenueId));
+
+        List<VenueInfo> allVenueList = venueInfoService.getAllVenueList();
+        Map<Long, BigDecimal> result = new HashMap<>();
+        for (VenueInfo venueInfo : allVenueList) {
+            List<DeviceDataVo> deviceDataVos = collect1.get(venueInfo.getId());
+            if(deviceDataVos== null){
+                result.put(venueInfo.getId(), BigDecimal.ZERO);
+            }else{
+                BigDecimal collect = deviceDataVos.stream().map(DeviceDataVo::getMouthTotal)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                result.put(venueInfo.getId(), collect);
+            }
+
+
+        }
+
+
+
+        return result;
     }
 
 

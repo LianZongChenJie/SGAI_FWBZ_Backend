@@ -1,9 +1,11 @@
 package org.jeecg.modules.fwbz.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecgframework.poi.excel.annotation.Excel;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -92,7 +94,11 @@ public class DeviceDataVo {
      */
     private BigDecimal mouthTotal;
 
-
+    /**创建日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @ApiModelProperty(value = "创建日期")
+    private java.util.Date createTime;
 
     public static DeviceDataVo convert(Device device){
         if(device == null){
