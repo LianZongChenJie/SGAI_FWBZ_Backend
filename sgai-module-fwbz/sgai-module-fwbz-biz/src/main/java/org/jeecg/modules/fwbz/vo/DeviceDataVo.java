@@ -104,6 +104,7 @@ public class DeviceDataVo {
         res.setDeviceName(device.getDeviceName());
         res.setSpaceId(device.getSpaceId());
         res.setCategoryId(device.getCategoryId());
+        res.setVenueId(device.getVenueId());
         res.setRunState(device.getRunState());
         res.setLastGatherTime(device.getLastGatherTime());
         return res;
