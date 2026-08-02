@@ -41,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
+/**
+ * 设备数据
+ */
 @AllArgsConstructor
 @RestController
 @RequestMapping("/fwbz/deviceData")

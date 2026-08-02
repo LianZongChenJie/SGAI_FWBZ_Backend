@@ -31,10 +31,15 @@ import org.jeecg.modules.fwbz.permission.vo.UserDataScope;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -695,12 +700,64 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
     @Override
     public MeteringPointStatisticsDto statistics() {
         List<MeteringPoint> list = super.list(new LambdaQueryWrapper<MeteringPoint>().select(MeteringPoint::getId,MeteringPoint::getFormula));
+
+
+        Long addCount = 0L;
+        for (MeteringPoint deviceDataVo : list) {
+            if(deviceDataVo.getCreateTime()!=null){
+                LocalDate localDate = LocalDate.ofInstant(deviceDataVo.getCreateTime().toInstant(), ZoneId.systemDefault());
+                if (localDate.isEqual(LocalDate.now())) {
+                    addCount++;
+                }
+            }
+        }
+
         Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
         MeteringPointStatisticsDto dto = new MeteringPointStatisticsDto();
         dto.setCount((long) list.size());
+        if(addCount==0){
+            dto.setAddCount("-0");
+        }else{
+            dto.setAddCount("↑"+addCount);
+
+        }
+
         dto.setFormulaCount((long) collect.size());
+
+
+        dto.setCoverage(calculatePercentage((long) collect.size(), (long) list.size()).toString());
+
+
         dto.setElectricCount((long) list.size());
+
+        dto.setElectricPercentage("100%");
+
         dto.setWaterCount(0L);
+        dto.setWaterPercentage("0%");
+
         return dto;
     }
+
+    /**
+     * 计算百分比：分子 / 分母 * 100
+     * @param numerator 分子
+     * @param denominator 分母
+     * @return 百分比，保留2位小数
+     */
+    public static BigDecimal calculatePercentage(Long numerator, Long denominator) {
+        // 1. 判空
+        if (numerator == null || denominator == null) {
+            return null;
+        }
+        // 2. 分母为0处理
+        if (denominator == 0) {
+            return numerator == 0 ? BigDecimal.ZERO : null;  // 0/0 返回0，非零/0 返回null
+        }
+        // 3. 计算：(numerator / denominator) * 100
+        return BigDecimal.valueOf(numerator)
+                .divide(BigDecimal.valueOf(denominator), 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
 }

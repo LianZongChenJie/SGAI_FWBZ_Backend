@@ -656,6 +656,28 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
     @Override
     public MeteringPointDataStatisticsDto statistics() {
 
+        //查询总的计量点位的月数据
+
+        //查询总的计量点位的上月数据
+
+        //总耗电直接取值
+        //环比 和上个月比值
+
+
+
+
+        //水跳过
+
+        //日均耗电  除以一下天数
+
+//        环比日均耗电
+
+
+
+//        环比节能
+
+
+
 
 //        monthDataService.findByDateAndPointIds()
 //        List<MeteringPointDataMonth> list = monthDataService.
@@ -664,12 +686,16 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
 //
 //        (new LambdaQueryWrapper<MeteringPointDataMonth>().select(MeteringPoint::getId,MeteringPoint::getFormula));
 //        Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
-//        MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
-//        dto.setElectricCount(198456L);
-//        dto.setWaterCount(5234L);
-//        dto.setElectricAvg(22050L);
-//        dto.setMom(8.5);
-        return null;
+        MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
+        dto.setElectricCount(198456L);
+        dto.setWaterCountMoM("5.2%");
+        dto.setWaterCount(5234L);
+        dto.setWaterCountMoM("3.1%");
+        dto.setElectricAvg(22050L);
+        dto.setElectricAvgMom("2.8%");
+        dto.setEnergySaving("8.5");
+        dto.setEnergySavingMom("1.2%");
+        return dto;
     }
 
 }

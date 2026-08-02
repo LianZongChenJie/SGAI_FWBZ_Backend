@@ -14,9 +14,21 @@ public class MeteringPointStatisticsDto {
     private Long count;
 
     /**
+     * 计量项目总数新增
+     */
+    private String addCount;
+
+    /**
      * 已配置公式
      */
     private Long formulaCount;
+
+    /**
+     * 覆盖率
+     */
+    private String coverage;
+
+
 
     /**
      * 电表项目
@@ -27,4 +39,21 @@ public class MeteringPointStatisticsDto {
      * 水表项目
      */
     private Long waterCount;
+
+
+    /**
+     * 电表占比
+     */
+    private String electricPercentage;
+
+
+
+    /**
+     * 水表占比
+     */
+    private String waterPercentage;
+
+
+
+
 }

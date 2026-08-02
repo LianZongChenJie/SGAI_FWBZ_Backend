@@ -13,10 +13,21 @@ public class MeteringPointDataStatisticsDto {
      */
     private Long electricCount;
 
+
+    /**
+     *   环比
+     */
+    private String electricCountMoM;
+
     /**
      * 本月总耗水
      */
     private Long waterCount;
+
+    /**
+     * 本月总耗水 环比
+     */
+    private String waterCountMoM;
 
     /**
      * 日均耗电
@@ -24,7 +35,17 @@ public class MeteringPointDataStatisticsDto {
     private Long electricAvg;
 
     /**
+     * 日均耗电
+     */
+    private String electricAvgMom;
+
+    /**
      * 环比节能
      */
-    private Double mom;
+    private String energySaving;
+
+    /**
+     * 环比节能 环比
+     */
+    private String energySavingMom;
 }
