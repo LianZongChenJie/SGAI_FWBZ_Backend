@@ -2,10 +2,13 @@ package org.jeecg.modules.fwbz.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.common.util.RedisUtil;
@@ -87,9 +90,17 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
 
     @Override
     public IPage<DeviceDataVo> measuringList(DeviceDataFindDto params) {
-        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
+        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
+                .eq(StringUtils.isNotEmpty(params.getDeviceType()),  Device::getDeviceType, Device.DEVICE_TYPE_MEASURING )
+                .eq(params.getVenueId() != null,  Device::getVenueId, params.getVenueId())
+                .orderByDesc(Device::getSort);
 
-        IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
+        if (StringUtils.isNotEmpty(params.getCategoryIds())){
+            wrapper.in(Device::getCategoryId, Arrays.stream(params.getCategoryIds().split(",")).map(Long::parseLong).collect(Collectors.toList()));
+        }
+        IPage<Device> page = new Page<>(params.getPageNo(), params.getPageSize());
+        IPage<DeviceDataVo> listPage = deviceService.page(page, wrapper).convert(DeviceDataVo::convert);;
+
         List<DeviceDataVo> records = listPage.getRecords();
         if (CollectionUtils.isNotEmpty(records)) {
             List<Long> deviceIds = records.stream().map(DeviceDataVo::getDeviceId).toList();
@@ -108,6 +119,8 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
                 RealData realData = (RealData) redisUtil.get(CACHE_KEY_PREFIX_MAX + record.getDeviceId());
                 if (realData != null) {
                     record.setValue(realData.getValue());
+                }else{
+                    record.setValue(BigDecimal.ZERO);
                 }
 
                 List<DayData> dayData = day.get(record.getDeviceId());
