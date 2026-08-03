@@ -2,6 +2,7 @@ package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 
 import java.util.List;
@@ -36,4 +37,11 @@ public interface ICameraResourceService extends IService<CameraResource> {
      * @return 更新的记录数
      */
     int syncOnlineStatus();
+
+    /**
+     * 查询本地数据库中全部摄像头列表
+     *
+     * @return 摄像头列表
+     */
+    List<CameraListVO> getCameraList();
 }

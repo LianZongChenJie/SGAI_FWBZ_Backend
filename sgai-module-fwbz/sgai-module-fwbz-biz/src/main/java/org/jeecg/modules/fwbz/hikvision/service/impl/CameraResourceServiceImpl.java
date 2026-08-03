@@ -17,6 +17,7 @@ import org.jeecg.modules.fwbz.mapper.CameraResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlResponse;
@@ -408,5 +409,31 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
 
         log.info("海康在线状态拉取完成, 共获取{}条", statusMap.size());
         return statusMap;
+    }
+
+    @Override
+    public List<CameraListVO> getCameraList() {
+        log.info("查询本地数据库中全部摄像头列表");
+        List<CameraResource> cameraList = list();
+        List<CameraListVO> result = new ArrayList<>(cameraList.size());
+        for (CameraResource camera : cameraList) {
+            CameraListVO vo = new CameraListVO();
+            vo.setIndexCode(camera.getIndexCode());
+            vo.setName(camera.getName());
+            vo.setCameraType(camera.getCameraType());
+            vo.setInstallLocation(camera.getInstallLocation());
+            vo.setRegionIndexCode(camera.getRegionIndexCode());
+            vo.setRegionName(camera.getRegionName());
+            vo.setLongitude(camera.getLongitude());
+            vo.setLatitude(camera.getLatitude());
+            vo.setChannelType(camera.getChannelType());
+            vo.setOnline(camera.getOnline());
+            vo.setExternalIndexCode(camera.getExternalIndexCode());
+            vo.setCreateTime(camera.getCreateTime());
+            vo.setUpdateTime(camera.getUpdateTime());
+            result.add(vo);
+        }
+        log.info("查询摄像头列表完成, 共{}条", result.size());
+        return result;
     }
 }

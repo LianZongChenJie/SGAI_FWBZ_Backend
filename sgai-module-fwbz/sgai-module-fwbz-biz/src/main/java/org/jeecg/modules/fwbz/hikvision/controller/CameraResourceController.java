@@ -5,8 +5,10 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -83,6 +85,24 @@ public class CameraResourceController {
         } catch (Exception e) {
             log.error("同步监控点在线状态失败", e);
             return Result.error("同步监控点在线状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取全部摄像头列表
+     * <p>从本地数据库查询全部摄像头数据并返回列表。</p>
+     *
+     * @return 摄像头列表
+     */
+    @GetMapping("/list")
+    @ApiOperation(value = "获取全部摄像头列表", notes = "从本地数据库查询全部摄像头数据")
+    public Result<List<CameraListVO>> getCameraList() {
+        try {
+            List<CameraListVO> list = cameraResourceService.getCameraList();
+            return Result.ok(list);
+        } catch (Exception e) {
+            log.error("获取摄像头列表失败", e);
+            return Result.error("获取摄像头列表失败: " + e.getMessage());
         }
     }
 }
