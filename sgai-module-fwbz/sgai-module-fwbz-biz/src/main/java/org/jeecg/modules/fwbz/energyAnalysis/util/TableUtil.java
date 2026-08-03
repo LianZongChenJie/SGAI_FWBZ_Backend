@@ -96,7 +96,7 @@ public class TableUtil {
     }
 
     public static List<TableHeader> yearOnly(int year) {
-        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("年");
+        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("yyyy年");
         List<TableHeader> result = baseHeaders();
         TableHeader e = new TableHeader();
         LocalDate localDate = LocalDate.of(year, 1, 1);
