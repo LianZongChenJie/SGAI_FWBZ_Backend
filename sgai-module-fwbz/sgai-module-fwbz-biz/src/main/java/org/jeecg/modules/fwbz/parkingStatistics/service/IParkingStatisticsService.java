@@ -1,5 +1,7 @@
 package org.jeecg.modules.fwbz.parkingStatistics.service;
 
+import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingFlowStatVO;
+import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingSpaceStatVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingStatCardVO;
 
 import java.util.List;
@@ -33,4 +35,18 @@ public interface IParkingStatisticsService {
      * 汇总（同步四项 → 写入DB → 从DB读取返回全部卡片）
      */
     List<ParkingStatCardVO> getSummary();
+
+    /**
+     * 停车场实时车位分布（直接从外部系统获取，不落库）
+     * <p>
+     * 用于"停车场实时状态"图，示例：P1: 156/300 | P2: 89/200 ...
+     */
+    List<ParkingSpaceStatVO> getParkingSpaceDistribution();
+
+    /**
+     * 24 小时停车流量趋势（直接从外部系统获取，不落库）
+     * <p>
+     * 用于"停车流量趋势"图，含每小时进出场数量
+     */
+    List<ParkingFlowStatVO> getParkingFlow24h();
 }

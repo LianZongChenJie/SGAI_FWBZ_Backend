@@ -1,19 +1,27 @@
 package org.jeecg.modules.fwbz.parkingStatistics.service.impl;
 
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.parkingStatistics.dto.ExternalParkingFlowItemDto;
+import org.jeecg.modules.fwbz.parkingStatistics.dto.ExternalParkingSpaceItemDto;
 import org.jeecg.modules.fwbz.parkingStatistics.entity.ParkingCount;
 import org.jeecg.modules.fwbz.parkingStatistics.mapper.ParkingCountMapper;
 import org.jeecg.modules.fwbz.parkingStatistics.service.IParkingStatisticsService;
+import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingFlowStatVO;
+import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingSpaceStatVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingStatCardVO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 停车统计Service实现
@@ -38,6 +46,12 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     @Value("${parking.statistics.api.avgDurationPath:/api/parking/avgDuration}")
     private String avgDurationPath;
+
+    @Value("${parking.statistics.api.spaceDistributionPath:/api/parking/spaceDistribution}")
+    private String spaceDistributionPath;
+
+    @Value("${parking.statistics.api.flow24hPath:/api/parking/flow24h}")
+    private String flow24hPath;
 
     private static final int TIMEOUT_MS = 5000;
 
@@ -76,6 +90,63 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
                 queryRemainingSpaceCount(),
                 queryAverageParkingDuration()
         );
+    }
+
+    @Override
+    public List<ParkingSpaceStatVO> getParkingSpaceDistribution() {
+        // 直接从外部系统实时获取，不落库
+        try {
+            String body = HttpUtil.createGet(apiHost + spaceDistributionPath)
+                    .timeout(TIMEOUT_MS)
+                    .execute()
+                    .body();
+            log.debug("停车场车位分布外部API响应: {}", body);
+            if (body == null || body.trim().isEmpty()) {
+                return Collections.emptyList();
+            }
+            JSONArray array = extractArray(body, "data");
+            if (array == null) {
+                return Collections.emptyList();
+            }
+            List<ExternalParkingSpaceItemDto> items = array.toJavaList(ExternalParkingSpaceItemDto.class);
+            if (items == null || items.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return items.stream().map(this::toSpaceStatVO).collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取停车场车位分布失败", e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<ParkingFlowStatVO> getParkingFlow24h() {
+        // 直接从外部系统实时获取，不落库
+        try {
+            String body = HttpUtil.createGet(apiHost + flow24hPath)
+                    .timeout(TIMEOUT_MS)
+                    .execute()
+                    .body();
+            log.debug("24小时停车流量外部API响应: {}", body);
+            if (body == null || body.trim().isEmpty()) {
+                return Collections.emptyList();
+            }
+            JSONArray array = extractArray(body, "data");
+            if (array == null) {
+                return Collections.emptyList();
+            }
+            List<ExternalParkingFlowItemDto> items = array.toJavaList(ExternalParkingFlowItemDto.class);
+            if (items == null || items.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return items.stream()
+                    .sorted((a, b) -> Integer.compare(nvl(a.getHour()), nvl(b.getHour())))
+                    .map(this::toFlowStatVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取24小时停车流量失败", e);
+            return Collections.emptyList();
+        }
     }
 
     // ==================== 同步外部数据 → 写入DB ====================
@@ -355,5 +426,81 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         vo.setUnit(unit);
         vo.setContext(context);
         return vo;
+    }
+
+    // ==================== 图数据辅助 ====================
+
+    /**
+     * 从响应体中提取数组。
+     * <p>
+     * 支持三种格式：
+     * 1. 整个 body 就是数组：[...]
+     * 2. 顶层 data 是数组：{"data":[...]}
+     * 3. 顶层 list 是数组：{"list":[...]}（兼容）
+     */
+    private JSONArray extractArray(String body, String fieldName) {
+        try {
+            if (body.trim().startsWith("[")) {
+                return JSONArray.parseArray(body);
+            }
+            JSONObject json = JSONObject.parseObject(body);
+            if (json == null) {
+                return null;
+            }
+            if (json.containsKey("data") && json.get("data") instanceof JSONArray) {
+                return json.getJSONArray("data");
+            }
+            if (json.containsKey("list") && json.get("list") instanceof JSONArray) {
+                return json.getJSONArray("list");
+            }
+            // 兜底：尝试在 fieldName 中查找
+            if (json.containsKey(fieldName) && json.get(fieldName) instanceof JSONArray) {
+                return json.getJSONArray(fieldName);
+            }
+            // 兜底：扫描所有 value，找到第一个 JSONArray
+            for (Object value : json.values()) {
+                if (value instanceof JSONArray) {
+                    return (JSONArray) value;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("解析外部API响应数组失败: body={}", body, e);
+            return null;
+        }
+    }
+
+    /**
+     * 构造停车场车位分布VO，包含使用率
+     */
+    private ParkingSpaceStatVO toSpaceStatVO(ExternalParkingSpaceItemDto item) {
+        ParkingSpaceStatVO vo = new ParkingSpaceStatVO();
+        vo.setName(item.getName());
+        long used = nvl(item.getUsed());
+        long total = nvl(item.getTotal());
+        vo.setUsed(used);
+        vo.setTotal(total);
+        if (total > 0) {
+            double rate = Math.round(used * 1000.0 / total) / 10.0;
+            vo.setUsageRate(rate);
+        } else {
+            vo.setUsageRate(0.0);
+        }
+        return vo;
+    }
+
+    /**
+     * 构造 24 小时停车流量 VO
+     */
+    private ParkingFlowStatVO toFlowStatVO(ExternalParkingFlowItemDto item) {
+        ParkingFlowStatVO vo = new ParkingFlowStatVO();
+        vo.setHour(nvl(item.getHour()));
+        vo.setInCount(nvl(item.getInCount()));
+        vo.setOutCount(nvl(item.getOutCount()));
+        return vo;
+    }
+
+    private int nvl(Integer v) {
+        return v == null ? 0 : v;
     }
 }
