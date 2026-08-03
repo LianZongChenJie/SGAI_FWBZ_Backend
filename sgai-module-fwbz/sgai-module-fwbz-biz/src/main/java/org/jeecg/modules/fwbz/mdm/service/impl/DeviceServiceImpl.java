@@ -16,10 +16,7 @@ import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceStatusDto;
-import org.jeecg.modules.fwbz.mdm.entity.Device;
-import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
-import org.jeecg.modules.fwbz.mdm.entity.DeviceModelAttribute;
-import org.jeecg.modules.fwbz.mdm.entity.Space;
+import org.jeecg.modules.fwbz.mdm.entity.*;
 import org.jeecg.modules.fwbz.mdm.mapper.DeviceMapper;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceModelAttributeService;
@@ -218,13 +215,14 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     @Override
     public DeviceRunStateStatisticsDto statisticsRunState(Long categoryId) {
         List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId).eq(categoryId != null, Device::getCategoryId, categoryId));
-        Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
-        Map<Long, Long> collect2 = list.stream().filter(item -> item.getSpaceId() != null).collect(Collectors.groupingBy(Device::getSpaceId, Collectors.counting()));
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        Map<String, Long> deviceTypeMap = list.stream().filter(item -> item.getDeviceType() != null).collect(Collectors.groupingBy(Device::getDeviceType, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
         dto.setCount((long) list.size());
-        dto.setOnline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
-        dto.setOffline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
-        dto.setSpaceCount((long) collect2.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+        dto.setMeasuringCount(deviceTypeMap.getOrDefault(EquipmentCategory.TYPE_MEASURING, 0L));
+        dto.setEquipmentCount(deviceTypeMap.getOrDefault(EquipmentCategory.TYPE_EQUIPMENT, 0L));
         return dto;
     }
 
