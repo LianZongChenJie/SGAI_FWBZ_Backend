@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.fwbz.patorlPlan.mapper.PatrolHistoryMapper">
+
+    <!-- 查询指定计划今天的记录数量 -->
+    <select id="countTodayByPlanId" resultType="int">
+        SELECT COUNT(*) FROM table_patrolHistory
+        WHERE patrol_id = #{patrolId}
+        AND TRUNC(runTime) = TRUNC(SYSDATE)
+    </select>
+
+    <!-- 插入巡更历史记录 -->
+    <insert id="insertHistory">
+        INSERT INTO table_patrolHistory (patrol_id, runTime)
+        VALUES (#{patrolId}, SYSDATE)
+    </insert>
+
+</mapper>

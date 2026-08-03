@@ -3,6 +3,7 @@ package org.jeecg.modules.fwbz.patorlPlan.job;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.patorlPlan.entity.PatrolPlan;
+import org.jeecg.modules.fwbz.patorlPlan.mapper.PatrolHistoryMapper;
 import org.jeecg.modules.fwbz.patorlPlan.mapper.PatrolPlanMapper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 public class PatrolPlanJob {
 
     private final PatrolPlanMapper patrolPlanMapper;
+    private final PatrolHistoryMapper patrolHistoryMapper;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -45,8 +47,17 @@ public class PatrolPlanJob {
         if (planToRun != null) {
             String nextExecution = calcNextExecution(planToRun.getExecutionCycle());
             patrolPlanMapper.updateStatusToRunning(planToRun.getId(), nextExecution);
-            log.info("巡更计划定时任务：切换 [{}] (id={}) 为运行中，执行周期={}，下次执行={}",
-                    planToRun.getPlanName(), planToRun.getId(), planToRun.getExecutionCycle(), nextExecution);
+
+            // 4. 添加巡更历史记录（同一天同一计划只记录一次）
+            int count = patrolHistoryMapper.countTodayByPlanId(planToRun.getId());
+            if (count == 0) {
+                patrolHistoryMapper.insertHistory(planToRun.getId());
+                log.info("巡更计划定时任务：切换 [{}] (id={}) 为运行中，执行周期={}，下次执行={}，已添加历史记录",
+                        planToRun.getPlanName(), planToRun.getId(), planToRun.getExecutionCycle(), nextExecution);
+            } else {
+                log.info("巡更计划定时任务：切换 [{}] (id={}) 为运行中，执行周期={}，下次执行={}，今日已有记录跳过",
+                        planToRun.getPlanName(), planToRun.getId(), planToRun.getExecutionCycle(), nextExecution);
+            }
         } else {
             log.debug("巡更计划定时任务：当前无到期计划，所有启用计划保持启用状态");
         }
