@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 摄像头资源管理控制器
@@ -59,9 +60,10 @@ public class CameraResourceController {
      * @return 播放地址列表（每项包含 cameraIndexCode 和 url）
      */
     @PostMapping("/playUrls")
-    @ApiOperation(value = "获取摄像头播放地址", notes = "传入摄像头唯一编码列表，返回对应的播放地址")
-    public Result<List<CameraPlayUrlVO>> getPlayUrls(@RequestBody List<String> cameraIndexCodes) {
+    @ApiOperation(value = "获取摄像头播放地址", notes = "传入 {\\\"cameraIndexCode\\\": [...]}，返回对应的播放地址")
+    public Result<List<CameraPlayUrlVO>> getPlayUrls(@RequestBody Map<String, List<String>> body) {
         try {
+            List<String> cameraIndexCodes = body.get("cameraIndexCode");
             List<CameraPlayUrlVO> playUrls = cameraResourceService.getPlayUrls(cameraIndexCodes);
             return Result.ok(playUrls);
         } catch (Exception e) {

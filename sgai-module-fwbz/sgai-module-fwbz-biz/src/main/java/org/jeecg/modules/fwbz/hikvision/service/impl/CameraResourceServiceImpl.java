@@ -53,6 +53,9 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     /** 海康监控点在线状态查询API路径 */
     private static final String CAMERA_ONLINE_API = "/api/nms/v1/online/camera/get";
 
+    /** 获取播放地址失败时的测试地址 */
+    private static final String TEST_STREAM_URL = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+
     /** 固定分页大小（最大1000） */
     private static final int PAGE_SIZE = 1000;
 
@@ -270,16 +273,29 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
 
                 JSONObject dataJson = hikvisionUtil.getResponseData(responseBody);
                 if (dataJson == null) {
-                    log.warn("摄像头[{}]海康返回的data为空", cameraIndexCode);
-                    continue;
+                    log.warn("海康返回的data为空");
+                } else {
+                    // 解析返回的播放地址列表
+                    List<PlayUrlResponse> urlList = JSON.parseArray(
+                            dataJson.getString("list"), PlayUrlResponse.class);
+                    if (urlList != null && !urlList.isEmpty()) {
+                        for (PlayUrlResponse item : urlList) {
+                            result.add(new CameraPlayUrlVO(cameraIndexCode, item.getUrl()));
+                        }
+                        log.info("海康批量播放地址获取成功, 返回{}条", urlList.size());
+                    }
                 }
+            }catch (Exception e) {
+                log.error("批量获取海康播放地址异常", e);
+            }
+        }
 
-                PlayUrlResponse playUrlResp = dataJson.toJavaObject(PlayUrlResponse.class);
-                result.add(new CameraPlayUrlVO(cameraIndexCode, playUrlResp.getUrl()));
-                log.info("摄像头[{}]播放地址获取成功: {}", cameraIndexCode, playUrlResp.getUrl());
-
-            } catch (Exception e) {
-                log.error("获取摄像头[{}]播放地址异常", cameraIndexCode, e);
+        // 海康请求失败或未返回的摄像头，使用测试地址兜底
+        for (String cameraIndexCode : cameraIndexCodes) {
+            boolean found = result.stream().anyMatch(vo -> cameraIndexCode.equals(vo.getCameraIndexCode()));
+            if (!found) {
+                log.warn("摄像头[{}]海康获取失败, 使用测试地址: {}", cameraIndexCode, TEST_STREAM_URL);
+                result.add(new CameraPlayUrlVO(cameraIndexCode, TEST_STREAM_URL));
             }
         }
 
