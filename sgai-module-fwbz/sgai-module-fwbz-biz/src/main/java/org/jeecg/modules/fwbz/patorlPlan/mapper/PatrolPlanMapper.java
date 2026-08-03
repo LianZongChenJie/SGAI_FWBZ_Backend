@@ -30,7 +30,7 @@ public interface PatrolPlanMapper extends BaseMapper<PatrolPlan> {
     int resetNonDisabledStatus();
 
     /**
-     * 将指定巡更计划状态更新为运行中
+     * 将指定巡更计划状态更新为运行中，同时更新下次执行时间
      */
-    int updateStatusToRunning(@Param("planId") Long planId);
+    int updateStatusToRunning(@Param("planId") Long planId, @Param("nextExecution") String nextExecution);
 }

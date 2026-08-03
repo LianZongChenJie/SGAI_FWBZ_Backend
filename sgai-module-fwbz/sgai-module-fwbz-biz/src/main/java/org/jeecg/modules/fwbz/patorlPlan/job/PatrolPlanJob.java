@@ -8,6 +8,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * @Description: 巡更计划定时任务 - 根据执行周期自动切换运行中状态
  * @Author: jeecg-boot
@@ -20,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class PatrolPlanJob {
 
     private final PatrolPlanMapper patrolPlanMapper;
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     /**
      * 每30秒执行一次，根据执行周期将最近一个到期的巡更计划设为运行中，
@@ -34,13 +41,23 @@ public class PatrolPlanJob {
         // 2. 先将所有非停用计划重置为启用
         patrolPlanMapper.resetNonDisabledStatus();
 
-        // 3. 如果有到期的计划，设为运行中
+        // 3. 如果有到期的计划，设为运行中，并更新下次执行时间为明天
         if (planToRun != null) {
-            patrolPlanMapper.updateStatusToRunning(planToRun.getId());
-            log.info("巡更计划定时任务：切换 [{}] (id={}) 为运行中，执行周期={}",
-                    planToRun.getPlanName(), planToRun.getId(), planToRun.getExecutionCycle());
+            String nextExecution = calcNextExecution(planToRun.getExecutionCycle());
+            patrolPlanMapper.updateStatusToRunning(planToRun.getId(), nextExecution);
+            log.info("巡更计划定时任务：切换 [{}] (id={}) 为运行中，执行周期={}，下次执行={}",
+                    planToRun.getPlanName(), planToRun.getId(), planToRun.getExecutionCycle(), nextExecution);
         } else {
             log.debug("巡更计划定时任务：当前无到期计划，所有启用计划保持启用状态");
         }
+    }
+
+    /**
+     * 计算下次执行时间：明天 + 执行周期时间
+     */
+    private String calcNextExecution(String executionCycle) {
+        LocalTime time = LocalTime.parse(executionCycle, TIME_FORMATTER);
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        return tomorrow.format(DATE_FORMATTER) + " " + time.format(TIME_FORMATTER);
     }
 }

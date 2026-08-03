@@ -149,5 +149,5 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
         }
         return Result.OK("批量删除成功!");
     }
-
+    ///todo获取当前巡更计划返回中加上摄像头的播放地址。
 }

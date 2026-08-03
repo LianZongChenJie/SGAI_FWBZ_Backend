@@ -23,9 +23,9 @@
         UPDATE table_patrol_plan SET staus = 1 WHERE staus != 0
     </update>
 
-    <!-- 将指定巡更计划状态更新为运行中 -->
+    <!-- 将指定巡更计划状态更新为运行中，同时更新下次执行时间 -->
     <update id="updateStatusToRunning">
-        UPDATE table_patrol_plan SET staus = 2 WHERE id = #{planId}
+        UPDATE table_patrol_plan SET staus = 2, next_execution = #{nextExecution} WHERE id = #{planId}
     </update>
 
 </mapper>
