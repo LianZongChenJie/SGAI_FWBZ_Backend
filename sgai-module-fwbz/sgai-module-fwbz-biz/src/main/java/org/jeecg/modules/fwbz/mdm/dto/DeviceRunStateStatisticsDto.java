@@ -23,8 +23,21 @@ public class DeviceRunStateStatisticsDto {
      */
     private Long offline;
 
+
     /**
-     * 区域数量
+     * 仪表数量
      */
-    private Long spaceCount;
+    private Long measuringCount;
+
+    /**
+     * 运行设备
+     */
+    private Long equipmentCount;
+
+
+
+
+
+
+
 }
