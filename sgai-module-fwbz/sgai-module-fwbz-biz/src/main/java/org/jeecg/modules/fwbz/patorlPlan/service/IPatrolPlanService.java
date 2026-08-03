@@ -37,4 +37,9 @@ public interface IPatrolPlanService extends IService<PatrolPlan> {
      * 获取正在运行中的巡更计划详情（staus=2，含关联摄像头列表）
      */
     PatrolPlanDetailVo getRunningPlanDetail();
+
+    /**
+     * 判断传入id是否为当前正在运行中的巡更计划
+     */
+    boolean isRunningPlan(Long id);
 }

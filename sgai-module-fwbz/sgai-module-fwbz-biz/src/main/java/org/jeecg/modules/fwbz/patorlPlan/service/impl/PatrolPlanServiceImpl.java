@@ -112,6 +112,22 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
     }
 
     @Override
+    public boolean isRunningPlan(Long id) {
+        if (id == null) {
+            return false;
+        }
+        PatrolPlan plan = this.baseMapper.selectRunningPlan();
+        if (plan == null) {
+            return false;
+        }
+        if (id.equals(plan.getId())){
+            return true;
+        }else {
+            return false;
+        }
+    }
+
+    @Override
     public PatrolPlanDetailVo getRunningPlanDetail() {
         // 查询运行中状态(staus=2)的巡更计划
         PatrolPlan plan = this.baseMapper.selectRunningPlan();

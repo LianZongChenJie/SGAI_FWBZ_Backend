@@ -135,6 +135,19 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
     }
 
     /**
+     * 判断传入id是否为当前正在运行中的巡更计划
+     *
+     * @param id
+     * @return
+     */
+    @ApiOperation(value="巡更计划-判断是否为当前巡更计划", notes="判断传入id是否为当前正在运行中的巡更计划")
+    @GetMapping(value = "/isRunningPlan")
+    public Result<Boolean> isRunningPlan(@RequestParam(name="id", required=true) Long id) {
+        boolean result = patrolPlanService.isRunningPlan(id);
+        return Result.OK(result);
+    }
+
+    /**
      * 批量删除
      *
      * @param ids
@@ -151,5 +164,5 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
         }
         return Result.OK("批量删除成功!");
     }
-    ///todo获取当前巡更计划返回中加上摄像头的播放地址。
+
 }
