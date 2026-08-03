@@ -19,4 +19,12 @@
         WHERE a.plan_id = #{planId}
     </select>
 
+    <!-- 批量插入关联摄像头 -->
+    <insert id="batchInsertCameras">
+        INSERT INTO table_plan_camera (plan_id, index_code) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.planId}, #{item.indexCode})
+        </foreach>
+    </insert>
+
 </mapper>

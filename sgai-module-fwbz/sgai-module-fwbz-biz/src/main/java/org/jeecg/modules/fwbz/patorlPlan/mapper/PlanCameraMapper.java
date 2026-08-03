@@ -25,4 +25,9 @@ public interface PlanCameraMapper extends BaseMapper<PlanCamera> {
      * 根据计划ID查询关联摄像头
      */
     List<PlanCamera> selectByPlanId(@Param("planId") Long planId);
+
+    /**
+     * 批量插入关联摄像头
+     */
+    int batchInsertCameras(@Param("list") List<PlanCamera> list);
 }

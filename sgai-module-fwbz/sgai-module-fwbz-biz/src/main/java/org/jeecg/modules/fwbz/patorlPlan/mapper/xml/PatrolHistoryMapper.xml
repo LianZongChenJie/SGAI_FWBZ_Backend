@@ -6,12 +6,12 @@
     <select id="countTodayByPlanId" resultType="int">
         SELECT COUNT(*) FROM table_patrolHistory
         WHERE patrol_id = #{patrolId}
-        AND TRUNC(runTime) = TRUNC(SYSDATE)
+        AND TRUNC(run_time) = TRUNC(SYSDATE)
     </select>
 
     <!-- 插入巡更历史记录 -->
     <insert id="insertHistory">
-        INSERT INTO table_patrolHistory (patrol_id, runTime)
+        INSERT INTO table_patrolHistory (patrol_id, run_time)
         VALUES (#{patrolId}, SYSDATE)
     </insert>
 

@@ -34,7 +34,7 @@ public class PlanCameraServiceImpl extends ServiceImpl<PlanCameraMapper, PlanCam
             camera.setIndexCode(indexCode);
             list.add(camera);
         }
-        this.saveBatch(list);
+        this.baseMapper.batchInsertCameras(list);
     }
 
     @Override

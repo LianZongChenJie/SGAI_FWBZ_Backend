@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.patorlPlan.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
@@ -37,5 +38,6 @@ public class PatrolHistory implements Serializable {
 
     /**运行时间*/
     @ApiModelProperty(value = "运行时间")
+    @TableField("run_time")
     private Date runTime;
 }

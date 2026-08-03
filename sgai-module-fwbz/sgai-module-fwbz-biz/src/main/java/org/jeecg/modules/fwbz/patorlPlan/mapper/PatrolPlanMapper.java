@@ -33,4 +33,11 @@ public interface PatrolPlanMapper extends BaseMapper<PatrolPlan> {
      * 将指定巡更计划状态更新为运行中，同时更新下次执行时间
      */
     int updateStatusToRunning(@Param("planId") Long planId, @Param("nextExecution") String nextExecution);
+
+    /**
+     * 统计相同执行周期且非停用的巡更计划数量
+     * @param executionCycle 执行周期
+     * @param excludeId 排除的计划ID（编辑时排除自身）
+     */
+    int countByExecutionCycle(@Param("executionCycle") String executionCycle, @Param("excludeId") Long excludeId);
 }

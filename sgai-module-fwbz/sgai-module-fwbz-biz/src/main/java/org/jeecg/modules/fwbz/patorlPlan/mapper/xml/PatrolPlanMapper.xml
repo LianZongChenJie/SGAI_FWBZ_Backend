@@ -28,4 +28,14 @@
         UPDATE table_patrol_plan SET staus = 2, next_execution = #{nextExecution} WHERE id = #{planId}
     </update>
 
+    <!-- 统计相同执行周期且非停用的巡更计划数量（用于新增/编辑时校验时间冲突） -->
+    <select id="countByExecutionCycle" resultType="int">
+        SELECT COUNT(*) FROM table_patrol_plan
+        WHERE execution_cycle = #{executionCycle}
+        AND staus != 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
 </mapper>
