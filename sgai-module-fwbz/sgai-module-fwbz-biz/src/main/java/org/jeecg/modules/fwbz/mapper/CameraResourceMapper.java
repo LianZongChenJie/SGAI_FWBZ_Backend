@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 import org.jeecg.modules.fwbz.entity.CameraResource;
 
 /**
@@ -8,6 +9,7 @@ import org.jeecg.modules.fwbz.entity.CameraResource;
  *
  * @author fwbz
  */
+@Mapper
 public interface CameraResourceMapper extends BaseMapper<CameraResource> {
 
 }
