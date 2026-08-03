@@ -41,4 +41,21 @@ public class BusinessConfigConstant {
      * 碳排放分析-总量，多个点位以英文逗号分隔
      */
     public static final String CARBON_EMISSION_POINT = "carbon:carbon_emission_pointIds";
+    /**
+     * 能源计量场馆用电量计量规则ids，多个点位以英文逗号分隔
+     */
+    public static final String METERPOINTDATA_VENUEELECTRICITY = "meterPointData:venueElectricity";
+
+
+    /**
+     * 能源计量用能结构分析计量规则ids，多个点位以英文逗号分隔
+     */
+    public static final String METERPOINTDATA_ENERGYSTRUCTURE = "meterPointData:energyStructure";
+    /**
+     * 能源计量-概览-今日用电量
+     */
+    public static final String ENERGYMETERING_DAY_ELECTRIC = "energyMetering:day:electric";
+    public static final String ENERGYMETERING_DAY_WATER = "energyMetering:day:water";
+    public static final String ENERGYMETERING_MONTH_ELECTRIC = "energyMetering:month:electric";
+    public static final String ENERGYMETERING_MONTH_WATER = "energyMetering:month:water";
 }

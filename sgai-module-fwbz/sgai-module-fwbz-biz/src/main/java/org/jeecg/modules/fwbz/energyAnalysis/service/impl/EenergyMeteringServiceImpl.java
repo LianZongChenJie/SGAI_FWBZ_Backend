@@ -2,22 +2,25 @@ package org.jeecg.modules.fwbz.energyAnalysis.service.impl;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
+import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.EnergyMeteringStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.service.*;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IEenergyMeteringService;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
-import org.jeecg.modules.fwbz.service.*;
-import org.jeecg.modules.fwbz.vo.DeviceDataVo;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.service.IBusinessConfigService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,46 +28,50 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EenergyMeteringServiceImpl implements IEenergyMeteringService {
 
-    private final IDeviceDataService deviceDataService;
+    private final IDeviceService deviceService;
+    private final IMeteringPointDataDayService dayDataService;
 
+    private final IBusinessConfigService businessConfigService;
 
     @Override
     public EnergyMeteringStatisticsDto statistics() {
 
-        DeviceDataFindDto params = new DeviceDataFindDto();
-        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
-        LocalDateTime now = LocalDate.now().atStartOfDay();
-        params.setStartTime(now);
 
-        List<DeviceDataVo> list = deviceDataService.findListWithDay(params);
-        params.setStartTime(now.plusDays(-1));
+        Device device = new Device();
+        device.setDeviceType(Device.DEVICE_TYPE_MEASURING);
 
-        List<DeviceDataVo> listYestoday = deviceDataService.findListWithDay(params);
+        List<Device> list = deviceService.findAll(device);
 
         Long addCount = 0L;
-        for (DeviceDataVo deviceDataVo : list) {
+        LocalDate now = LocalDate.now();
+        LocalDate yestoday = now.plusDays(-1);
+        for (Device deviceDataVo : list) {
             if(deviceDataVo.getCreateTime()!=null){
                 LocalDate localDate = LocalDate.ofInstant(deviceDataVo.getCreateTime().toInstant(), ZoneId.systemDefault());
-                if (localDate.isEqual(LocalDate.now())) {
+                if (localDate.isEqual(now)) {
                     addCount++;
                 }
             }
         }
 
-
-        Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(DeviceDataVo::getRunState, Collectors.counting()));
-        Map<Long, BigDecimal> collect1 = list.stream()
-                .filter(item -> item.getCategoryId() != null)
-                .collect(Collectors.groupingBy(DeviceDataVo::getCategoryId,
-                        Collectors.reducing(BigDecimal.ZERO, DeviceDataVo::getDayTotal, BigDecimal::add)));
+        Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
 
-        Map<Long, BigDecimal> collect2 = listYestoday.stream()
-                .filter(item -> item.getCategoryId() != null)
-                .collect(Collectors.groupingBy(DeviceDataVo::getCategoryId,
-                        Collectors.reducing(BigDecimal.ZERO, DeviceDataVo::getDayTotal, BigDecimal::add)));
+        //查询计量点位数据
+
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_ELECTRIC);
+        MeteringPointDataDay todayElectric = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey));
+        MeteringPointDataDay yestodayElectric = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey));
 
 
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_WATER);
+        MeteringPointDataDay todayWater = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey2));
+        MeteringPointDataDay yestodayWater = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey2));
+
+        BigDecimal todayElectricValue = Optional.ofNullable(todayElectric).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
+        BigDecimal yestodayElectricValue = Optional.ofNullable(yestodayElectric).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
+        BigDecimal todayWaterValue = Optional.ofNullable(todayWater).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
+        BigDecimal yestodayWaterValue = Optional.ofNullable(yestodayWater).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
 
 
         EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
@@ -73,36 +80,31 @@ public class EenergyMeteringServiceImpl implements IEenergyMeteringService {
             dto.setAddCount("-0");
         }else{
             dto.setAddCount("↑"+addCount);
-
         }
         BigDecimal bigDecimal = calculatePercentage(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L), (long) list.size());
         dto.setOnlineRate(bigDecimal+"%");
 
-        BigDecimal todayElectricity = collect1.getOrDefault(DeviceConstant.CATEGORY_ELECTRICITY, BigDecimal.ZERO);
-        dto.setElectricCount(todayElectricity);
 
-
-        BigDecimal todayWater = collect1.getOrDefault(DeviceConstant.CATEGORY_WATER, BigDecimal.ZERO);
-        dto.setWaterCount(todayWater);
-
-        BigDecimal yestodayElectricity = collect2.getOrDefault(DeviceConstant.CATEGORY_ELECTRICITY, BigDecimal.ZERO);
-
-        dto.setElectricCountDoD(calculateMom(todayElectricity,yestodayElectricity)+"%");
-
-
-        BigDecimal yestodayWater = collect2.getOrDefault(DeviceConstant.CATEGORY_WATER, BigDecimal.ZERO);
-        dto.setWaterCountDoD(calculateMom(todayWater,yestodayWater)+"%");
-
-
-
-
+        dto.setElectricCount(todayElectricValue);
+        dto.setWaterCount(todayWaterValue);
+        dto.setElectricCountDoD(formatData(calculateMom(todayElectricValue, yestodayElectricValue)));
+        dto.setWaterCountDoD(formatData(calculateMom(todayWaterValue, yestodayWaterValue)));
 
 
         return dto;
+    }
 
-
-
-
+    @NotNull
+    private static String formatData(BigDecimal bigDecimal2) {
+        String waterCountDoD;
+        if(bigDecimal2.compareTo(BigDecimal.ZERO)>0){
+             waterCountDoD = "↑" + bigDecimal2 + "%";
+        }else if (bigDecimal2.compareTo(BigDecimal.ZERO)<0){
+             waterCountDoD = "↓" + bigDecimal2 + "%";
+        }else{
+             waterCountDoD = bigDecimal2 + "%";
+        }
+        return waterCountDoD;
     }
 
     /**
@@ -154,8 +156,4 @@ public class EenergyMeteringServiceImpl implements IEenergyMeteringService {
                 .multiply(new BigDecimal("100"))
                 .setScale(2, RoundingMode.HALF_UP);
     }
-
-
-
-
 }

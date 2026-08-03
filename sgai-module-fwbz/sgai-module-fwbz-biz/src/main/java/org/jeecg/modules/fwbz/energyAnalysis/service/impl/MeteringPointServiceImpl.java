@@ -713,6 +713,12 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         }
 
         Map<String, Long> collect = list.stream().filter(item -> item.getFormula() != null).collect(Collectors.groupingBy(MeteringPoint::getFormula, Collectors.counting()));
+
+        Map<Long, Long> collect2 = list.stream().filter(item -> item.getCategoryId() != null).collect(Collectors.groupingBy(MeteringPoint::getCategoryId, Collectors.counting()));
+
+
+
+
         MeteringPointStatisticsDto dto = new MeteringPointStatisticsDto();
         dto.setCount((long) list.size());
         if(addCount==0){
@@ -728,12 +734,14 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         dto.setCoverage(calculatePercentage((long) collect.size(), (long) list.size()).toString());
 
 
-        dto.setElectricCount((long) list.size());
+        Long orDefault = collect2.getOrDefault(DeviceConstant.CATEGORY_ELECTRICITY, 0L);
+        dto.setElectricCount(orDefault);
 
-        dto.setElectricPercentage("100%");
+        dto.setElectricPercentage(calculatePercentage(orDefault, (long) list.size())+"%");
 
-        dto.setWaterCount(0L);
-        dto.setWaterPercentage("0%");
+        Long orDefault1 = collect2.getOrDefault(DeviceConstant.CATEGORY_WATER, 0L);
+        dto.setWaterCount(orDefault1);
+        dto.setWaterPercentage(calculatePercentage(orDefault1, (long) list.size())+"%");
 
         return dto;
     }

@@ -2,6 +2,8 @@ package org.jeecg.modules.fwbz.energyAnalysis.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * 计量分析数据统计
  */
@@ -11,7 +13,7 @@ public class MeteringPointDataStatisticsDto {
     /**
      * 本月总耗电
      */
-    private Long electricCount;
+    private BigDecimal electricCount;
 
 
     /**
@@ -22,7 +24,7 @@ public class MeteringPointDataStatisticsDto {
     /**
      * 本月总耗水
      */
-    private Long waterCount;
+    private BigDecimal waterCount;
 
     /**
      * 本月总耗水 环比
@@ -32,7 +34,7 @@ public class MeteringPointDataStatisticsDto {
     /**
      * 日均耗电
      */
-    private Long electricAvg;
+    private BigDecimal electricAvg;
 
     /**
      * 日均耗电
