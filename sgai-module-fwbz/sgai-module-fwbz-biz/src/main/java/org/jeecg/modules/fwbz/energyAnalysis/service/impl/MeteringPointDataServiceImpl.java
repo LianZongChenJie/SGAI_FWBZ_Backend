@@ -20,6 +20,7 @@ import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.jeecg.modules.fwbz.service.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -179,9 +180,67 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         return createTable(tableHeaderList, configs, meterDataList);
     }
 
+    @Override
+    public List<PieChatSeriesData> findPieDayByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
 
+        if(localDate==null){
+            localDate = LocalDate.now();
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
+        List<? extends MeteringPointData> meterDataList = dayDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createPieChatList(meterDataList, idName);
+    }
+    @Override
+    public List<PieChatSeriesData> findPieMonthByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
 
+        if(localDate==null){
+            localDate = LocalDate.now().withDayOfMonth(1);
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
+        List<? extends MeteringPointData> meterDataList = monthDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createPieChatList(meterDataList, idName);
+    }
+    @Override
+    public List<PieChatSeriesData> findPieYearByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
 
+        if(localDate==null){
+            localDate = LocalDate.now().withDayOfYear(1);
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
+        List<? extends MeteringPointData> meterDataList = yearDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createPieChatList(meterDataList, idName);
+    }
+
+    @NotNull
+    private static List<PieChatSeriesData> createPieChatList(List<? extends MeteringPointData> meterDataList, Map<Long, String> idName) {
+        List<PieChatSeriesData> seriesData = new ArrayList<>();
+        for (MeteringPointData meteringPointData : meterDataList) {
+            String name = idName.get(meteringPointData.getId());
+            seriesData.add(new PieChatSeriesData(name,null,meteringPointData.getValue(),null));
+        }
+        return seriesData;
+    }
 
 
     @Override

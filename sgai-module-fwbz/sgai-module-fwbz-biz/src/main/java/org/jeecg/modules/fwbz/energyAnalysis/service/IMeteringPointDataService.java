@@ -7,6 +7,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,10 @@ public interface IMeteringPointDataService {
     Table findDayByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
     Table findMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
     Table findYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+
+    List<PieChatSeriesData> findPieDayByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+    List<PieChatSeriesData> findPieMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+    List<PieChatSeriesData> findPieYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
 
 
 

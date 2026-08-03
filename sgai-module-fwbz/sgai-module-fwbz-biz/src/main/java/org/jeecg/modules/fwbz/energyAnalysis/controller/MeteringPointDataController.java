@@ -15,9 +15,12 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Api(tags = "计量点位数据信息")
@@ -150,6 +153,37 @@ public class MeteringPointDataController {
         return Result.ok(new MeteringPointDataChartVo(service.findYearByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 
+
+
+
+    /**
+     * 用能结构分析
+     * @param param
+     * @return
+     */
+    @GetMapping("/findPieDayByConfig")
+    public Result<List<PieChatSeriesData>> findPieDayByConfig(MeteringPointDataDto param){
+        return Result.ok(service.findPieDayByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
+    }
+    /**
+     * 用能结构分析
+     * @param param
+     * @return
+     */
+    @GetMapping("/findPieMonthByConfig")
+    public Result<List<PieChatSeriesData>> findPieMonthByConfig(MeteringPointDataDto param){
+        return Result.ok(service.findPieMonthByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
+    }
+    /**
+     * 用能结构分析
+     * @param param
+     * @return
+     */
+    @GetMapping("/findPieYearByConfig")
+    public Result<List<PieChatSeriesData>> findPieYearByConfig(MeteringPointDataDto param){
+        return Result.ok(service.findPieYearByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
+
+    }
 
 
 
