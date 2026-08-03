@@ -190,13 +190,18 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         }
         List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
         List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
-        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
         List<? extends MeteringPointData> meterDataList = dayDataService.findByDateAndPointIds(
                 localDate,
                 configIds
         );
-        return createPieChatList(meterDataList, idName);
+        Map<Long, BigDecimal> idValue = meterDataList.stream().collect(Collectors.toMap(MeteringPointData::getId, MeteringPointData::getValue));
+
+        return createPieChatList(configs, idValue);
+
     }
+
+
+
     @Override
     public List<PieChatSeriesData> findPieMonthByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
         //查询业务配置类， 获取计量点位ID集合 格式为，分割
@@ -207,12 +212,13 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         }
         List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
         List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
-        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
         List<? extends MeteringPointData> meterDataList = monthDataService.findByDateAndPointIds(
                 localDate,
                 configIds
         );
-        return createPieChatList(meterDataList, idName);
+        Map<Long, BigDecimal> idValue = meterDataList.stream().collect(Collectors.toMap(MeteringPointData::getId, MeteringPointData::getValue));
+
+        return createPieChatList(configs, idValue);
     }
     @Override
     public List<PieChatSeriesData> findPieYearByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
@@ -224,24 +230,26 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         }
         List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
         List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
-        Map<Long, String> idName = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, MeteringPoint::getNodeName));
         List<? extends MeteringPointData> meterDataList = yearDataService.findByDateAndPointIds(
                 localDate,
                 configIds
         );
-        return createPieChatList(meterDataList, idName);
-    }
+        Map<Long, BigDecimal> idValue = meterDataList.stream().collect(Collectors.toMap(MeteringPointData::getId, MeteringPointData::getValue));
 
+        return createPieChatList(configs, idValue);
+    }
     @NotNull
-    private static List<PieChatSeriesData> createPieChatList(List<? extends MeteringPointData> meterDataList, Map<Long, String> idName) {
+    private static List<PieChatSeriesData> createPieChatList(List<MeteringPoint> configs, Map<Long, BigDecimal> idValue) {
         List<PieChatSeriesData> seriesData = new ArrayList<>();
-        for (MeteringPointData meteringPointData : meterDataList) {
-            String name = idName.get(meteringPointData.getId());
-            seriesData.add(new PieChatSeriesData(name,null,meteringPointData.getValue(),null));
+        for (MeteringPoint meteringPoint : configs) {
+            BigDecimal value = idValue.get(meteringPoint.getId());
+            if(value==null){
+                value = BigDecimal.ZERO;
+            }
+            seriesData.add(new PieChatSeriesData(meteringPoint.getNodeName(),null,value,null));
         }
         return seriesData;
     }
-
 
     @Override
     public void calculateValue(LocalDateTime hour){
