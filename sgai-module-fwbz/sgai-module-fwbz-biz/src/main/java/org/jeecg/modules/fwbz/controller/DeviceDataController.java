@@ -32,9 +32,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,7 +69,7 @@ public class DeviceDataController {
     //    @DataPermission
     @GetMapping("/measuringList")
     public Result<IPage<DeviceDataVo>> measuringList(DeviceDataFindDto params) {
-        return Result.ok(service.measuringListWithDayMouth(params));
+        return Result.ok(service.measuringListWithDayMonth(params));
     }
 
     @GetMapping("/venueElectricityMouth")
