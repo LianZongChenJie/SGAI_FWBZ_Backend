@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @Description: 巡更计划
@@ -34,6 +35,16 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
     private IPlanCameraService planCameraService;
 
     private static final DateTimeFormatter NEXT_EXECUTION_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /** 演示流地址池 */
+    private static final String[] STREAM_URLS = {
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
+            "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+            "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
+            "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8",
+            "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8",
+            "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8"
+    };
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -111,6 +122,10 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
         BeanUtils.copyProperties(plan, vo);
         // 查询关联摄像头
         List<PlanCamera> cameras = planCameraService.selectByPlanId(plan.getId());
+        // 为每个摄像头随机分配演示流地址
+        for (PlanCamera camera : cameras) {
+            camera.setUrl(STREAM_URLS[ThreadLocalRandom.current().nextInt(STREAM_URLS.length)]);
+        }
         vo.setCameras(cameras);
         return vo;
     }

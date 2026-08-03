@@ -51,6 +51,8 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
                                                    @RequestParam(name="pageSize", defaultValue="10") Integer pageSize,
                                                    HttpServletRequest req) {
         QueryWrapper<PatrolPlan> queryWrapper = QueryGenerator.initQueryWrapper(patrolPlan, req.getParameterMap());
+        // 运行中的巡更计划排到第一位（staus: 2=运行中, 1=启用, 0=停用）
+        queryWrapper.orderByDesc("staus");
         Page<PatrolPlan> page = new Page<>(pageNo, pageSize);
         IPage<PatrolPlan> pageList = patrolPlanService.page(page, queryWrapper);
         return Result.OK(pageList);

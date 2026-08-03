@@ -43,4 +43,9 @@ public class PlanCamera implements Serializable {
     @TableField(exist = false)
     @ApiModelProperty(value = "摄像头名称")
     private String cameraName;
+
+    /**播放地址（非数据库字段，运行中计划返回时随机赋值）*/
+    @TableField(exist = false)
+    @ApiModelProperty(value = "播放地址")
+    private String url;
 }
