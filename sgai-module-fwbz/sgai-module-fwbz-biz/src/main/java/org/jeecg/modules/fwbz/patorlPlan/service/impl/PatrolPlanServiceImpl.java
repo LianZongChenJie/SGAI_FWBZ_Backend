@@ -80,4 +80,19 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
 
         return vo;
     }
+
+    @Override
+    public PatrolPlanDetailVo getRunningPlanDetail() {
+        // 查询运行中状态(staus=2)的巡更计划
+        PatrolPlan plan = this.baseMapper.selectRunningPlan();
+        if (plan == null) {
+            return null;
+        }
+        PatrolPlanDetailVo vo = new PatrolPlanDetailVo();
+        BeanUtils.copyProperties(plan, vo);
+        // 查询关联摄像头
+        List<PlanCamera> cameras = planCameraService.selectByPlanId(plan.getId());
+        vo.setCameras(cameras);
+        return vo;
+    }
 }

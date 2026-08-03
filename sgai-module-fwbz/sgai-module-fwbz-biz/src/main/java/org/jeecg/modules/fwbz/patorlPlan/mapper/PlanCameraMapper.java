@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.patorlPlan.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.jeecg.modules.fwbz.patorlPlan.entity.PlanCamera;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * @Date:   2026-07-31
  * @Version: V1.0
  */
+@Mapper
 public interface PlanCameraMapper extends BaseMapper<PlanCamera> {
 
     /**

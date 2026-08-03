@@ -7,9 +7,16 @@
         DELETE FROM table_plan_camera WHERE plan_id = #{planId}
     </delete>
 
-    <!-- 根据计划ID查询关联摄像头 -->
+    <!-- 根据计划ID查询关联摄像头（含摄像头名称） -->
     <select id="selectByPlanId" resultType="org.jeecg.modules.fwbz.patorlPlan.entity.PlanCamera">
-        SELECT id, plan_id, index_code FROM table_plan_camera WHERE plan_id = #{planId}
+        SELECT
+            a.id,
+            a.plan_id,
+            a.index_code,
+            b.name AS camera_name
+        FROM table_plan_camera a
+        LEFT JOIN table_camera_resource b ON a.index_code = b.index_code
+        WHERE a.plan_id = #{planId}
     </select>
 
 </mapper>

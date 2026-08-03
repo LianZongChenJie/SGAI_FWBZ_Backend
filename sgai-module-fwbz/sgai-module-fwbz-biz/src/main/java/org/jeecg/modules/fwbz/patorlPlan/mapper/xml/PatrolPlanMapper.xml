@@ -2,4 +2,30 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.jeecg.modules.fwbz.patorlPlan.mapper.PatrolPlanMapper">
 
+    <!-- 获取正在运行中的巡更计划（staus = 2） -->
+    <select id="selectRunningPlan" resultType="org.jeecg.modules.fwbz.patorlPlan.entity.PatrolPlan">
+        SELECT * FROM table_patrol_plan
+        WHERE staus = 2
+        LIMIT 1
+    </select>
+
+    <!-- 获取当前应切换为运行中的巡更计划（非停用且执行时间已到达的最近一个） -->
+    <select id="selectPlanToRun" resultType="org.jeecg.modules.fwbz.patorlPlan.entity.PatrolPlan">
+        SELECT * FROM table_patrol_plan
+        WHERE staus != 0
+        AND execution_cycle &lt;= CURRENT_TIME
+        ORDER BY execution_cycle DESC
+        LIMIT 1
+    </select>
+
+    <!-- 将所有非停用巡更计划状态重置为启用 -->
+    <update id="resetNonDisabledStatus">
+        UPDATE table_patrol_plan SET staus = 1 WHERE staus != 0
+    </update>
+
+    <!-- 将指定巡更计划状态更新为运行中 -->
+    <update id="updateStatusToRunning">
+        UPDATE table_patrol_plan SET staus = 2 WHERE id = #{planId}
+    </update>
+
 </mapper>

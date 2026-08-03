@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 
 /**
  * @Description: 巡更计划
@@ -69,6 +68,21 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
         PatrolPlanDetailVo detail = patrolPlanService.getDetail(id);
         if (detail == null) {
             return Result.error("未找到对应数据");
+        }
+        return Result.OK(detail);
+    }
+
+    /**
+     * 获取正在运行中的巡更计划详情
+     *
+     * @return
+     */
+    @ApiOperation(value="巡更计划-获取运行中的巡更计划详情", notes="获取当前状态为运行中(staus=2)的巡更计划详情（含关联摄像头）")
+    @GetMapping(value = "/runningPlan")
+    public Result<PatrolPlanDetailVo> getRunningPlan() {
+        PatrolPlanDetailVo detail = patrolPlanService.getRunningPlanDetail();
+        if (detail == null) {
+            return Result.error("当前没有运行中的巡更计划");
         }
         return Result.OK(detail);
     }

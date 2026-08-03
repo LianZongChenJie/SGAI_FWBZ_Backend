@@ -32,4 +32,9 @@ public interface IPatrolPlanService extends IService<PatrolPlan> {
      * 查询巡更计划详情（含关联摄像头列表）
      */
     PatrolPlanDetailVo getDetail(Long id);
+
+    /**
+     * 获取正在运行中的巡更计划详情（staus=2，含关联摄像头列表）
+     */
+    PatrolPlanDetailVo getRunningPlanDetail();
 }

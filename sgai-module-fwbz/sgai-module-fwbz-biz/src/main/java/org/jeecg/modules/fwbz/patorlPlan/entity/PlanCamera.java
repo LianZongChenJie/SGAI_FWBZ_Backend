@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.patorlPlan.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
@@ -37,4 +38,9 @@ public class PlanCamera implements Serializable {
     /**摄像头唯一编码*/
     @ApiModelProperty(value = "摄像头唯一编码")
     private String indexCode;
+
+    /**摄像头名称（非数据库字段，联表查询）*/
+    @TableField(exist = false)
+    @ApiModelProperty(value = "摄像头名称")
+    private String cameraName;
 }

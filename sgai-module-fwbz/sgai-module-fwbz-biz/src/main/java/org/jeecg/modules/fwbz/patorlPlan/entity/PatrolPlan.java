@@ -24,6 +24,13 @@ import org.jeecgframework.poi.excel.annotation.Excel;
 public class PatrolPlan extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
+    /** 状态：停用 */
+    public static final int STATUS_DISABLED = 0;
+    /** 状态：启用 */
+    public static final int STATUS_ENABLED = 1;
+    /** 状态：运行中 */
+    public static final int STATUS_RUNNING = 2;
+
     /**计划名称*/
     @Excel(name = "计划名称", width = 15)
     @ApiModelProperty(value = "计划名称")
