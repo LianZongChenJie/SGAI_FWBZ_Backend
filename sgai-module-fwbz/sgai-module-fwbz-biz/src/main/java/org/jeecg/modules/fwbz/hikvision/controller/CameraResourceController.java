@@ -26,7 +26,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @AllArgsConstructor
-@RequestMapping("/hikvision/camera")
+@RequestMapping("/fwbz/hikvision/camera")
 @Api(tags = "海康摄像头资源管理")
 public class CameraResourceController {
 

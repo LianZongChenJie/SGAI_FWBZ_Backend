@@ -24,7 +24,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @AllArgsConstructor
-@RequestMapping("/hikvision/region")
+@RequestMapping("/fwbz/hikvision/region")
 @Api(tags = "海康区域资源管理")
 public class RegionResourceController {
 
