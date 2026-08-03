@@ -1,17 +1,14 @@
 package org.jeecg.modules.fwbz.energyAnalysis.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import dm.jdbc.util.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
 import org.jeecg.modules.fwbz.energyAnalysis.util.Jexl3Util;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
@@ -67,6 +64,9 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
 
     private final MqSendService mqSendService;
 
+    private final IBusinessConfigService businessConfigService;
+
+
 
     @Override
     public Table findMinute(String energyFlowDiagramIds, LocalDateTime hour) {
@@ -120,6 +120,69 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         );
         return createTable(tableHeaderList, configs, meterDataList);
     }
+
+
+    @Override
+    public Table findDayByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
+
+        if(localDate==null){
+            localDate = LocalDate.now();
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        List<TableHeader> tableHeaderList = TableUtil.dayOnly(localDate.getYear(),localDate.getMonthValue(),localDate.getDayOfMonth());
+        List<? extends MeteringPointData> meterDataList = dayDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createTable(tableHeaderList, configs, meterDataList);
+    }
+
+
+    @Override
+    public Table findMonthByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
+
+        if(localDate==null){
+            localDate = LocalDate.now().withDayOfMonth(1);
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        List<TableHeader> tableHeaderList = TableUtil.monthOnly(localDate.getYear(),localDate.getMonthValue());
+        List<? extends MeteringPointData> meterDataList = monthDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createTable(tableHeaderList, configs, meterDataList);
+    }
+
+
+
+    @Override
+    public Table findYearByConfig(String key ,String energyFlowDiagramIds, LocalDate localDate) {
+        //查询业务配置类， 获取计量点位ID集合 格式为，分割
+        String longByKey = businessConfigService.getValueByKey(key);
+
+        if(localDate==null){
+            localDate = LocalDate.now().withDayOfYear(1);
+        }
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        List<TableHeader> tableHeaderList = TableUtil.yearOnly(localDate.getYear());
+        List<? extends MeteringPointData> meterDataList = yearDataService.findByDateAndPointIds(
+                localDate,
+                configIds
+        );
+        return createTable(tableHeaderList, configs, meterDataList);
+    }
+
+
+
+
+
 
     @Override
     public void calculateValue(LocalDateTime hour){
@@ -697,5 +760,9 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         dto.setEnergySavingMom("1.2%");
         return dto;
     }
+
+
+
+
 
 }

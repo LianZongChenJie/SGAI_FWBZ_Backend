@@ -13,8 +13,10 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
+import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -118,6 +120,38 @@ public class MeteringPointDataController {
     public Result<?> statistics(){
         return Result.ok(service.statistics());
     }
+
+
+    /**
+     * 各场馆用电量柱状图
+     * @param param
+     * @return
+     */
+    @GetMapping("/findDayByConfig")
+    public Result<MeteringPointDataChartVo> findDayByConfig(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findDayByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+    /**
+     * 各场馆用电量柱状图
+     * @param param
+     * @return
+     */
+    @GetMapping("/findMonthByConfig")
+    public Result<MeteringPointDataChartVo> findMonthByConfig(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonthByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+    /**
+     * 各场馆用电量柱状图
+     * @param param
+     * @return
+     */
+    @GetMapping("/findYearByConfig")
+    public Result<MeteringPointDataChartVo> findYearByConfig(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYearByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+
 
 
 

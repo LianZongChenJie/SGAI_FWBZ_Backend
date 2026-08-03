@@ -20,6 +20,13 @@ public interface IMeteringPointDataService {
 
     Table findYear(String energyFlowDiagramIds,LocalDate localDate);
 
+
+    Table findDayByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+
+
+
     void calculateValue(LocalDateTime hour);
     void calculateValue(List<LocalDateTime> hours);
 

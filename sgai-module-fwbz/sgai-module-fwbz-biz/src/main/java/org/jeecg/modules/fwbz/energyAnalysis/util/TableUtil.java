@@ -72,6 +72,42 @@ public class TableUtil {
         return result;
     }
 
+
+    public static List<TableHeader> dayOnly(int year, int month, int day) {
+        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("d日");
+        List<TableHeader> result = baseHeaders();
+        TableHeader e = new TableHeader();
+        LocalDate localDate = LocalDate.of(year, month, day);
+        e.setField(LocalDateTime.of(localDate, LocalTime.MIN).format(filedForMatter));
+        e.setLabel(localDate.format(labelFormatter));
+        result.add(e);
+        return result;
+    }
+
+    public static List<TableHeader> monthOnly(int year,int month) {
+        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("M月");
+        List<TableHeader> result = baseHeaders();
+        TableHeader e = new TableHeader();
+        LocalDate localDate = LocalDate.of(year, month, 1);
+        e.setField(LocalDateTime.of(localDate, LocalTime.MIN).format(filedForMatter));
+        e.setLabel(localDate.format(labelFormatter));
+        result.add(e);
+        return result;
+    }
+
+    public static List<TableHeader> yearOnly(int year) {
+        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("年");
+        List<TableHeader> result = baseHeaders();
+        TableHeader e = new TableHeader();
+        LocalDate localDate = LocalDate.of(year, 1, 1);
+        e.setField(LocalDateTime.of(localDate, LocalTime.MIN).format(filedForMatter));
+        e.setLabel(localDate.format(labelFormatter));
+        result.add(e);
+        return result;
+    }
+
+
+
     public static List<TableHeader> yearHeaders(int year) {
         DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("M月");
         List<TableHeader> result = baseHeaders();
