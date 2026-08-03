@@ -72,7 +72,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
 	 */
 	@AutoLog(value = "采集管理-规则标准-添加")
 	@ApiOperation(value="采集管理-规则标准-添加", notes="采集管理-规则标准-添加")
-	@RequiresPermissions("Fwbz:gather_rule_config:add")
+//	@RequiresPermissions("Fwbz:gather_rule_config:add")
 	@PostMapping(value = "/add")
 	public Result<String> add(@RequestBody GatherRuleConfig gatherRuleConfig) {
 		gatherRuleConfigService.save(gatherRuleConfig);
@@ -87,7 +87,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
 	 */
 	@AutoLog(value = "采集管理-规则标准-编辑")
 	@ApiOperation(value="采集管理-规则标准-编辑", notes="采集管理-规则标准-编辑")
-	@RequiresPermissions("Fwbz:gather_rule_config:edit")
+//	@RequiresPermissions("Fwbz:gather_rule_config:edit")
 	@RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
 	public Result<String> edit(@RequestBody GatherRuleConfig gatherRuleConfig) {
 		gatherRuleConfigService.updateById(gatherRuleConfig);
@@ -102,7 +102,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
 	 */
 	@AutoLog(value = "采集管理-规则标准-通过id删除")
 	@ApiOperation(value="采集管理-规则标准-通过id删除", notes="采集管理-规则标准-通过id删除")
-	@RequiresPermissions("Fwbz:gather_rule_config:delete")
+//	@RequiresPermissions("Fwbz:gather_rule_config:delete")
 	@DeleteMapping(value = "/delete")
 	public Result<String> delete(@RequestParam(name="id",required=true) String id) {
 		gatherRuleConfigService.removeById(id);
@@ -117,7 +117,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
 	 */
 	@AutoLog(value = "采集管理-规则标准-批量删除")
 	@ApiOperation(value="采集管理-规则标准-批量删除", notes="采集管理-规则标准-批量删除")
-	@RequiresPermissions("Fwbz:gather_rule_config:deleteBatch")
+//	@RequiresPermissions("Fwbz:gather_rule_config:deleteBatch")
 	@DeleteMapping(value = "/deleteBatch")
 	public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
 		this.gatherRuleConfigService.removeByIds(Arrays.asList(ids.split(",")));
@@ -147,7 +147,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
     * @param request
     * @param gatherRuleConfig
     */
-    @RequiresPermissions("Fwbz:gather_rule_config:exportXls")
+//    @RequiresPermissions("Fwbz:gather_rule_config:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, GatherRuleConfig gatherRuleConfig) {
         return super.exportXls(request, gatherRuleConfig, GatherRuleConfig.class, "采集管理-规则标准");
@@ -160,7 +160,7 @@ public class GatherRuleConfigController extends JeecgController<GatherRuleConfig
     * @param response
     * @return
     */
-    @RequiresPermissions("Fwbz:gather_rule_config:importExcel")
+//    @RequiresPermissions("Fwbz:gather_rule_config:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, GatherRuleConfig.class);

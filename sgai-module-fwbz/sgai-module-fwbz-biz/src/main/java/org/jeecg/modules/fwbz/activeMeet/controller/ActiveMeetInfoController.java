@@ -28,7 +28,7 @@ public class ActiveMeetInfoController {
     }
 
     @PostMapping("/edit")
-    @RequiresPermissions("fwbz:activeMeetInfo:edit")
+//    @RequiresPermissions("fwbz:activeMeetInfo:edit")
     @AutoLog(value = "活动信息-编辑")
     public Result<String> edit(@RequestBody ActiveMeetInfo param) {
         service.updateById(param);
@@ -36,7 +36,7 @@ public class ActiveMeetInfoController {
     }
 
     @DeleteMapping("/delete")
-    @RequiresPermissions("fwbz:activeMeetInfo:delete")
+//    @RequiresPermissions("fwbz:activeMeetInfo:delete")
     @AutoLog(value = "活动信息-删除")
     public Result<String> delete(@RequestParam(name = "id") Long id) {
         service.removeById(id);

@@ -20,21 +20,21 @@ public class CostCenterController {
 
     private final ICostCenterService service;
 
-    @RequiresPermissions("Fwbz:cost:center:add")
+//    @RequiresPermissions("Fwbz:cost:center:add")
     @PostMapping("/add")
     public Result<String> add(@RequestBody CostCenter costCenter) {
         service.add(costCenter);
         return Result.ok();
     }
 
-    @RequiresPermissions("Fwbz:cost:center:update")
+//    @RequiresPermissions("Fwbz:cost:center:update")
     @PostMapping("/update")
     public Result<String> update(@RequestBody CostCenter costCenter) {
         service.update(costCenter);
         return Result.ok();
     }
 
-    @RequiresPermissions("Fwbz:cost:center:delete")
+//    @RequiresPermissions("Fwbz:cost:center:delete")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam Long id) {
         service.delete(id);

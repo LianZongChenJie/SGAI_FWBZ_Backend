@@ -95,7 +95,7 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
      */
     @AutoLog(value = "巡更计划-添加")
     @ApiOperation(value="巡更计划-添加", notes="巡更计划-添加")
-    @RequiresPermissions("fwbz:patrol_plan:add")
+//    @RequiresPermissions("fwbz:patrol_plan:add")
     @PostMapping(value = "/add")
     public Result<String> add(@RequestBody PatrolPlanDto dto) {
         patrolPlanService.saveWithCameras(dto);
@@ -110,7 +110,7 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
      */
     @AutoLog(value = "巡更计划-编辑")
     @ApiOperation(value="巡更计划-编辑", notes="巡更计划-编辑")
-    @RequiresPermissions("fwbz:patrol_plan:edit")
+//    @RequiresPermissions("fwbz:patrol_plan:edit")
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST})
     public Result<String> edit(@RequestBody PatrolPlanDto dto) {
         patrolPlanService.updateWithCameras(dto);
@@ -125,7 +125,7 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
      */
     @AutoLog(value = "巡更计划-通过id删除")
     @ApiOperation(value="巡更计划-通过id删除", notes="巡更计划-通过id删除")
-    @RequiresPermissions("fwbz:patrol_plan:delete")
+//    @RequiresPermissions("fwbz:patrol_plan:delete")
     @DeleteMapping(value = "/delete")
     public Result<String> delete(@RequestParam(name="id", required=true) Long id) {
         patrolPlanService.deleteWithCameras(id);
@@ -140,7 +140,7 @@ public class PatrolPlanController extends JeecgController<PatrolPlan, IPatrolPla
      */
     @AutoLog(value = "巡更计划-批量删除")
     @ApiOperation(value="巡更计划-批量删除", notes="巡更计划-批量删除")
-    @RequiresPermissions("fwbz:patrol_plan:deleteBatch")
+//    @RequiresPermissions("fwbz:patrol_plan:deleteBatch")
     @DeleteMapping(value = "/deleteBatch")
     public Result<String> deleteBatch(@RequestParam(name="ids", required=true) String ids) {
         String[] idArray = ids.split(",");

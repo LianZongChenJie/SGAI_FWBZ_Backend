@@ -21,21 +21,21 @@ public class EnergyPricingConfigController{
 
     private final IEnergyPricingConfigService service;
 
-    @RequiresPermissions("Fwbz:energyPricingConfig:save")
+//    @RequiresPermissions("Fwbz:energyPricingConfig:save")
     @PostMapping("/save")
     public Result<String> save(@RequestBody EnergyPricingConfig data){
         service.save(data);
         return Result.ok();
     }
 
-    @RequiresPermissions("Fwbz:energyPricingConfig:add")
+//    @RequiresPermissions("Fwbz:energyPricingConfig:add")
     @PostMapping("/add")
     public Result<String> add(@RequestBody EnergyPricingConfig data){
         service.add(data);
         return Result.ok();
     }
 
-    @RequiresPermissions("Fwbz:energyPricingConfig:update")
+//    @RequiresPermissions("Fwbz:energyPricingConfig:update")
     @PostMapping("/update")
     public Result<String> update(@RequestBody EnergyPricingConfig data){
         service.update(data);

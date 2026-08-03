@@ -20,7 +20,7 @@ public class LinkageStrategyController {
     private final ILinkageStrategyService service;
 
     @AutoLog(value = "联动策略-新增")
-    @RequiresPermissions("Fwbz:linkageStrategy:add")
+//    @RequiresPermissions("Fwbz:linkageStrategy:add")
     @PostMapping("/add")
     public Result<String> add(@RequestBody LinkageStrategy param){
         service.save(param);
@@ -28,7 +28,7 @@ public class LinkageStrategyController {
     }
 
     @AutoLog(value = "联动策略-编辑")
-    @RequiresPermissions("Fwbz:linkageStrategy:edit")
+//    @RequiresPermissions("Fwbz:linkageStrategy:edit")
     @PostMapping("/edit")
     public Result<String> edit(@RequestBody LinkageStrategy param){
         service.updateById(param);
@@ -36,7 +36,7 @@ public class LinkageStrategyController {
     }
 
     @AutoLog(value = "联动策略-删除")
-    @RequiresPermissions("Fwbz:linkageStrategy:delete")
+//    @RequiresPermissions("Fwbz:linkageStrategy:delete")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam Long id){
         service.removeById(id);
@@ -54,7 +54,7 @@ public class LinkageStrategyController {
     }
 
     @AutoLog(value = "联动策略-启用")
-    @RequiresPermissions("Fwbz:linkageStrategy:startStrategy")
+//    @RequiresPermissions("Fwbz:linkageStrategy:startStrategy")
     @PostMapping("/startStrategy")
     public Result<String> startStrategy(@RequestParam Long id){
         service.startStrategy(id);
@@ -62,7 +62,7 @@ public class LinkageStrategyController {
     }
 
     @AutoLog(value = "联动策略-禁用")
-    @RequiresPermissions("Fwbz:linkageStrategy:stopStrategy")
+//    @RequiresPermissions("Fwbz:linkageStrategy:stopStrategy")
     @PostMapping("/stopStrategy")
     public Result<String> stopStrategy(@RequestParam Long id){
         service.stopStrategy(id);

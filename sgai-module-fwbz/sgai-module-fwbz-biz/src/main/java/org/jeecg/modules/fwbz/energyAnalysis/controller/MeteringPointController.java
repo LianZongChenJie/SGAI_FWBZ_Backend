@@ -39,7 +39,7 @@ public class MeteringPointController {
      */
     @AutoLog(value = "计量点位-添加")
     @ApiOperation(value="计量点位-添加", notes="计量点位-添加")
-    @RequiresPermissions("Fwbz:metering_point:add")
+//    @RequiresPermissions("Fwbz:metering_point:add")
     @PostMapping(value = "/add")
     public Result<String> add(@RequestBody MeteringPoint params) {
         service.save(params);
@@ -48,7 +48,7 @@ public class MeteringPointController {
 
     @AutoLog(value = "计量点位-编辑")
     @ApiOperation(value="计量点位-编辑", notes="计量点位-编辑")
-    @RequiresPermissions("Fwbz:metering_point:edit")
+//    @RequiresPermissions("Fwbz:metering_point:edit")
     @PostMapping("/edit")
     public Result<String> edit(@RequestBody MeteringPoint params){
         service.updateById(params);
@@ -57,7 +57,7 @@ public class MeteringPointController {
 
     @AutoLog(value = "计量点位-通过id删除")
     @ApiOperation(value="计量点位-通过id删除", notes="计量点位-通过id删除")
-    @RequiresPermissions("Fwbz:metering_point:delete")
+//    @RequiresPermissions("Fwbz:metering_point:delete")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam Long id){
         service.deleteById(id);

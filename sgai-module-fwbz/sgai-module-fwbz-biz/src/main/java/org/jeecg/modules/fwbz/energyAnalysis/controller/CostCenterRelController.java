@@ -21,7 +21,7 @@ public class CostCenterRelController {
 
     private final ICostCenterRelService service;
 
-    @RequiresPermissions("Fwbz:cost:center:rel:saveRel")
+//    @RequiresPermissions("Fwbz:cost:center:rel:saveRel")
     @PostMapping("/saveRel")
     public Result<String> saveRel(@RequestBody CostCenterRelDto data){
         service.saveRel(data.getCostCenterId(),data.getRelList());

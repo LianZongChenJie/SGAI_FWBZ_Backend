@@ -20,7 +20,7 @@ public class AlarmRuleController {
     private final IAlarmRulesService service;
 
     @PostMapping("/add")
-    @RequiresPermissions("Fwbz:alarmRule:add")
+//    @RequiresPermissions("Fwbz:alarmRule:add")
     @AutoLog(value = "告警规则-新增")
     public Result<String> add(@RequestBody AlarmRules data){
         service.save(data);
@@ -28,7 +28,7 @@ public class AlarmRuleController {
     }
 
     @PostMapping("/edit")
-    @RequiresPermissions("Fwbz:alarmRule:edit")
+//    @RequiresPermissions("Fwbz:alarmRule:edit")
     @AutoLog(value = "告警规则-编辑")
     public Result<String> edit(@RequestBody AlarmRules data){
         service.updateById(data);
@@ -36,7 +36,7 @@ public class AlarmRuleController {
     }
 
     @DeleteMapping("/delete")
-    @RequiresPermissions("Fwbz:alarmRule:delete")
+//    @RequiresPermissions("Fwbz:alarmRule:delete")
     @AutoLog(value = "告警规则-删除")
     public Result<String> delete(Long id){
         service.removeById(id);
@@ -49,7 +49,7 @@ public class AlarmRuleController {
     }
 
     @PostMapping("/startRule")
-    @RequiresPermissions("Fwbz:alarmRule:startRule")
+//    @RequiresPermissions("Fwbz:alarmRule:startRule")
     @AutoLog(value = "告警规则-启用")
     public Result<String> startRule(Long id){
         service.startRule(id);
@@ -57,7 +57,7 @@ public class AlarmRuleController {
     }
 
     @PostMapping("/stopRule")
-    @RequiresPermissions("Fwbz:alarmRule:stopRule")
+//    @RequiresPermissions("Fwbz:alarmRule:stopRule")
     @AutoLog(value = "告警规则-禁用")
     public Result<String> stopRule(Long id){
         service.stopRule(id);

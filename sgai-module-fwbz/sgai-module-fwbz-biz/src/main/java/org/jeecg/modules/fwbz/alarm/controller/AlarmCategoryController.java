@@ -19,7 +19,7 @@ public class AlarmCategoryController {
     private final IAlarmCategoryService service;
 
     @PostMapping("/add")
-    @RequiresPermissions("Fwbz:alarmCategory:add")
+//    @RequiresPermissions("Fwbz:alarmCategory:add")
     @AutoLog(value = "告警类别-添加")
     public Result<String> add(@RequestBody AlarmCategory param) {
         service.save(param);
@@ -27,7 +27,7 @@ public class AlarmCategoryController {
     }
 
     @PostMapping("/edit")
-    @RequiresPermissions("Fwbz:alarmCategory:edit")
+//    @RequiresPermissions("Fwbz:alarmCategory:edit")
     @AutoLog(value = "告警类别-编辑")
     public Result<String> edit(@RequestBody AlarmCategory param) {
         service.updateById(param);
@@ -35,7 +35,7 @@ public class AlarmCategoryController {
     }
 
     @DeleteMapping("/delete")
-    @RequiresPermissions("Fwbz:alarmCategory:delete")
+//    @RequiresPermissions("Fwbz:alarmCategory:delete")
     @AutoLog(value = "告警类别-删除")
     public Result<String> delete(@RequestParam(name = "id") Long id) {
         service.removeById(id);
@@ -43,7 +43,7 @@ public class AlarmCategoryController {
     }
 
     @PostMapping("/startCategory")
-    @RequiresPermissions("Fwbz:alarmCategory:startCategory")
+//    @RequiresPermissions("Fwbz:alarmCategory:startCategory")
     @AutoLog(value = "告警类别-启用")
     public Result<String> startCategory(@RequestParam(name = "id") Long id) {
         service.startCategory(id);
@@ -51,7 +51,7 @@ public class AlarmCategoryController {
     }
 
     @PostMapping("/stopCategory")
-    @RequiresPermissions("Fwbz:alarmCategory:stopCategory")
+//    @RequiresPermissions("Fwbz:alarmCategory:stopCategory")
     @AutoLog(value = "告警类别-停用")
     public Result<String> stopCategory(@RequestParam(name = "id") Long id) {
         service.stopCategory(id);
