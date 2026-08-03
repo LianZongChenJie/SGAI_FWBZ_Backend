@@ -105,8 +105,8 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     public IPage<DeviceDataVo> measuringListWithDayMonth(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
                 .eq(StringUtils.isNotEmpty(params.getDeviceType()),  Device::getDeviceType, Device.DEVICE_TYPE_MEASURING)
-                .eq(params.getCategoryId() != null,  Device::getVenueId, params.getCategoryId())
-                .eq(params.getSpaceId() != null,  Device::getVenueId, params.getSpaceId())
+                .eq(params.getCategoryId() != null,  Device::getCategoryId, params.getCategoryId())
+                .eq(params.getSpaceId() != null,  Device::getSpaceId, params.getSpaceId())
                 .eq(params.getVenueId() != null,  Device::getVenueId, params.getVenueId())
                 .orderByDesc(Device::getSort);
 
