@@ -1,10 +1,12 @@
 package org.jeecg.modules.fwbz.parking.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
@@ -13,10 +15,14 @@ import java.time.LocalDateTime;
 /**
  * 停车记录
  */
-@EqualsAndHashCode(callSuper = true)
 @TableName("table_parking_record")
 @Data
-public class ParkingRecord extends BaseEntity {
+public class ParkingRecord {
+
+    /**主键*/
+    @TableId(type = IdType.AUTO)
+    @ApiModelProperty(value = "主键")
+    private Long id;
 
     /**
      * 时间，格式 HH24:MI:SS
@@ -73,4 +79,9 @@ public class ParkingRecord extends BaseEntity {
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime gmtModified;
+
+    @TableField(exist = false)
+    private int pageNo = 1;
+    @TableField(exist = false)
+    private int pageSize = 10;
 }
