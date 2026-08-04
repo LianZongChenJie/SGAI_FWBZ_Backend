@@ -62,17 +62,6 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     }
 
     private void check(ActiveMeetInfo entity) {
-        if (entity.getId() != null) {
-            ActiveMeetInfo byId = getById(entity.getId());
-            if (byId == null) {
-                throw new JeecgBootException("活动信息不存在");
-            }
-        }
-        if (count(new LambdaQueryWrapper<ActiveMeetInfo>()
-                .eq(ActiveMeetInfo::getActiveName, entity.getActiveName())
-                .ne(entity.getId() != null, ActiveMeetInfo::getId, entity.getId())) > 0) {
-            throw new JeecgBootException("已存在相同名称的活动");
-        }
         checkTimeConflict(entity);
     }
 
