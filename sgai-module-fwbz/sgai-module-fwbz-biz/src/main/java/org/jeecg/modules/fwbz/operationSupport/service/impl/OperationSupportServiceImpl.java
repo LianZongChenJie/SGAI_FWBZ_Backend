@@ -12,6 +12,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
@@ -55,6 +56,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IMeteringPointService meteringPointService;
     private final IMeteringPointDataDayService meteringPointDataDayService;
     private final IDeviceAttributeService deviceAttributeService;
+    private final IMeteringPointDataService meteringPointDataService;
 
     private final IBusinessConfigService businessConfigService;
     @Override
@@ -145,16 +147,13 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     @Override
     public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
-//        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(energyFlowDiagramIds));
-//        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
-//        List<TableHeader> tableHeaderList = TableUtil.dayHeaders(localDate);
-//        List<? extends MeteringPointData> meterDataList = hourDataService.findByTimeRangeAndPointIds(
-//                LocalDateTime.of(localDate, LocalTime.MIN),
-//                LocalDateTime.of(localDate, LocalTime.MIN.withHour(23)),
-//                configIds
-//        );
-//        return createTable(tableHeaderList, configs, meterDataList);
-        return null;
+        //查询业务key
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_ENERGY_POINTIDS);
+        if(localDate==null){
+            localDate = LocalDate.now();
+        }
+        //调用分时数据
+        return meteringPointDataService.findDay(longByKey2, localDate);
     }
 
 

@@ -99,6 +99,12 @@ public class BusinessConfigConstant {
      */
     public static final String OPERATIONSUPPORT_TAB_AIR_POINT_ID = "operationSupport:tab:air:pointId";
 
+    /**
+     *运行保障tab页空调机组-能耗曲线ids
+     */
+    public static final String OPERATIONSUPPORT_TAB_AIR_ENERGY_POINTIDS = "operationSupport:tab:air:energyPointIds";
+
+
 
 
 
