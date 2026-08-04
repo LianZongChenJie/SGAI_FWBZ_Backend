@@ -15,6 +15,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayServic
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.TableHeader;
 import org.jeecg.modules.fwbz.entity.DayData;
 import org.jeecg.modules.fwbz.entity.MonthData;
@@ -36,6 +37,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
@@ -123,8 +125,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         if(byId!=null){
             MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(),byId.getId());
-            if(byDateAndPointId.getValue() != null){
-                energyConsumption = byDateAndPointId.getValue();
+            if(byDateAndPointId!=null){
+                if(byDateAndPointId.getValue() != null){
+                    energyConsumption = byDateAndPointId.getValue();
+                }
             }
         }
         AirConditioningUnitStatisticsDto dto = new AirConditioningUnitStatisticsDto();
@@ -137,6 +141,22 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         return dto;
 
     }
+
+
+    @Override
+    public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
+//        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(energyFlowDiagramIds));
+//        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+//        List<TableHeader> tableHeaderList = TableUtil.dayHeaders(localDate);
+//        List<? extends MeteringPointData> meterDataList = hourDataService.findByTimeRangeAndPointIds(
+//                LocalDateTime.of(localDate, LocalTime.MIN),
+//                LocalDateTime.of(localDate, LocalTime.MIN.withHour(23)),
+//                configIds
+//        );
+//        return createTable(tableHeaderList, configs, meterDataList);
+        return null;
+    }
+
 
 
 //    @Override

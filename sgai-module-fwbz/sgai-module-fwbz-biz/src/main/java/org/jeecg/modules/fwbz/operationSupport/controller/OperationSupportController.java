@@ -2,11 +2,14 @@ package org.jeecg.modules.fwbz.operationSupport.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,12 +53,24 @@ public class OperationSupportController {
     }
     /**
      * 空调机组-数据统计
-     * @param params
+     * @param
      * @return
      */
     @GetMapping("/airConditioningUnitStatistics")
-    public Result<AirConditioningUnitStatisticsDto> airConditioningUnitStatistics(DeviceDataFindDto params) {
+    public Result<AirConditioningUnitStatisticsDto> airConditioningUnitStatistics() {
         return Result.ok(service.airConditioningUnitStatistics());
     }
+
+
+    /**
+     * 空调机组-空调耗能趋势
+     * @param
+     * @return
+     */
+    @GetMapping("/airEnergyFindDay")
+    public Result<MeteringPointDataChartVo> airEnergyFindDay(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.airEnergyFindDay(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
 
 }
