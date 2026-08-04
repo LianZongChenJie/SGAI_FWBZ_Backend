@@ -55,6 +55,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 .eq(Device::getDeviceType, Device.DEVICE_TYPE_EQUIPMENT)
                 .eq(Device::getCategoryId, params.getCategoryId())
                 .eq(params.getSpaceId() != null,  Device::getSpaceId, params.getSpaceId())
+                .eq(params.getRunState() != null,  Device::getRunState, params.getRunState())
                 .orderByDesc(Device::getSort);
 
         IPage<Device> page = new Page<>(params.getPageNo(), params.getPageSize());
