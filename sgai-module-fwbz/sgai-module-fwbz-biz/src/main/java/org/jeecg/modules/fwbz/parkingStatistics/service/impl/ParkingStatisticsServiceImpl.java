@@ -73,7 +73,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     @Value("${parking.statistics.api.appSecret:GDg18aNuWaKsIX33euL0maXbSVqZSp}")
     private String appSecret;
 
-    private static final int TIMEOUT_MS = 5000;
+    private static final int TIMEOUT_MS = 1500;
 
     // ==================== 数据查询（同步 → 写入 → 返回） ====================
 
