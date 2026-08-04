@@ -2,6 +2,7 @@ package org.jeecg.modules.fwbz.activeMeet.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.modules.fwbz.entity.BaseEntity;
@@ -37,18 +38,21 @@ public class ActiveMeetInfo extends BaseEntity {
      * 开始日期
      */
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
     private Date startDate;
 
     /**
      * 开始时间
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
     private Time startTime;
 
     /**
      * 结束时间
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
     private Time endTime;
 
     /**
