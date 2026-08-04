@@ -104,7 +104,7 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     @Override
     public IPage<DeviceDataVo> measuringListWithDayMonth(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
-                .eq(StringUtils.isNotEmpty(params.getDeviceType()),  Device::getDeviceType, Device.DEVICE_TYPE_MEASURING)
+                .eq(Device::getDeviceType, Device.DEVICE_TYPE_MEASURING)
                 .eq(params.getCategoryId() != null,  Device::getCategoryId, params.getCategoryId())
                 .eq(params.getSpaceId() != null,  Device::getSpaceId, params.getSpaceId())
                 .eq(params.getVenueId() != null,  Device::getVenueId, params.getVenueId())
@@ -145,7 +145,7 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
                     record.setDayTotal(BigDecimal.ZERO);
                 }
                 List<MonthData> mouthData = mouth.get(record.getDeviceId());
-                if (CollectionUtils.isNotEmpty(dayData)) {
+                if (CollectionUtils.isNotEmpty(mouthData)) {
                     record.setMouthTotal(mouthData.get(0).getValue());
                 } else {
                     record.setMouthTotal(BigDecimal.ZERO);

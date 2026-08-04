@@ -1,12 +1,10 @@
 package org.jeecg.modules.fwbz.energyAnalysis.controller;
 
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
-import org.jeecg.modules.fwbz.energyAnalysis.service.IEenergyMeteringService;
-import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IEnergyMeteringService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class EnergyMeteringController {
 
-    private final IEenergyMeteringService service;
+    private final IEnergyMeteringService service;
 
 
     /**

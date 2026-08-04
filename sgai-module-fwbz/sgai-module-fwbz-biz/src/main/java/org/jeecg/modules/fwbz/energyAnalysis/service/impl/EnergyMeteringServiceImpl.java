@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.EnergyMeteringStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
-import org.jeecg.modules.fwbz.energyAnalysis.service.IEenergyMeteringService;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IEnergyMeteringService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 @Slf4j
-public class EenergyMeteringServiceImpl implements IEenergyMeteringService {
+public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
 
     private final IDeviceService deviceService;
     private final IMeteringPointDataDayService dayDataService;

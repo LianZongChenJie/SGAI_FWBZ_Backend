@@ -58,4 +58,42 @@ public class BusinessConfigConstant {
     public static final String ENERGYMETERING_DAY_WATER = "energyMetering:day:water";
     public static final String ENERGYMETERING_MONTH_ELECTRIC = "energyMetering:month:electric";
     public static final String ENERGYMETERING_MONTH_WATER = "energyMetering:month:water";
+
+    /**
+     *运行保障tab页空调机组id
+     */
+    public static final String OPERATIONSUPPORT_TAB_AIR_CATEGORYID = "operationSupport:tab:air:categoryid";
+
+
+    /**
+     *运行保障tab页新风机组id
+     */
+    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID = "operationSupport:tab:freshAir:categoryid";
+
+    /**
+     *运行保障tab页配电系统id
+     */
+    public static final String OPERATIONSUPPORT_TAB_POWER_CATEGORYID = "operationSupport:tab:power:categoryid";
+
+
+
+
+    /**
+     *运行保障tab页空调机组 列表配置项
+     */
+    public static final String OPERATIONSUPPORT_TAB_AIR_COLUMNS = "operationSupport:tab:air:columns";
+
+
+    /**
+     *运行保障tab页新风机组 列表配置项
+     */
+    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_COLUMNS = "operationSupport:tab:freshAir:columns";
+
+    /**
+     *运行保障tab页配电系统 列表配置项
+     */
+    public static final String OPERATIONSUPPORT_TAB_POWER_COLUMNS = "operationSupport:tab:power:columns";
+
+
+
 }

@@ -24,6 +24,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointTreeVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.PermissionMeteringPointTreeModel;
+import org.jeecg.modules.fwbz.mdm.constant.CategoryConstant;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
 import org.jeecg.modules.fwbz.permission.service.RoleDataPermissionService;
@@ -734,14 +735,20 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         dto.setCoverage(calculatePercentage((long) collect.size(), (long) list.size()).toString());
 
 
-        Long orDefault = collect2.getOrDefault(DeviceConstant.CATEGORY_ELECTRICITY, 0L);
-        dto.setElectricCount(orDefault);
+        Long orDefault = collect2.getOrDefault(CategoryConstant.CATEGORY_ELECTRICITY, 0L);
+        Long orDefault4 = collect2.getOrDefault(CategoryConstant.CATEGORY_LOW_VOLTAGE_ELECTRICITY, 0L);
+        Long orDefault5 = collect2.getOrDefault(CategoryConstant.CATEGORY_END_ELECTRICITY, 0L);
+        long electricCount = orDefault + orDefault4 + orDefault5;
+        dto.setElectricCount(electricCount);
 
-        dto.setElectricPercentage(calculatePercentage(orDefault, (long) list.size())+"%");
+        dto.setElectricPercentage(calculatePercentage(electricCount, (long) list.size())+"%");
 
-        Long orDefault1 = collect2.getOrDefault(DeviceConstant.CATEGORY_WATER, 0L);
-        dto.setWaterCount(orDefault1);
-        dto.setWaterPercentage(calculatePercentage(orDefault1, (long) list.size())+"%");
+        Long orDefault1 = collect2.getOrDefault(CategoryConstant.CATEGORY_WATER, 0L);
+        Long orDefault2 = collect2.getOrDefault(CategoryConstant.CATEGORY_OUTDOOR_SUMMARY_TABLE, 0L);
+        Long orDefault3 = collect2.getOrDefault(CategoryConstant.CATEGORY_END_WATER, 0L);
+        long waterCount = orDefault1 + orDefault2 + orDefault3;
+        dto.setWaterCount(waterCount);
+        dto.setWaterPercentage(calculatePercentage(waterCount, (long) list.size())+"%");
 
         return dto;
     }

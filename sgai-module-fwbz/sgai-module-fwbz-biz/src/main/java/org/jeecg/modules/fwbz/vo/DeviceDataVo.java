@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class DeviceDataVo {
@@ -93,6 +95,8 @@ public class DeviceDataVo {
      * 本月累计
      */
     private BigDecimal mouthTotal;
+
+    private List<DeviceAttribute> DeviceAttributeList;
 
     /**创建日期*/
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
