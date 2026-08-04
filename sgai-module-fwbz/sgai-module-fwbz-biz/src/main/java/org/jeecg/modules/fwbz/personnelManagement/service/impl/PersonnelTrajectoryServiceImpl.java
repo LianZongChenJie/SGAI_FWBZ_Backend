@@ -45,14 +45,16 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
         log.info("开始查询人员轨迹, startTime={}, endTime={}", startTime, endTime);
 
         // 第一步：调取海康人脸识别分组信息（1:N检索）
+        FaceGroupSearchResponse.FaceGroupSearchItem bestGroupMatch = null;
         log.info("开始海康人脸分组检索, faceGroupIndexCodes={}", (Object) FACE_GROUP_INDEX_CODES);
         try {
             FaceGroupSearchResponse groupResponse = faceGroupSearchService.oneToMany(facePhoto, FACE_GROUP_INDEX_CODES);
             List<FaceGroupSearchResponse.FaceGroupSearchItem> groupItems = groupResponse.getList();
             if (groupItems != null && !groupItems.isEmpty()) {
-                log.info("人脸分组检索完成, 匹配到{}条记录, 总相似度最高={}",
-                        groupItems.size(),
-                        groupItems.stream().findFirst().map(FaceGroupSearchResponse.FaceGroupSearchItem::getSimilarity).orElse("N/A"));
+                bestGroupMatch = groupItems.get(0);
+                log.info("人脸分组检索完成, 匹配到{}条记录, 最高相似度={}, 姓名={}",
+                        groupItems.size(), bestGroupMatch.getSimilarity(),
+                        bestGroupMatch.getFaceInfo() != null ? bestGroupMatch.getFaceInfo().getName() : "未知");
             } else {
                 log.warn("人脸分组检索未匹配到任何人员, 继续执行以图搜图");
             }
@@ -86,7 +88,7 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
         Map<String, CameraResource> cameraMap = queryCameraMap(cameraIndexCodes);
         log.info("摄像头信息查询完成, 匹配到{}/{}个摄像头", cameraMap.size(), cameraIndexCodes.size());
 
-        // 第四步：组装结果，关联摄像头信息
+        // 第四步：组装结果，关联摄像头信息和人脸分组信息
         List<PersonnelTrajectoryVO> result = new ArrayList<>(searchItems.size());
         for (CaptureSearchResponse.CaptureSearchItem item : searchItems) {
             PersonnelTrajectoryVO vo = new PersonnelTrajectoryVO();
@@ -105,6 +107,21 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
                 vo.setInstallLocation(camera.getInstallLocation());
                 vo.setLongitude(camera.getLongitude());
                 vo.setLatitude(camera.getLatitude());
+            }
+
+            // 人脸分组信息（1:N身份匹配结果）
+            if (bestGroupMatch != null) {
+                vo.setGroupSimilarity(bestGroupMatch.getSimilarity());
+                FaceGroupSearchResponse.FaceInfo faceInfo = bestGroupMatch.getFaceInfo();
+                if (faceInfo != null) {
+                    vo.setGroupName(faceInfo.getName());
+                    vo.setGroupCertificateType(faceInfo.getCertificateType());
+                    vo.setGroupCertificateNum(faceInfo.getCertificateNum());
+                }
+                FaceGroupSearchResponse.FacePic facePic = bestGroupMatch.getFacePic();
+                if (facePic != null) {
+                    vo.setGroupFaceUrl(facePic.getFaceUrl());
+                }
             }
 
             result.add(vo);
