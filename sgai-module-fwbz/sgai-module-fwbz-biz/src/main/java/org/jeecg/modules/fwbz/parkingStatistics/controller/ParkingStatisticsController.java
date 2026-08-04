@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.parkingStatistics.service.IParkingStatisticsService;
-import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingFlowStatVO;
+import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingFlow24hVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingSpaceStatVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingStatCardVO;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,11 +84,11 @@ public class ParkingStatisticsController {
     /**
      * 24 小时停车流量趋势（"停车流量趋势"统计图数据）
      * <p>
-     * 直接从外部系统获取，不落库，含每小时进出场数量
+     * 直接从外部系统获取，不落库，保持外部API原始返回格式
      */
     @GetMapping("/parkingFlow24h")
     @AutoLog(value = "停车统计-24小时停车流量")
-    public Result<List<ParkingFlowStatVO>> parkingFlow24h() {
+    public Result<ParkingFlow24hVO> parkingFlow24h() {
         return Result.ok(service.getParkingFlow24h());
     }
 }
