@@ -34,7 +34,7 @@ public class PatrolPlanJob {
      * 每30秒执行一次，根据执行周期将最近一个到期的巡更计划设为运行中，
      * 其他非停用计划重置为启用，保证同一时间只有一条计划在运行中。
      */
-    @Scheduled(cron = "0/30 * * * * ?")
+    @Scheduled(cron = "0 */5 * * * ?")
     @Transactional(rollbackFor = Exception.class)
     public void switchRunningStatus() {
         // 1. 查询到期的巡更计划（非停用，执行周期 <= 当前时间，取最近一个）

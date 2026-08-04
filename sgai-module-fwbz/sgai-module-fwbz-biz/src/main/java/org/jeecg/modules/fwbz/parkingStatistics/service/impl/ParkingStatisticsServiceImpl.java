@@ -75,40 +75,35 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     private static final int TIMEOUT_MS = 1500;
 
-    // ==================== 数据查询（同步 → 写入 → 返回） ====================
+    // ==================== 卡片查询（仅读库，同步由定时任务负责） ====================
 
     @Override
-    public ParkingStatCardVO todayEntryCount() {
-        syncTodayEntryFromApi();
-        return queryTodayEntryCount();
+    public ParkingStatCardVO queryTodayEntryCount() {
+        return doQueryTodayEntryCount();
     }
 
     @Override
-    public ParkingStatCardVO currentInCount() {
-        syncCurrentInFromApi();
-        return queryCurrentInCount();
+    public ParkingStatCardVO queryCurrentInCount() {
+        return doQueryCurrentInCount();
     }
 
     @Override
-    public ParkingStatCardVO remainingSpaceCount() {
-        syncRemainingSpaceFromApi();
-        return queryRemainingSpaceCount();
+    public ParkingStatCardVO queryRemainingSpaceCount() {
+        return doQueryRemainingSpaceCount();
     }
 
     @Override
-    public ParkingStatCardVO averageParkingDuration() {
-        syncAvgDurationFromApi();
-        return queryAverageParkingDuration();
+    public ParkingStatCardVO queryAverageParkingDuration() {
+        return doQueryAverageParkingDuration();
     }
 
     @Override
-    public List<ParkingStatCardVO> getSummary() {
-        syncAllFromApi();
+    public List<ParkingStatCardVO> querySummary() {
         return Arrays.asList(
-                queryTodayEntryCount(),
-                queryCurrentInCount(),
-                queryRemainingSpaceCount(),
-                queryAverageParkingDuration()
+                doQueryTodayEntryCount(),
+                doQueryCurrentInCount(),
+                doQueryRemainingSpaceCount(),
+                doQueryAverageParkingDuration()
         );
     }
 
@@ -193,9 +188,11 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     // ==================== 同步外部数据 → 写入DB ====================
 
     /**
-     * 同步全部四项数据到DB，失败项跳过不更新
+     * 同步全部四项数据到DB，失败项跳过不更新。
+     * <p>由定时任务 ParkingStatisticsJob 每5分钟自动调用。</p>
      */
-    private void syncAllFromApi() {
+    @Override
+    public void syncAllFromApi() {
         ParkingCount entity = getOrCreateToday();
         boolean hasData = false;
 
@@ -311,7 +308,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     // ==================== 查询DB → 构建VO ====================
 
-    private ParkingStatCardVO queryTodayEntryCount() {
+    private ParkingStatCardVO doQueryTodayEntryCount() {
         ParkingCount today = getToday();
         ParkingCount yesterday = getYesterday();
         long todayVal = today == null ? 0L : nvl(today.getTodayEntryCount());
@@ -320,7 +317,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         return buildCard("今日进场车辆", todayVal, "", compareRate(todayVal, yesterdayVal), "较昨日");
     }
 
-    private ParkingStatCardVO queryCurrentInCount() {
+    private ParkingStatCardVO doQueryCurrentInCount() {
         ParkingCount today = getToday();
         ParkingCount yesterday = getYesterday();
         long todayVal = today == null ? 0L : nvl(today.getCurrentInCount());
@@ -329,14 +326,14 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         return buildCard("当前在场车辆", todayVal, "", compareRate(todayVal, yesterdayVal), "较昨日");
     }
 
-    private ParkingStatCardVO queryRemainingSpaceCount() {
+    private ParkingStatCardVO doQueryRemainingSpaceCount() {
         ParkingCount today = getToday();
         long todayVal = today == null ? 0L : nvl(today.getRemainingSpaceCount());
 
         return buildSimpleCard("剩余车位", todayVal, "", "可用");
     }
 
-    private ParkingStatCardVO queryAverageParkingDuration() {
+    private ParkingStatCardVO doQueryAverageParkingDuration() {
         ParkingCount today = getToday();
         ParkingCount yesterday = getYesterday();
         double todayVal = today == null ? 0.0 : nvl(today.getAverageParkingDuration());

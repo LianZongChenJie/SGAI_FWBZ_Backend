@@ -16,7 +16,8 @@ import java.util.List;
 /**
  * 停车统计
  * <p>
- * 查询卡片时自动同步外部数据 → 写入DB → 返回前端
+ * 数据由定时任务 ParkingStatisticsJob 每5分钟同步到数据库，接口直接读库返回。
+ * 停车场实时车位分布和24小时流量趋势从外部系统实时获取，不落库。
  */
 @RestController
 @RequestMapping("/fwbz/parkingStatistics")
@@ -26,48 +27,48 @@ public class ParkingStatisticsController {
     private final IParkingStatisticsService service;
 
     /**
-     * 今日进场车辆（同步外部 → 写入DB → 返回）
+     * 今日进场车辆（读库，数据由定时任务每5分钟同步）
      */
     @GetMapping("/todayEntryCount")
     @AutoLog(value = "停车统计-今日进场车辆")
     public Result<ParkingStatCardVO> todayEntryCount() {
-        return Result.ok(service.todayEntryCount());
+        return Result.ok(service.queryTodayEntryCount());
     }
 
     /**
-     * 当前在场车辆（同步外部 → 写入DB → 返回）
+     * 当前在场车辆（读库，数据由定时任务每5分钟同步）
      */
     @GetMapping("/currentInCount")
     @AutoLog(value = "停车统计-当前在场车辆")
     public Result<ParkingStatCardVO> currentInCount() {
-        return Result.ok(service.currentInCount());
+        return Result.ok(service.queryCurrentInCount());
     }
 
     /**
-     * 剩余车位（同步外部 → 写入DB → 返回）
+     * 剩余车位（读库，数据由定时任务每5分钟同步）
      */
     @GetMapping("/remainingSpaceCount")
     @AutoLog(value = "停车统计-剩余车位")
     public Result<ParkingStatCardVO> remainingSpaceCount() {
-        return Result.ok(service.remainingSpaceCount());
+        return Result.ok(service.queryRemainingSpaceCount());
     }
 
     /**
-     * 平均停车时长（同步外部 → 写入DB → 返回）
+     * 平均停车时长（读库，数据由定时任务每5分钟同步）
      */
     @GetMapping("/averageParkingDuration")
     @AutoLog(value = "停车统计-平均停车时长")
     public Result<ParkingStatCardVO> averageParkingDuration() {
-        return Result.ok(service.averageParkingDuration());
+        return Result.ok(service.queryAverageParkingDuration());
     }
 
     /**
-     * 汇总（同步四项 → 写入DB → 返回4张卡片）
+     * 汇总（读库，数据由定时任务每5分钟同步）
      */
     @GetMapping("/summary")
     @AutoLog(value = "停车统计-汇总")
     public Result<List<ParkingStatCardVO>> summary() {
-        return Result.ok(service.getSummary());
+        return Result.ok(service.querySummary());
     }
 
     /**

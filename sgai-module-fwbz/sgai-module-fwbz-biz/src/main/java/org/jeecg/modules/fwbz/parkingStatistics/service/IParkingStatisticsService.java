@@ -11,30 +11,42 @@ import java.util.List;
  */
 public interface IParkingStatisticsService {
 
-    /**
-     * 今日进场车辆（同步外部数据 → 写入DB → 返回前端VO，含较昨日对比）
-     */
-    ParkingStatCardVO todayEntryCount();
+    // ==================== 数据同步（由定时任务调用） ====================
 
     /**
-     * 当前在场车辆（同步外部数据 → 写入DB → 返回前端VO，含较昨日对比）
+     * 同步全部四项停车数据到数据库（今日进场/当前在场/剩余车位/平均停车时长）。
+     * <p>由定时任务 ParkingStatisticsJob 每5分钟自动调用。</p>
      */
-    ParkingStatCardVO currentInCount();
+    void syncAllFromApi();
+
+    // ==================== 卡片查询（仅读库，同步由定时任务负责） ====================
 
     /**
-     * 剩余车位（同步外部数据 → 写入DB → 返回前端VO）
+     * 从数据库读取今日进场车辆（含较昨日对比）
      */
-    ParkingStatCardVO remainingSpaceCount();
+    ParkingStatCardVO queryTodayEntryCount();
 
     /**
-     * 平均停车时长（同步外部数据 → 写入DB → 返回前端VO，含较昨日对比）
+     * 从数据库读取当前在场车辆（含较昨日对比）
      */
-    ParkingStatCardVO averageParkingDuration();
+    ParkingStatCardVO queryCurrentInCount();
 
     /**
-     * 汇总（同步四项 → 写入DB → 从DB读取返回全部卡片）
+     * 从数据库读取剩余车位
      */
-    List<ParkingStatCardVO> getSummary();
+    ParkingStatCardVO queryRemainingSpaceCount();
+
+    /**
+     * 从数据库读取平均停车时长（含较昨日对比）
+     */
+    ParkingStatCardVO queryAverageParkingDuration();
+
+    /**
+     * 从数据库读取全部四张停车卡片
+     */
+    List<ParkingStatCardVO> querySummary();
+
+    // ==================== 实时数据（直接从外部系统获取，不落库） ====================
 
     /**
      * 停车场实时车位分布（直接从外部系统获取，不落库）
