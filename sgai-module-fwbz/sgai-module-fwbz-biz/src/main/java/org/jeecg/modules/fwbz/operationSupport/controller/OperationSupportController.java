@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,13 +40,22 @@ public class OperationSupportController {
     }
 
     /**
-     * 空调机组
+     * 空调机组-列表
      * @param params
      * @return
      */
     @GetMapping("/airConditioningUnitList")
     public Result<IPage<DeviceDataVo>> airConditioningUnitList(DeviceDataFindDto params) {
         return Result.ok(service.airConditioningUnitList(params));
+    }
+    /**
+     * 空调机组-数据统计
+     * @param params
+     * @return
+     */
+    @GetMapping("/airConditioningUnitStatistics")
+    public Result<AirConditioningUnitStatisticsDto> airConditioningUnitStatistics(DeviceDataFindDto params) {
+        return Result.ok(service.airConditioningUnitStatistics());
     }
 
 }

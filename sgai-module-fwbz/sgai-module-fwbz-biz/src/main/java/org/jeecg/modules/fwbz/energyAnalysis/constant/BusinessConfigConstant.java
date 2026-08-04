@@ -94,6 +94,12 @@ public class BusinessConfigConstant {
      */
     public static final String OPERATIONSUPPORT_TAB_POWER_COLUMNS = "operationSupport:tab:power:columns";
 
+    /**
+     *运行保障tab页空调机组-计量规则id
+     */
+    public static final String OPERATIONSUPPORT_TAB_AIR_POINT_ID = "operationSupport:tab:air:pointId";
+
+
 
 
 }

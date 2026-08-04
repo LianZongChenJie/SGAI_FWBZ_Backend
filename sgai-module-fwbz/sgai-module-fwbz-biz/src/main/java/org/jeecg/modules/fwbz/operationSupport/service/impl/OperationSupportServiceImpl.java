@@ -9,16 +9,22 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointRel;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
+import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.TableHeader;
 import org.jeecg.modules.fwbz.entity.DayData;
 import org.jeecg.modules.fwbz.entity.MonthData;
 import org.jeecg.modules.fwbz.entity.RealData;
 import org.jeecg.modules.fwbz.mdm.constant.CategoryConstant;
+import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
+import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
+import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
@@ -44,9 +50,9 @@ import static java.util.stream.Collectors.groupingBy;
 public class OperationSupportServiceImpl implements IOperationSupportService {
 
     private final IDeviceService deviceService;
-    private final IMeteringPointDataDayService dayDataService;
+    private final IMeteringPointService meteringPointService;
+    private final IMeteringPointDataDayService meteringPointDataDayService;
     private final IDeviceAttributeService deviceAttributeService;
-    private final IMeteringPointRelService meteringPointRelService;
 
     private final IBusinessConfigService businessConfigService;
     @Override
@@ -100,6 +106,37 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
 
+    @Override
+    public AirConditioningUnitStatisticsDto airConditioningUnitStatistics() {
+        //查询 空调机组配置id
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(longByKey)));
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_POINT_ID);
+
+        MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if(byId!=null){
+            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(),byId.getId());
+            if(byDateAndPointId.getValue() != null){
+                energyConsumption = byDateAndPointId.getValue();
+            }
+        }
+        AirConditioningUnitStatisticsDto dto = new AirConditioningUnitStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
+        dto.setAvgCop("4.2");
+
+        return dto;
+
+    }
 
 
 //    @Override
