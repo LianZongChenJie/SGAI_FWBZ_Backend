@@ -451,13 +451,16 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId) {
         ArrayList<DeviceRunStateStatisticsDto> objects = new ArrayList<>();
         if(categoryId==null){
-            List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
-            for (SelectTreeModel selectTreeModel : selectTreeModels) {
-                DeviceRunStateStatisticsDto dto = getDto(Long.valueOf(selectTreeModel.getKey()));
+            List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
+                    .eq(EquipmentCategory::getPid, 0L));
+            for (EquipmentCategory selectTreeModel : selectTreeModels) {
+                DeviceRunStateStatisticsDto dto = getDto(selectTreeModel);
                 objects.add(dto);
             }
         }else{
-            DeviceRunStateStatisticsDto dto = getDto(categoryId);
+            List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
+                    .eq(EquipmentCategory::getId, categoryId));
+            DeviceRunStateStatisticsDto dto = getDto(selectTreeModels.get(0));
             objects.add(dto);
         }
 
@@ -465,11 +468,12 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
     @NotNull
-    private DeviceRunStateStatisticsDto getDto(Long categoryId) {
-        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId).eq(categoryId != null, Device::getCategoryId, categoryId));
+    private DeviceRunStateStatisticsDto getDto(EquipmentCategory selectTreeModel) {
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId)
+                .eq(selectTreeModel.getId() != null, Device::getCategoryId, selectTreeModel.getId()));
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
-        dto.setCategoryId(categoryId);
+        dto.setCategory(selectTreeModel);
         dto.setCount((long) list.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));

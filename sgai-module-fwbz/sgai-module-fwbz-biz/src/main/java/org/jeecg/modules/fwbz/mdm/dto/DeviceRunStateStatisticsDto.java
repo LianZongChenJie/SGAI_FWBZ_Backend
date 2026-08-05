@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.mdm.dto;
 
 import lombok.Data;
+import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 
 /**
  * 设备运行状态统计
@@ -10,7 +11,7 @@ public class DeviceRunStateStatisticsDto {
 
 
 
-    private Long categoryId;
+    private EquipmentCategory category;
 
     /**
      * 总数
