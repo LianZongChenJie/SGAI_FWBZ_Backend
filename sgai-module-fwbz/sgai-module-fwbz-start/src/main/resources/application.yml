@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: sgai-fwbz-dev
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
   config:
     import:
       - optional:nacos:jeecg.yaml
