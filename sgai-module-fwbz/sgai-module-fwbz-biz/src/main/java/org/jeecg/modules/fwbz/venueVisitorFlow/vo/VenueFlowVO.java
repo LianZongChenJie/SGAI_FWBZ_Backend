@@ -30,9 +30,19 @@ public class VenueFlowVO {
     private Long todayInCount;
 
     /**
+     * 昨日进场人数
+     */
+    private Long yesterdayInCount;
+
+    /**
      * 当前在场人数
      */
     private Long todayNowCount;
+
+    /**
+     * 昨日当前在场人数
+     */
+    private Long yesterdayNowCount;
 
     /**
      * 峰值人数

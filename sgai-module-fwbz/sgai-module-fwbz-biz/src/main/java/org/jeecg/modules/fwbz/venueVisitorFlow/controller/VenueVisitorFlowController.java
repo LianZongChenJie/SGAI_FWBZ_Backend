@@ -24,7 +24,7 @@ import java.util.List;
  *     <li>整体四张卡片（今日总客流/当前在场/峰值客流/平均停留）</li>
  *     <li>各场馆客流统计表格</li>
  * </ul>
- * 数据由定时任务每5分钟从海康同步到数据库，接口直接读库返回。
+ * 数据由定时任务每5分钟从 HTTP API 同步到数据库，接口直接读库返回。
  * </p>
  *
  * @author fwbz
@@ -92,9 +92,9 @@ public class VenueVisitorFlowController {
             @RequestParam(value = "date", required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         if (date == null) {
-            return Result.ok(venueFlowService.queryVenueFlowList());
+            return Result.ok(venueFlowService.queryToday());
         }
-        return Result.ok(venueFlowService.queryVenueFlowListByDate(date));
+        return Result.ok(venueFlowService.queryByDate(date));
     }
 
     /**
@@ -103,6 +103,6 @@ public class VenueVisitorFlowController {
     @GetMapping("/syncVenueFlow")
     @AutoLog(value = "各场馆客流-手动同步")
     public Result<Integer> syncVenueFlow() {
-        return Result.ok(venueFlowService.syncAllVenueFlowFromHikvision());
+        return Result.ok(venueFlowService.syncAllVenueFlowFromApi());
     }
 }
