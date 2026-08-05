@@ -9,7 +9,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
@@ -57,17 +58,19 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
 
     private final IBusinessConfigService businessConfigService;
+
     @Override
     public IPage<DeviceDataVo> equipmentList(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
                 .eq(Device::getDeviceType, Device.DEVICE_TYPE_EQUIPMENT)
                 .eq(Device::getCategoryId, params.getCategoryId())
-                .eq(params.getSpaceId() != null,  Device::getSpaceId, params.getSpaceId())
-                .eq(params.getRunState() != null,  Device::getRunState, params.getRunState())
+                .eq(params.getSpaceId() != null, Device::getSpaceId, params.getSpaceId())
+                .eq(params.getRunState() != null, Device::getRunState, params.getRunState())
                 .orderByDesc(Device::getSort);
 
         IPage<Device> page = new Page<>(params.getPageNo(), params.getPageSize());
-        IPage<DeviceDataVo> listPage = deviceService.page(page, wrapper).convert(DeviceDataVo::convert);;
+        IPage<DeviceDataVo> listPage = deviceService.page(page, wrapper).convert(DeviceDataVo::convert);
+        ;
         List<DeviceDataVo> records = listPage.getRecords();
         if (CollectionUtils.isEmpty(records)) {
             return listPage;
@@ -86,12 +89,29 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
     public IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) {
-        //查询 空调机组配置id
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_COLUMNS);
+        return findDeviceWithAttr(params, longByKey, columns);
+    }
+
+    public IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) {
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_COLUMNS);
+        return findDeviceWithAttr(params, longByKey, columns);
+    }
+
+    public IPage<DeviceDataVo> powerDistributionSystemList(DeviceDataFindDto params) {
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_COLUMNS);
+        return findDeviceWithAttr(params, longByKey, columns);
+    }
+
+
+    @NotNull
+    private IPage<DeviceDataVo> findDeviceWithAttr(DeviceDataFindDto params, String longByKey, String columns) {
         params.setCategoryId(Long.valueOf(longByKey));
         IPage<DeviceDataVo> deviceDataVoIPage = equipmentList(params);
         //查询 空调机组展示配置项 然后过滤， 只展示配置的属性列
-        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_COLUMNS);
         Set<String> strings = stream(columns.split(","))
                 .map(String::trim)
                 .filter(id -> !id.isEmpty())
@@ -101,7 +121,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         for (DeviceDataVo record : records) {
             List<DeviceAttribute> deviceAttributeList = record.getDeviceAttributeList();
             List<DeviceAttribute> collect = deviceAttributeList
-                    .stream().filter(attr->strings.contains(attr.getAttributeCode())).toList();
+                    .stream().filter(attr -> strings.contains(attr.getAttributeCode())).toList();
             record.setDeviceAttributeList(collect);
         }
         return deviceDataVoIPage;
@@ -123,10 +143,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
         BigDecimal energyConsumption = BigDecimal.ZERO;
 
-        if(byId!=null){
-            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(),byId.getId());
-            if(byDateAndPointId!=null){
-                if(byDateAndPointId.getValue() != null){
+        if (byId != null) {
+            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+            if (byDateAndPointId != null) {
+                if (byDateAndPointId.getValue() != null) {
                     energyConsumption = byDateAndPointId.getValue();
                 }
             }
@@ -147,7 +167,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
         //查询业务key
         String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_ENERGY_POINTIDS);
-        if(localDate==null){
+        if (localDate == null) {
             localDate = LocalDate.now();
         }
         //调用分时数据
@@ -156,6 +176,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     /**
      * 送风温度当天的温度曲线
+     *
      * @param energyFlowDiagramIds
      * @param localDate
      * @return
@@ -170,6 +191,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     /**
      * 回风温度当天的温度曲线
+     *
      * @param energyFlowDiagramIds
      * @param localDate
      * @return
@@ -184,6 +206,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     /**
      * 根据分类id 和属性Code 和时间查询当天的分时间变化曲线
+     *
      * @param localDate
      * @param categoryId
      * @param attrCode
@@ -197,7 +220,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         params.setPageNo(1);
         params.setPageSize(9999);
         IPage<DeviceDataVo> deviceDataVoIPage = equipmentList(params);
-        if(localDate ==null){
+        if (localDate == null) {
             localDate = LocalDate.now();
         }
 
@@ -207,7 +230,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         for (DeviceDataVo record : records) {
             List<DeviceAttribute> deviceAttributeList = record.getDeviceAttributeList();
             for (DeviceAttribute deviceAttribute : deviceAttributeList) {
-                if(deviceAttribute.getAttributeCode().equals(attrCode)){
+                if (deviceAttribute.getAttributeCode().equals(attrCode)) {
                     deviceProperties.put(deviceAttribute.getId(), record.getDeviceCode());
                 }
             }
@@ -225,83 +248,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
 
-//    @Override
-//    public EnergyMeteringStatisticsDto statistics() {
-//
-//
-//        Device device = new Device();
-//        device.setDeviceType(Device.DEVICE_TYPE_MEASURING);
-//
-//        List<Device> list = deviceService.findAll(device);
-//
-//        Long addCount = 0L;
-//        LocalDate now = LocalDate.now();
-//        LocalDate yestoday = now.plusDays(-1);
-//        for (Device deviceDataVo : list) {
-//            if(deviceDataVo.getCreateTime()!=null){
-//                LocalDate localDate = LocalDate.ofInstant(deviceDataVo.getCreateTime().toInstant(), ZoneId.systemDefault());
-//                if (localDate.isEqual(now)) {
-//                    addCount++;
-//                }
-//            }
-//        }
-//
-//        Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
-//
-//
-//        //查询计量点位数据
-//
-//        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_ELECTRIC);
-//        MeteringPointDataDay todayElectric = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey));
-//        MeteringPointDataDay yestodayElectric = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey));
-//
-//
-//        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_WATER);
-//        MeteringPointDataDay todayWater = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey2));
-//        MeteringPointDataDay yestodayWater = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey2));
-//
-//        BigDecimal todayElectricValue = Optional.ofNullable(todayElectric).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
-//        BigDecimal yestodayElectricValue = Optional.ofNullable(yestodayElectric).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
-//        BigDecimal todayWaterValue = Optional.ofNullable(todayWater).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
-//        BigDecimal yestodayWaterValue = Optional.ofNullable(yestodayWater).map(MeteringPointDataDay::getValue).orElse(BigDecimal.ZERO);
-//
-//
-//        EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
-//        dto.setCount((long) list.size());
-//        if(addCount==0){
-//            dto.setAddCount("-0");
-//        }else{
-//            dto.setAddCount("↑"+addCount);
-//        }
-//        BigDecimal bigDecimal = calculatePercentage(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L), (long) list.size());
-//        dto.setOnlineRate(bigDecimal+"%");
-//
-//
-//        dto.setElectricCount(todayElectricValue);
-//        dto.setWaterCount(todayWaterValue);
-//        dto.setElectricCountDoD(formatData(calculateMom(todayElectricValue, yestodayElectricValue)));
-//        dto.setWaterCountDoD(formatData(calculateMom(todayWaterValue, yestodayWaterValue)));
-//
-//
-//        return dto;
-//    }
-//
-//    @NotNull
-//    private static String formatData(BigDecimal bigDecimal2) {
-//        String waterCountDoD;
-//        if(bigDecimal2.compareTo(BigDecimal.ZERO)>0){
-//             waterCountDoD = "↑" + bigDecimal2 + "%";
-//        }else if (bigDecimal2.compareTo(BigDecimal.ZERO)<0){
-//             waterCountDoD = "↓" + bigDecimal2 + "%";
-//        }else{
-//             waterCountDoD = bigDecimal2 + "%";
-//        }
-//        return waterCountDoD;
-//    }
-
     /**
      * 计算环比增长率（返回百分比数值，如 20.5 表示 20.5%）
-     * @param current 本期值
+     *
+     * @param current  本期值
      * @param previous 上期值
      * @return 环比增长率，保留2位小数
      */
@@ -329,7 +279,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     /**
      * 计算百分比：分子 / 分母 * 100
-     * @param numerator 分子
+     *
+     * @param numerator   分子
      * @param denominator 分母
      * @return 百分比，保留2位小数
      */
@@ -363,6 +314,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 .filter(id -> !id.isEmpty())
                 .collect(Collectors.toList());
     }
+
     private Table createTable(List<TableHeader> tableHeaderList, Map<Long, String> configs, List<DeviceAttributeHistory> meterDataList) {
         Map<Long, Map<LocalDateTime, String>> dataMap = meterDataList.stream()
                 .collect(Collectors.groupingBy(DeviceAttributeHistory::getAttributeId,
@@ -379,7 +331,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
             TableData tableData = new TableData();
             Map<LocalDateTime, String> dateTimeBigDecimalMap = dataMap.get(key);
-            for(TableHeader header : tableHeaderList){
+            for (TableHeader header : tableHeaderList) {
                 String field = header.getField();
                 if (field.equals("sum")) {
                     continue;
@@ -389,15 +341,15 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                     continue;
                 }
                 LocalDateTime localDateTime = LocalDateTime.parse(field, filedForMatter);
-                if(!sum.containsKey(field)){
-                    sum.put(field,BigDecimal.ZERO);
+                if (!sum.containsKey(field)) {
+                    sum.put(field, BigDecimal.ZERO);
                 }
                 BigDecimal value = dateTimeBigDecimalMap == null ? BigDecimal.ZERO : BigDecimal.valueOf(Long.parseLong(dateTimeBigDecimalMap.getOrDefault(localDateTime, "0")));
                 tableData.put(field, value);
-                sum.put(field,((BigDecimal)sum.get(field)).add(value));
+                sum.put(field, ((BigDecimal) sum.get(field)).add(value));
             }
             tableData.calculateSum();
-            sum.put("sum",((BigDecimal) sum.get("sum")).add((BigDecimal) tableData.get("sum")));
+            sum.put("sum", ((BigDecimal) sum.get("sum")).add((BigDecimal) tableData.get("sum")));
             tableDataList.add(tableData);
         }
         tableDataList.add(sum);

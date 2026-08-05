@@ -13,6 +13,8 @@ public interface IOperationSupportService {
     IPage<DeviceDataVo> equipmentList(DeviceDataFindDto params) ;
 
     IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) ;
+    IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) ;
+    IPage<DeviceDataVo> powerDistributionSystemList(DeviceDataFindDto params) ;
 
 
     AirConditioningUnitStatisticsDto airConditioningUnitStatistics() ;

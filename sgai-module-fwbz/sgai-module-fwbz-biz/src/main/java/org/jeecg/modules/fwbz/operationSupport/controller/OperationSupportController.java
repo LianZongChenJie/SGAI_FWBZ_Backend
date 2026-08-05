@@ -25,17 +25,6 @@ public class OperationSupportController {
     private final IOperationSupportService service;
 
 
-//    /**
-//     * 状态统计
-//     * @return 统计结果
-//     */
-//    @GetMapping("/statistics")
-//    public Result<?> deviceRunStateStatistics(){
-//        return Result.ok(service.statistics());
-//    }
-
-
-
     @GetMapping("/equipmentList")
     public Result<IPage<DeviceDataVo>> equipmentList(DeviceDataFindDto params) {
         return Result.ok(service.equipmentList(params));
@@ -50,6 +39,28 @@ public class OperationSupportController {
     public Result<IPage<DeviceDataVo>> airConditioningUnitList(DeviceDataFindDto params) {
         return Result.ok(service.airConditioningUnitList(params));
     }
+        /**
+     * 新风机组-列表
+     * @param params
+     * @return
+     */
+    @GetMapping("/freshAirHandlingUnitList")
+    public Result<IPage<DeviceDataVo>> freshAirHandlingUnitList(DeviceDataFindDto params) {
+        return Result.ok(service.freshAirHandlingUnitList(params));
+    }
+
+        /**
+     * 配电系统-列表
+     * @param params
+     * @return
+     */
+    @GetMapping("/powerDistributionSystemList")
+    public Result<IPage<DeviceDataVo>> powerDistributionSystemList(DeviceDataFindDto params) {
+        return Result.ok(service.powerDistributionSystemList(params));
+    }
+
+
+
     /**
      * 空调机组-数据统计
      * @param

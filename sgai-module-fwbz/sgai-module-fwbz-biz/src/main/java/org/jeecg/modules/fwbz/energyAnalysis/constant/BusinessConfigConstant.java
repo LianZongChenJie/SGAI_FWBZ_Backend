@@ -66,6 +66,17 @@ public class BusinessConfigConstant {
 
 
     /**
+     *运行保障tab页新风机组id
+     */
+    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID = "operationSupport:tab:freshAir:categoryid";
+
+    /**
+     *运行保障tab页配电系统id
+     */
+    public static final String OPERATIONSUPPORT_TAB_POWER_CATEGORYID = "operationSupport:tab:power:categoryid";
+
+
+    /**
      *运行保障tab页空调机组-计量规则id
      */
     public static final String OPERATIONSUPPORT_TAB_AIR_POINT_ID = "operationSupport:tab:air:pointId";
@@ -89,17 +100,6 @@ public class BusinessConfigConstant {
 
 
 
-
-
-    /**
-     *运行保障tab页新风机组id
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID = "operationSupport:tab:freshAir:categoryid";
-
-    /**
-     *运行保障tab页配电系统id
-     */
-    public static final String OPERATIONSUPPORT_TAB_POWER_CATEGORYID = "operationSupport:tab:power:categoryid";
 
 
 
