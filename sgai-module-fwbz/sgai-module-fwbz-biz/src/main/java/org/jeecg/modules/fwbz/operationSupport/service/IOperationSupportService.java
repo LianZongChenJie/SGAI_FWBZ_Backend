@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
+import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface IOperationSupportService {
 
@@ -23,6 +26,7 @@ public interface IOperationSupportService {
     AirConditioningUnitStatisticsDto airConditioningUnitStatistics() ;
     FreshAirStatisticsDto freshAirStatistics() ;
     PowerStatisticsDto powerStatistics() ;
+    OverViewStatisticsDto overviewStatistics() ;
 
 
     Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate);
@@ -33,7 +37,5 @@ public interface IOperationSupportService {
     Table freshReturnAirTemperature(String energyFlowDiagramIds, LocalDate localDate);
     Table pm25(String energyFlowDiagramIds, LocalDate localDate);
     Table activePower(String energyFlowDiagramIds, LocalDate localDate);
-
-//    EnergyMeteringStatisticsDto statistics();
-
+    List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId);
 }

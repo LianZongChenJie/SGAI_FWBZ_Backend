@@ -6,16 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.*;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
-import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -169,6 +166,29 @@ public class OperationSupportController {
     @GetMapping("/activePower")
     public Result<MeteringPointDataChartVo> activePower(MeteringPointDataDto param) {
         return Result.ok(new MeteringPointDataChartVo(service.activePower(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    /**
+     * 概览-设备总览
+     * @param categoryId 设备类别
+     * @return 统计结果
+     */
+    @GetMapping("/equipmentOverview")
+    public Result<?> equipmentOverview(@RequestParam(required = false) Long categoryId){
+        return Result.ok(service.equipmentOverview(categoryId));
+    }
+
+
+
+    /**
+     * 空调机组-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/overviewStatistics")
+    public Result<OverViewStatisticsDto> overviewStatistics() {
+        return Result.ok(service.overviewStatistics());
     }
 
 

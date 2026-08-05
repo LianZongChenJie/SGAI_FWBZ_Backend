@@ -7,10 +7,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jeecg.common.system.vo.SelectTreeModel;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
@@ -23,12 +25,15 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.TableData;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.TableHeader;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceAttributeHistoryQueryDto;
+import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttributeHistory;
+import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
@@ -56,6 +61,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final DateTimeFormatter filedForMatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final IDeviceService deviceService;
+    private final IEquipmentCategoryService equipmentCategoryService;
     private final IMeteringPointService meteringPointService;
     private final IMeteringPointDataDayService meteringPointDataDayService;
     private final IDeviceAttributeService deviceAttributeService;
@@ -314,6 +320,24 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         return dto;
 
     }
+    @Override
+    public OverViewStatisticsDto overviewStatistics() {
+        List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState));
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        OverViewStatisticsDto dto = new OverViewStatisticsDto();
+
+        dto.setCount((long) selectTreeModels.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setRemoteControlEquipment("2456");
+        dto.setTodayInstructionWasIssued("1234");
+
+
+        return dto;
+
+    }
 
 
     @Override
@@ -420,6 +444,35 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         return findAttrReal(params, localDate, attrCode);
 
 
+    }
+
+
+    @Override
+    public List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId) {
+        ArrayList<DeviceRunStateStatisticsDto> objects = new ArrayList<>();
+        if(categoryId==null){
+            List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
+            for (SelectTreeModel selectTreeModel : selectTreeModels) {
+                DeviceRunStateStatisticsDto dto = getDto(Long.valueOf(selectTreeModel.getKey()));
+                objects.add(dto);
+            }
+        }else{
+            DeviceRunStateStatisticsDto dto = getDto(categoryId);
+            objects.add(dto);
+        }
+
+        return objects;
+    }
+
+    @NotNull
+    private DeviceRunStateStatisticsDto getDto(Long categoryId) {
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId).eq(categoryId != null, Device::getCategoryId, categoryId));
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+        return dto;
     }
 
     /**
