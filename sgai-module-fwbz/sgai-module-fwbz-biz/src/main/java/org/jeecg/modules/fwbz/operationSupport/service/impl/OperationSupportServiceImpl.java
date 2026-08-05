@@ -42,10 +42,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 @Service
 @AllArgsConstructor
@@ -69,7 +71,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 .eq(params.getSpaceId() != null, Device::getSpaceId, params.getSpaceId())
                 .eq(params.getRunState() != null, Device::getRunState, params.getRunState())
                 .orderByDesc(Device::getSort);
-        if (StringUtils.isNotEmpty(params.getIds())){
+        if (StringUtils.isNotEmpty(params.getIds())) {
             wrapper.in(Device::getId, Arrays.stream(params.getIds().split(",")).map(Long::parseLong).collect(Collectors.toList()));
         }
         IPage<Device> page = new Page<>(params.getPageNo(), params.getPageSize());
@@ -95,7 +97,34 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
         String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_COLUMNS);
-        return findDeviceWithAttr(params, longByKey, columns);
+        IPage<DeviceDataVo> deviceWithAttr = findDeviceWithAttr(params, longByKey, columns);
+        //空调机组冗余展示字段 启停状态
+        for (DeviceDataVo record : deviceWithAttr.getRecords()) {
+            for (DeviceAttribute deviceAttribute : record.getDeviceAttributeList()) {
+                if(deviceAttribute.getAttributeCode().equals("STOP_RUN")){
+                    record.setRunStop(deviceAttribute.getValue());
+                }
+            }
+        }
+        return deviceWithAttr;
+    }
+
+    public IPage<DeviceDataVo> airList(DeviceDataFindDto params) {
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_COLUMNS);
+        IPage<DeviceDataVo> deviceWithAttr = findDeviceWithAttr(params, longByKey, columns);
+        //空调机组冗余展示字段 启停状态
+        for (DeviceDataVo record : deviceWithAttr.getRecords()) {
+            for (DeviceAttribute deviceAttribute : record.getDeviceAttributeList()) {
+                if(deviceAttribute.getAttributeCode().equals("STOP_RUN")){
+                    record.setRunStop(deviceAttribute.getValue());
+                }
+                if(deviceAttribute.getAttributeCode().equals("SA_TEMP_SETPOINT")){
+                    record.setSetTemperature(deviceAttribute.getValue());
+                }
+            }
+        }
+        return deviceWithAttr;
     }
 
     public IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) {
@@ -116,17 +145,23 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         params.setCategoryId(Long.valueOf(longByKey));
         IPage<DeviceDataVo> deviceDataVoIPage = deviceListWithAttrBycategoryId(params);
         //查询 空调机组展示配置项 然后过滤， 只展示配置的属性列
-        Set<String> strings = stream(columns.split(","))
+        List<String> strings = stream(columns.split(","))
                 .map(String::trim)
                 .filter(id -> !id.isEmpty())
-                .collect(Collectors.toSet());
+                .toList();
 
         List<DeviceDataVo> records = deviceDataVoIPage.getRecords();
         for (DeviceDataVo record : records) {
             List<DeviceAttribute> deviceAttributeList = record.getDeviceAttributeList();
-            List<DeviceAttribute> collect = deviceAttributeList
-                    .stream().filter(attr -> strings.contains(attr.getAttributeCode())).toList();
-            record.setDeviceAttributeList(collect);
+            Map<String, DeviceAttribute> collect1 = deviceAttributeList.stream().collect(toMap(DeviceAttribute::getAttributeCode, Function.identity()));
+            List<DeviceAttribute> newList = new ArrayList<>();
+            for (String string : strings) {
+                DeviceAttribute deviceAttribute = collect1.get(string);
+                if (deviceAttribute != null) {
+                    newList.add(deviceAttribute);
+                }
+            }
+            record.setDeviceAttributeList(newList);
         }
         return deviceDataVoIPage;
     }
@@ -223,7 +258,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     }
 
-   @Override
+    @Override
     public PowerStatisticsDto powerStatistics() {
 
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_CATEGORYID);
@@ -365,7 +400,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
             params.setIds(energyFlowDiagramIds);
         }
 
-        return findAttrReal(params,localDate, attrCode);
+        return findAttrReal(params, localDate, attrCode);
 
     }
 
@@ -382,7 +417,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
             params.setIds(energyFlowDiagramIds);
         }
 
-        return findAttrReal(params,localDate, attrCode);
+        return findAttrReal(params, localDate, attrCode);
 
 
     }
@@ -441,7 +476,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      * @return
      */
     @NotNull
-    private Table findAttrReal(DeviceDataFindDto params,LocalDate localDate,  String attrCode) {
+    private Table findAttrReal(DeviceDataFindDto params, LocalDate localDate, String attrCode) {
 
         IPage<DeviceDataVo> deviceDataVoIPage = deviceListWithAttrBycategoryId(params);
         if (localDate == null) {
@@ -461,7 +496,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                     e.setAttributeId(deviceAttribute.getId());
                     e.setCollectionTime(LocalDateTime.of(localDate, LocalTime.MIN));
                     String value = deviceAttribute.getValue();
-                    if(value==null){
+                    if (value == null) {
                         value = "0";
                     }
                     e.setValue(value);

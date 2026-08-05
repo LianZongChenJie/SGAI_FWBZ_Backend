@@ -15,6 +15,7 @@ public interface IOperationSupportService {
     IPage<DeviceDataVo> deviceListWithAttrBycategoryId(DeviceDataFindDto params) ;
 
     IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) ;
+    IPage<DeviceDataVo> airList(DeviceDataFindDto params) ;
     IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) ;
     IPage<DeviceDataVo> powerDistributionSystemList(DeviceDataFindDto params) ;
 

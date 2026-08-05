@@ -36,6 +36,16 @@ public class OperationSupportController {
     public Result<IPage<DeviceDataVo>> airConditioningUnitList(DeviceDataFindDto params) {
         return Result.ok(service.airConditioningUnitList(params));
     }
+
+    /**
+     * 概览-空调机组列表
+     * @param params
+     * @return
+     */
+    @GetMapping("/overview/airList")
+    public Result<IPage<DeviceDataVo>> airList(DeviceDataFindDto params) {
+        return Result.ok(service.airList(params));
+    }
         /**
      * 新风机组-列表
      * @param params

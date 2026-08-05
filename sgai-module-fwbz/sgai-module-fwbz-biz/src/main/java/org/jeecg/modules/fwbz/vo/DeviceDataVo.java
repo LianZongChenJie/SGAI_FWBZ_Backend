@@ -98,6 +98,16 @@ public class DeviceDataVo {
 
     private List<DeviceAttribute> DeviceAttributeList;
 
+    /**
+     * 运行状态
+     * [{"key":"0","value":"停止"},{"key":"1","value":"运行"}]
+     */
+    private String runStop;
+    /**
+     * 设定温度
+     */
+    private String setTemperature;
+
     /**创建日期*/
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
