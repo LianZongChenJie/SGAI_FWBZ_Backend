@@ -17,4 +17,12 @@ public interface IDoorResourceService extends IService<DoorResource> {
      * @return 同步成功的记录数
      */
     int syncFromHikvision();
+
+    /**
+     * 从海康平台查询门禁状态并更新到数据库
+     * <p>逐页拉取海康门禁状态数据，根据 indexCode 匹配更新 table_door_resource 的 door_state 字段。</p>
+     *
+     * @return 更新的记录数
+     */
+    int syncDoorStatus();
 }

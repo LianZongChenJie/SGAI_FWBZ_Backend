@@ -44,4 +44,23 @@ public class DoorResourceController {
             return Result.error("同步门禁点数据失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 同步海康门禁状态数据
+     * <p>从海康平台逐页拉取门禁状态，根据 indexCode 匹配更新本地 door_state 字段。
+     * 仅更新状态发生变化的记录。</p>
+     *
+     * @return 同步结果（包含更新条数）
+     */
+    @PostMapping("/syncDoorStatus")
+    @ApiOperation(value = "同步海康门禁状态", notes = "从海康平台拉取门禁状态，更新本地door_state字段")
+    public Result<Integer> syncDoorStatus() {
+        try {
+            int count = doorResourceService.syncDoorStatus();
+            return Result.ok(count);
+        } catch (Exception e) {
+            log.error("同步门禁状态失败", e);
+            return Result.error("同步门禁状态失败: " + e.getMessage());
+        }
+    }
 }

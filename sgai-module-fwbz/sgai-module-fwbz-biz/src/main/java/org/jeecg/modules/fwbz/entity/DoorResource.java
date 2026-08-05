@@ -125,4 +125,8 @@ public class DoorResource implements Serializable {
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @ApiModelProperty(value = "记录更新时间")
     private Date gmtModified;
+
+    /** 门状态，0-初始状态，1-开门状态，2-关门状态，3-离线状态 */
+    @ApiModelProperty(value = "门状态，0-初始状态，1-开门状态，2-关门状态，3-离线状态")
+    private String doorState;
 }
