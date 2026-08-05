@@ -1,7 +1,10 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
+
+import java.util.List;
 
 /**
  * 门禁点资源同步服务接口
@@ -25,4 +28,11 @@ public interface IDoorResourceService extends IService<DoorResource> {
      * @return 更新的记录数
      */
     int syncDoorStatus();
+
+    /**
+     * 查询本地数据库中全部门禁点列表
+     *
+     * @return 门禁点列表
+     */
+    List<DoorListVO> getDoorList();
 }

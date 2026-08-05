@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusRequest;
@@ -299,5 +300,29 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         entity.setRegionPathName(item.getRegionPathName());
         entity.setInstallLocation(item.getInstallLocation());
         return entity;
+    }
+
+    @Override
+    public List<DoorListVO> getDoorList() {
+        log.info("查询本地数据库中全部门禁点列表");
+        List<DoorResource> doorList = list();
+        List<DoorListVO> result = new ArrayList<>(doorList.size());
+        for (DoorResource door : doorList) {
+            DoorListVO vo = new DoorListVO();
+            vo.setIndexCode(door.getIndexCode());
+            vo.setName(door.getName());
+            vo.setDoorNo(door.getDoorNo());
+            vo.setChannelNo(door.getChannelNo());
+            vo.setRegionIndexCode(door.getRegionIndexCode());
+            vo.setRegionName(door.getRegionName());
+            vo.setInstallLocation(door.getInstallLocation());
+            vo.setDoorState(door.getDoorState());
+            vo.setTreatyType(door.getTreatyType());
+            vo.setCreateTime(door.getCreateTime());
+            vo.setUpdateTime(door.getUpdateTime());
+            result.add(vo);
+        }
+        log.info("查询门禁点列表完成, 共{}条", result.size());
+        return result;
     }
 }

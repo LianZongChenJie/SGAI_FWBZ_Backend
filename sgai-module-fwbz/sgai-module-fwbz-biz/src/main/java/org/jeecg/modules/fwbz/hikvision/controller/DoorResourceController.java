@@ -5,10 +5,14 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 门禁点资源管理控制器
@@ -61,6 +65,24 @@ public class DoorResourceController {
         } catch (Exception e) {
             log.error("同步门禁状态失败", e);
             return Result.error("同步门禁状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取全部门禁点列表
+     * <p>从本地数据库查询全部门禁点数据并返回列表。</p>
+     *
+     * @return 门禁点列表
+     */
+    @GetMapping("/list")
+    @ApiOperation(value = "获取全部门禁点列表", notes = "从本地数据库查询全部门禁点数据")
+    public Result<List<DoorListVO>> getDoorList() {
+        try {
+            List<DoorListVO> list = doorResourceService.getDoorList();
+            return Result.ok(list);
+        } catch (Exception e) {
+            log.error("获取门禁点列表失败", e);
+            return Result.error("获取门禁点列表失败: " + e.getMessage());
         }
     }
 }
