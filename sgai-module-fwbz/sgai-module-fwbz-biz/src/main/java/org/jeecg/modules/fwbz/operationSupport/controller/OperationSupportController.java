@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
@@ -27,7 +28,7 @@ public class OperationSupportController {
 
     @GetMapping("/equipmentList")
     public Result<IPage<DeviceDataVo>> equipmentList(DeviceDataFindDto params) {
-        return Result.ok(service.equipmentList(params));
+        return Result.ok(service.equipmentListWithAttr(params));
     }
 
     /**
@@ -69,6 +70,15 @@ public class OperationSupportController {
     @GetMapping("/airConditioningUnitStatistics")
     public Result<AirConditioningUnitStatisticsDto> airConditioningUnitStatistics() {
         return Result.ok(service.airConditioningUnitStatistics());
+    }
+    /**
+     * 新风机组-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/freshAirStatistics")
+    public Result<FreshAirStatisticsDto> freshAirStatistics() {
+        return Result.ok(service.freshAirStatistics());
     }
 
 

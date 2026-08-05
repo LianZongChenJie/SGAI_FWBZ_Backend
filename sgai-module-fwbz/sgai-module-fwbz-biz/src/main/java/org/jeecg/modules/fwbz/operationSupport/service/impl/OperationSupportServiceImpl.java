@@ -9,6 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
@@ -60,7 +61,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IBusinessConfigService businessConfigService;
 
     @Override
-    public IPage<DeviceDataVo> equipmentList(DeviceDataFindDto params) {
+    public IPage<DeviceDataVo> equipmentListWithAttr(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
                 .eq(Device::getDeviceType, Device.DEVICE_TYPE_EQUIPMENT)
                 .eq(Device::getCategoryId, params.getCategoryId())
@@ -110,7 +111,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @NotNull
     private IPage<DeviceDataVo> findDeviceWithAttr(DeviceDataFindDto params, String longByKey, String columns) {
         params.setCategoryId(Long.valueOf(longByKey));
-        IPage<DeviceDataVo> deviceDataVoIPage = equipmentList(params);
+        IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
         //查询 空调机组展示配置项 然后过滤， 只展示配置的属性列
         Set<String> strings = stream(columns.split(","))
                 .map(String::trim)
@@ -160,8 +161,73 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         return dto;
 
+    }    @Override
+    public FreshAirStatisticsDto freshAirStatistics() {
+
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(longByKey)));
+
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_POINT_ID);
+
+        MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if (byId != null) {
+            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+            if (byDateAndPointId != null) {
+                if (byDateAndPointId.getValue() != null) {
+                    energyConsumption = byDateAndPointId.getValue();
+                }
+            }
+        }
+        FreshAirStatisticsDto dto = new FreshAirStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
+
+        //分批次查询属性信息
+        int i = list.size() / 200;
+
+        BigDecimal total = BigDecimal.ZERO;
+        int count = 0;
+        for (int j = 0; j < i+1; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 200; k++) {
+                Device device = list.get(j * k);
+                deviceIds.add(device.getId());
+            }
+            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute byDeviceId : byDeviceIds) {
+                if(byDeviceId.getAttributeCode().equals("PM25")){
+                    total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    count++;
+                }
+            }
+        }
+
+        BigDecimal average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
+        dto.setAvgPm25(average);
+
+        return dto;
+
     }
 
+    public static void main(String[] args) {
+        //分批次查询属性信息
+        int i = 199 / 200;
+        int count = 0;
+        for (int k = 0; k < 199; k++) {
+            count++;
+        }
+        System.out.println(count);
+
+    }
 
     @Override
     public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
@@ -219,7 +285,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         params.setCategoryId(Long.valueOf(categoryId));
         params.setPageNo(1);
         params.setPageSize(9999);
-        IPage<DeviceDataVo> deviceDataVoIPage = equipmentList(params);
+        IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
         if (localDate == null) {
             localDate = LocalDate.now();
         }
