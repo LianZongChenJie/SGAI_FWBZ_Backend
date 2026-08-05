@@ -93,20 +93,20 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
     public IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) {
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
-        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_COLUMNS);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_COLUMNS);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
     public IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) {
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
-        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_COLUMNS);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_COLUMNS);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
     public IPage<DeviceDataVo> powerDistributionSystemList(DeviceDataFindDto params) {
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
-        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_COLUMNS);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_CATEGORYID);
+        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_COLUMNS);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
@@ -135,14 +135,14 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public AirConditioningUnitStatisticsDto airConditioningUnitStatistics() {
         //查询 空调机组配置id
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
 
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
                 .eq(Device::getCategoryId, Long.valueOf(longByKey)));
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_POINT_ID);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_POINT_ID);
 
         MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
         BigDecimal energyConsumption = BigDecimal.ZERO;
@@ -169,7 +169,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public FreshAirStatisticsDto freshAirStatistics() {
 
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
 
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
                 .eq(Device::getCategoryId, Long.valueOf(longByKey)));
@@ -177,7 +177,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_POINT_ID);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_POINT_ID);
 
         MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
         BigDecimal energyConsumption = BigDecimal.ZERO;
@@ -226,7 +226,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
    @Override
     public PowerStatisticsDto powerStatistics() {
 
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_CATEGORYID);
 
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
                 .eq(Device::getCategoryId, Long.valueOf(longByKey)));
@@ -234,7 +234,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_COLUMNS);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_COLUMNS);
 
         MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
         BigDecimal energyConsumption = BigDecimal.ZERO;
@@ -284,7 +284,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
         //查询业务key
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_ENERGY_POINTIDS);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_ENERGY_POINTIDS);
         if (localDate == null) {
             localDate = LocalDate.now();
         }
@@ -301,8 +301,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table supplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_SUPPLYAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_SUPPLYAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
@@ -316,8 +316,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table freshSupplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_SUPPLYAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_SUPPLYAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
@@ -331,8 +331,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_RETURNAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_RETURNAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
@@ -346,16 +346,16 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table freshReturnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_RETURNAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_RETURNAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
 
     @Override
     public Table pm25(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_PM25);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_PM25);
 
         DeviceDataFindDto params = new DeviceDataFindDto();
         params.setCategoryId(Long.valueOf(category));
@@ -371,8 +371,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     @Override
     public Table activePower(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_ACTIVE);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_ACTIVE);
 
         DeviceDataFindDto params = new DeviceDataFindDto();
         params.setCategoryId(Long.valueOf(category));

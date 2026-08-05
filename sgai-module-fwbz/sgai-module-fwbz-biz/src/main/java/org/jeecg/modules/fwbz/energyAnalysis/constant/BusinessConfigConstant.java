@@ -60,90 +60,90 @@ public class BusinessConfigConstant {
     public static final String ENERGYMETERING_MONTH_WATER = "energyMetering:month:water";
 
     /**
-     *运行保障tab页空调机组id
+     *运行保障-空调机组-categoryId
      */
-    public static final String OPERATIONSUPPORT_TAB_AIR_CATEGORYID = "operationSupport:tab:air:categoryid";
+    public static final String OPERATIONSUPPORT_AIR_CATEGORYID = "operationSupport:air:categoryId";
 
     /**
-     *运行保障tab页空调机组 列表配置项
+     *运行保障-空调机组-列表配置
      */
-    public static final String OPERATIONSUPPORT_TAB_AIR_COLUMNS = "operationSupport:tab:air:columns";
+    public static final String OPERATIONSUPPORT_AIR_COLUMNS = "operationSupport:air:columns";
 
     /**
-     *运行保障tab页空调机组-计量规则id
+     *运行保障-空调机组-计量规则Id
      */
-    public static final String OPERATIONSUPPORT_TAB_AIR_POINT_ID = "operationSupport:tab:air:pointId";
+    public static final String OPERATIONSUPPORT_AIR_POINT_ID = "operationSupport:air:pointId";
 
     /**
-     *运行保障tab页空调机组-能耗曲线ids
+     *运行保障-空调机组-能耗曲线ids
      */
-    public static final String OPERATIONSUPPORT_TAB_AIR_ENERGY_POINTIDS = "operationSupport:tab:air:energyPointIds";
+    public static final String OPERATIONSUPPORT_AIR_ENERGY_POINTIDS = "operationSupport:air:energyPointIds";
 
     /**
-     *运行保障tab页空调机组-送风温度趋势属性名
+     *运运行保障-空调机组-送风温度
      */
-    public static final String OPERATIONSUPPORT_TAB_AIR_SUPPLYAIR = "operationSupport:tab:air:supplyAir";
-
-
-
-    /**
-     *运行保障tab页空调机组-回风温度趋势属性名
-     */
-    public static final String OPERATIONSUPPORT_TAB_AIR_RETURNAIR = "operationSupport:tab:air:returnAir";
-    /**
-     *运行保障tab页新风机组id
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID = "operationSupport:tab:freshAir:categoryid";
-
-
-    /**
-     *运行保障tab页新风机组 列表配置项
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESH_AIR_COLUMNS = "operationSupport:tab:freshAir:columns";
-
-
-    /**
-     *运行保障tab页新风机组-计量规则id
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_POINT_ID = "operationSupport:tab:freshAir:pointId";
-
-
-    /**
-     *运行保障tab页新风机组-PM2.5趋势属性名
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_PM25 = "operationSupport:tab:freshAir:pm25";
-
-
-    /**
-     *运行保障tab页空调机组-送风温度趋势属性名
-     */
-    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_SUPPLYAIR = "operationSupport:tab:freshAir:supplyAir";
+    public static final String OPERATIONSUPPORT_AIR_SUPPLYAIR = "operationSupport:air:supplyAir";
 
 
 
     /**
-     *运行保障tab页空调机组-回风温度趋势属性名
+     *运行保障-空调机组-回风温度
      */
-    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_RETURNAIR = "operationSupport:tab:freshAir:returnAir";
+    public static final String OPERATIONSUPPORT_AIR_RETURNAIR = "operationSupport:air:returnAir";
+    /**
+     *运行保障-新风机组-categoryId
+     */
+    public static final String OPERATIONSUPPORT_FRESH_AIR_CATEGORYID = "operationSupport:freshAir:categoryId";
+
+
+    /**
+     *运行保障-新风机组-列表配置
+     */
+    public static final String OPERATIONSUPPORT_FRESH_AIR_COLUMNS = "operationSupport:freshAir:columns";
+
+
+    /**
+     *运行保障-新风机组-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_POINT_ID = "operationSupport:freshAir:pointId";
+
+
+    /**
+     *运行保障-新风机组-pm25
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_PM25 = "operationSupport:freshAir:pm25";
+
+
+    /**
+     *运行保障-新风机组-送风温度
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_SUPPLYAIR = "operationSupport:freshAir:supplyAir";
 
 
 
     /**
-     *运行保障tab页配电系统id
+     *运行保障-新风机组-回风温度
      */
-    public static final String OPERATIONSUPPORT_TAB_POWER_CATEGORYID = "operationSupport:tab:power:categoryid";
+    public static final String OPERATIONSUPPORT_FRESHAIR_RETURNAIR = "operationSupport:freshAir:returnAir";
+
 
 
     /**
-     *运行保障tab页配电系统 列表配置项
+     *运行保障-配电系统-categoryId
      */
-    public static final String OPERATIONSUPPORT_TAB_POWER_COLUMNS = "operationSupport:tab:power:columns";
+    public static final String OPERATIONSUPPORT_POWER_CATEGORYID = "operationSupport:power:categoryId";
 
 
     /**
-     *运行保障tab页配电系统-有功功率属性名
+     *运行保障-配电系统-列表配置
      */
-    public static final String OPERATIONSUPPORT_TAB_POWER_ACTIVE = "operationSupport:tab:power:active";
+    public static final String OPERATIONSUPPORT_POWER_COLUMNS = "operationSupport:power:columns";
+
+
+    /**
+     *运行保障-配电系统-有功功率
+     */
+    public static final String OPERATIONSUPPORT_POWER_ACTIVE = "operationSupport:power:active";
 
 
 }
