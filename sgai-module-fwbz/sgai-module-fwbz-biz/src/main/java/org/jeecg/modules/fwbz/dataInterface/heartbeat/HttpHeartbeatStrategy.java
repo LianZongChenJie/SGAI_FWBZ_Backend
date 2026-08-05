@@ -78,7 +78,7 @@ public class HttpHeartbeatStrategy implements HeartbeatStrategy {
             long elapsed = System.currentTimeMillis() - startTime;
             if (e.getCause() instanceof java.net.SocketTimeoutException) {
                 log.warn("HTTP心跳超时 - URL: {}, 耗时: {}ms", url, elapsed);
-                return HeartbeatResult.abnormal(elapsed);
+                return HeartbeatResult.offline(elapsed);
             }
             log.warn("HTTP心跳连接失败 - URL: {}, 耗时: {}ms, 原因: {}", url, elapsed, e.getMessage());
             return HeartbeatResult.offline(elapsed);

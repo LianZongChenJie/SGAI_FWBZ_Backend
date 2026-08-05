@@ -42,8 +42,8 @@ public class InterfaceHistoryServiceImpl extends ServiceImpl<InterfaceHistoryMap
     }
 
     @Override
-    public Double getTodayDataSize(Date startTime, Date endTime) {
-        Double result = getBaseMapper().selectDataSizeSum(startTime, endTime);
+    public Double getTodayDataSize(Date date) {
+        Double result = getBaseMapper().selectDataSizeSum(date);
         return result == null ? 0.0 : result;
     }
 }

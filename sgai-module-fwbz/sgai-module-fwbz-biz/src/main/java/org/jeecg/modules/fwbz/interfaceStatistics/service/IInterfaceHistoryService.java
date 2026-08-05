@@ -21,11 +21,10 @@ public interface IInterfaceHistoryService extends IService<InterfaceHistory> {
     void saveHistory(Long systemId, String interfacePath, Long responseTime, String responseBody);
 
     /**
-     * 统计指定时间范围内的数据量（KB）
+     * 统计指定日期的数据量（KB）
      *
-     * @param startTime 开始时间
-     * @param endTime   结束时间
+     * @param date 日期
      * @return 数据量总和，无记录时返回 0
      */
-    Double getTodayDataSize(Date startTime, Date endTime);
+    Double getTodayDataSize(Date date);
 }

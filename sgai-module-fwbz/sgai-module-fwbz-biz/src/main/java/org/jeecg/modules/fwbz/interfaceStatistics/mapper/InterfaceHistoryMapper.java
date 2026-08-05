@@ -10,8 +10,8 @@ import java.util.Date;
 public interface InterfaceHistoryMapper extends BaseMapper<InterfaceHistory> {
 
     /**
-     * 统计指定时间范围内的数据量总和（KB）
+     * 统计指定日期的数据量总和（KB），使用 TRUNC 做纯日期比较，避免 Dameng DATE 类型时间部分不匹配
      */
-    @Select("SELECT SUM(data_size) FROM table_interface_history WHERE clinet_date >= #{startTime} AND clinet_date < #{endTime}")
-    Double selectDataSizeSum(@Param("startTime") Date startTime, @Param("endTime") Date endTime);
+    @Select("SELECT NVL(SUM(data_size), 0) FROM table_interface_history WHERE TRUNC(clinet_date) = TRUNC(#{date})")
+    Double selectDataSizeSum(@Param("date") Date date);
 }
