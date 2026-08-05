@@ -1,10 +1,10 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
-
-import java.util.List;
 
 /**
  * 门禁点资源同步服务接口
@@ -30,9 +30,10 @@ public interface IDoorResourceService extends IService<DoorResource> {
     int syncDoorStatus();
 
     /**
-     * 查询本地数据库中全部门禁点列表
+     * 分页查询门禁点列表，支持按名称、门禁点编号、区域名称、门状态、接入协议、安装位置检索，为空查全部
      *
-     * @return 门禁点列表
+     * @param dto 分页及查询条件
+     * @return 门禁点分页列表
      */
-    List<DoorListVO> getDoorList();
+    IPage<DoorListVO> getDoorList(DoorResourcePageDto dto);
 }

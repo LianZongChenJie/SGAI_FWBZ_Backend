@@ -3,10 +3,15 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorEvent;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorEventListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorEventPageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorEventSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorEventSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorEventService;
@@ -196,6 +201,54 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
                 .map(DoorEvent::getEventId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public IPage<DoorEventListVO> getEventList(DoorEventPageDto dto) {
+        log.info("分页查询门禁点事件列表, pageNo={}, pageSize={}, personName={}, doorName={}, doorIndexCode={}, eventType={}, inAndOutType={}, cardNo={}, startTime={}, endTime={}",
+                dto.getPageNo(), dto.getPageSize(), dto.getPersonName(), dto.getDoorName(), dto.getDoorIndexCode(),
+                dto.getEventType(), dto.getInAndOutType(), dto.getCardNo(), dto.getStartTime(), dto.getEndTime());
+
+        LambdaQueryWrapper<DoorEvent> wrapper = new LambdaQueryWrapper<DoorEvent>()
+                .like(StringUtils.isNotBlank(dto.getPersonName()), DoorEvent::getPersonName, dto.getPersonName())
+                .like(StringUtils.isNotBlank(dto.getDoorName()), DoorEvent::getDoorName, dto.getDoorName())
+                .eq(StringUtils.isNotBlank(dto.getDoorIndexCode()), DoorEvent::getDoorIndexCode, dto.getDoorIndexCode())
+                .eq(dto.getEventType() != null, DoorEvent::getEventType, dto.getEventType())
+                .eq(dto.getInAndOutType() != null, DoorEvent::getInAndOutType, dto.getInAndOutType())
+                .like(StringUtils.isNotBlank(dto.getCardNo()), DoorEvent::getCardNo, dto.getCardNo())
+                .ge(StringUtils.isNotBlank(dto.getStartTime()), DoorEvent::getEventTime, dto.getStartTime())
+                .le(StringUtils.isNotBlank(dto.getEndTime()), DoorEvent::getEventTime, dto.getEndTime())
+                .orderByDesc(DoorEvent::getEventTime);
+
+        IPage<DoorEvent> eventPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        List<DoorEventListVO> voList = new ArrayList<>((int) eventPage.getSize());
+        for (DoorEvent event : eventPage.getRecords()) {
+            DoorEventListVO vo = new DoorEventListVO();
+            vo.setId(event.getId());
+            vo.setEventId(event.getEventId());
+            vo.setEventName(event.getEventName());
+            vo.setEventTime(event.getEventTime());
+            vo.setPersonId(event.getPersonId());
+            vo.setCardNo(event.getCardNo());
+            vo.setPersonName(event.getPersonName());
+            vo.setOrgName(event.getOrgName());
+            vo.setDoorName(event.getDoorName());
+            vo.setDoorIndexCode(event.getDoorIndexCode());
+            vo.setEventType(event.getEventType());
+            vo.setInAndOutType(event.getInAndOutType());
+            vo.setReaderDevName(event.getReaderDevName());
+            vo.setDevName(event.getDevName());
+            vo.setPicUri(event.getPicUri());
+            vo.setGmtCreate(event.getGmtCreate() != null ? event.getGmtCreate().toString() : null);
+            voList.add(vo);
+        }
+
+        IPage<DoorEventListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), eventPage.getTotal());
+        resultPage.setRecords(voList);
+
+        log.info("分页查询门禁点事件列表完成, 共{}条, 当前页{}条", eventPage.getTotal(), voList.size());
+        return resultPage;
     }
 
     private DoorEvent convertToEntity(DoorEventSearchResponse.DoorEventItem item) {

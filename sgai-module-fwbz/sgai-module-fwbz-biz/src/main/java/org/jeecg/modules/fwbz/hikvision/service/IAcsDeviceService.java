@@ -1,6 +1,9 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDevicePageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 
 /**
@@ -26,4 +29,12 @@ public interface IAcsDeviceService extends IService<AcsDevice> {
      * @return 更新的记录数
      */
     int syncOnlineStatus();
+
+    /**
+     * 分页查询门禁设备列表，支持按名称、设备类型编码、区域名称、在线状态、IP检索，为空查全部
+     *
+     * @param dto 分页及查询条件
+     * @return 门禁设备分页列表
+     */
+    IPage<AcsDeviceListVO> getDeviceList(AcsDevicePageDto dto);
 }

@@ -1,18 +1,18 @@
 package org.jeecg.modules.fwbz.hikvision.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * 门禁点资源管理控制器
@@ -75,11 +75,11 @@ public class DoorResourceController {
      * @return 门禁点列表
      */
     @GetMapping("/list")
-    @ApiOperation(value = "获取全部门禁点列表", notes = "从本地数据库查询全部门禁点数据")
-    public Result<List<DoorListVO>> getDoorList() {
+    @ApiOperation(value = "分页获取门禁点列表", notes = "分页查询门禁点数据，支持按名称、门禁点编号、区域名称、门状态、接入协议、安装位置检索，为空查全部")
+    public Result<IPage<DoorListVO>> getDoorList(DoorResourcePageDto dto) {
         try {
-            List<DoorListVO> list = doorResourceService.getDoorList();
-            return Result.ok(list);
+            IPage<DoorListVO> page = doorResourceService.getDoorList(dto);
+            return Result.ok(page);
         } catch (Exception e) {
             log.error("获取门禁点列表失败", e);
             return Result.error("获取门禁点列表失败: " + e.getMessage());

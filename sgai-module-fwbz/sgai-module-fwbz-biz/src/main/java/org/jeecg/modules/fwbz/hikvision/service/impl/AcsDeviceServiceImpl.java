@@ -3,9 +3,14 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDevicePageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineResponse;
@@ -241,6 +246,47 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
 
         log.info("海康门禁设备在线状态全部拉取完成, 共获取{}条", onlineMap.size());
         return onlineMap;
+    }
+
+    @Override
+    public IPage<AcsDeviceListVO> getDeviceList(AcsDevicePageDto dto) {
+        log.info("分页查询门禁设备列表, pageNo={}, pageSize={}, name={}, devTypeCode={}, regionName={}, online={}, ip={}",
+                dto.getPageNo(), dto.getPageSize(), dto.getName(), dto.getDevTypeCode(), dto.getRegionName(), dto.getOnline(), dto.getIp());
+
+        LambdaQueryWrapper<AcsDevice> wrapper = new LambdaQueryWrapper<AcsDevice>()
+                .like(StringUtils.isNotBlank(dto.getName()), AcsDevice::getName, dto.getName())
+                .eq(StringUtils.isNotBlank(dto.getDevTypeCode()), AcsDevice::getDevTypeCode, dto.getDevTypeCode())
+                .like(StringUtils.isNotBlank(dto.getRegionName()), AcsDevice::getRegionName, dto.getRegionName())
+                .eq(StringUtils.isNotBlank(dto.getOnline()), AcsDevice::getOnline, dto.getOnline())
+                .like(StringUtils.isNotBlank(dto.getIp()), AcsDevice::getIp, dto.getIp());
+
+        IPage<AcsDevice> devicePage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        List<AcsDeviceListVO> voList = new ArrayList<>((int) devicePage.getSize());
+        for (AcsDevice device : devicePage.getRecords()) {
+            AcsDeviceListVO vo = new AcsDeviceListVO();
+            vo.setIndexCode(device.getIndexCode());
+            vo.setName(device.getName());
+            vo.setDevTypeCode(device.getDevTypeCode());
+            vo.setDevTypeDesc(device.getDevTypeDesc());
+            vo.setDeviceCode(device.getDeviceCode());
+            vo.setManufacturer(device.getManufacturer());
+            vo.setRegionIndexCode(device.getRegionIndexCode());
+            vo.setRegionName(device.getRegionName());
+            vo.setTreatyType(device.getTreatyType());
+            vo.setIp(device.getIp());
+            vo.setPort(device.getPort());
+            vo.setOnline(device.getOnline());
+            vo.setCreateTime(device.getCreateTime());
+            vo.setUpdateTime(device.getUpdateTime());
+            voList.add(vo);
+        }
+
+        IPage<AcsDeviceListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), devicePage.getTotal());
+        resultPage.setRecords(voList);
+
+        log.info("分页查询门禁设备列表完成, 共{}条, 当前页{}条", devicePage.getTotal(), voList.size());
+        return resultPage;
     }
 
     private AcsDevice convertToEntity(AcsDeviceSearchResponse.AcsDeviceItem item) {

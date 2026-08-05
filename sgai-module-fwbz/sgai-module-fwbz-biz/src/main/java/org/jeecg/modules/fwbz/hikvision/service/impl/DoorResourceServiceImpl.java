@@ -3,11 +3,15 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusRequest;
@@ -303,11 +307,22 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
     }
 
     @Override
-    public List<DoorListVO> getDoorList() {
-        log.info("查询本地数据库中全部门禁点列表");
-        List<DoorResource> doorList = list();
-        List<DoorListVO> result = new ArrayList<>(doorList.size());
-        for (DoorResource door : doorList) {
+    public IPage<DoorListVO> getDoorList(DoorResourcePageDto dto) {
+        log.info("分页查询门禁点列表, pageNo={}, pageSize={}, name={}, doorNo={}, regionName={}, doorState={}, treatyType={}, installLocation={}",
+                dto.getPageNo(), dto.getPageSize(), dto.getName(), dto.getDoorNo(), dto.getRegionName(), dto.getDoorState(), dto.getTreatyType(), dto.getInstallLocation());
+
+        LambdaQueryWrapper<DoorResource> wrapper = new LambdaQueryWrapper<DoorResource>()
+                .like(StringUtils.isNotBlank(dto.getName()), DoorResource::getName, dto.getName())
+                .eq(StringUtils.isNotBlank(dto.getDoorNo()), DoorResource::getDoorNo, dto.getDoorNo())
+                .like(StringUtils.isNotBlank(dto.getRegionName()), DoorResource::getRegionName, dto.getRegionName())
+                .eq(StringUtils.isNotBlank(dto.getDoorState()), DoorResource::getDoorState, dto.getDoorState())
+                .eq(StringUtils.isNotBlank(dto.getTreatyType()), DoorResource::getTreatyType, dto.getTreatyType())
+                .like(StringUtils.isNotBlank(dto.getInstallLocation()), DoorResource::getInstallLocation, dto.getInstallLocation());
+
+        IPage<DoorResource> doorPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        List<DoorListVO> voList = new ArrayList<>((int) doorPage.getSize());
+        for (DoorResource door : doorPage.getRecords()) {
             DoorListVO vo = new DoorListVO();
             vo.setIndexCode(door.getIndexCode());
             vo.setName(door.getName());
@@ -320,9 +335,13 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             vo.setTreatyType(door.getTreatyType());
             vo.setCreateTime(door.getCreateTime());
             vo.setUpdateTime(door.getUpdateTime());
-            result.add(vo);
+            voList.add(vo);
         }
-        log.info("查询门禁点列表完成, 共{}条", result.size());
-        return result;
+
+        IPage<DoorListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), doorPage.getTotal());
+        resultPage.setRecords(voList);
+
+        log.info("分页查询门禁点列表完成, 共{}条, 当前页{}条", doorPage.getTotal(), voList.size());
+        return resultPage;
     }
 }

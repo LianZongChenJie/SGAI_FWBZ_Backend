@@ -1,6 +1,9 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorEventListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorEventPageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorEvent;
 
 /**
@@ -18,4 +21,12 @@ public interface IDoorEventService extends IService<DoorEvent> {
      * @return 新增的事件记录数
      */
     int syncFromHikvision();
+
+    /**
+     * 分页查询门禁点事件列表，支持按人员姓名、门禁点名称、门禁点编码、事件类型、进出类型、卡号、时间范围检索，为空查全部
+     *
+     * @param dto 分页及查询条件
+     * @return 门禁点事件分页列表
+     */
+    IPage<DoorEventListVO> getEventList(DoorEventPageDto dto);
 }

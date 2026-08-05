@@ -1,11 +1,15 @@
 package org.jeecg.modules.fwbz.hikvision.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceListVO;
+import org.jeecg.modules.fwbz.hikvision.dto.AcsDevicePageDto;
 import org.jeecg.modules.fwbz.hikvision.service.IAcsDeviceService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +51,25 @@ public class AcsDeviceController {
         } catch (Exception e) {
             log.error("同步门禁设备在线状态失败", e);
             return Result.error("同步门禁设备在线状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 分页获取门禁设备列表
+     * <p>分页查询门禁设备数据，支持按名称、设备类型编码、区域名称、在线状态、IP检索，为空查全部。</p>
+     *
+     * @param dto 分页及查询条件
+     * @return 门禁设备分页列表
+     */
+    @GetMapping("/list")
+    @ApiOperation(value = "分页获取门禁设备列表", notes = "分页查询门禁设备数据，支持按名称、设备类型、区域名称、在线状态、IP检索，为空查全部")
+    public Result<IPage<AcsDeviceListVO>> getDeviceList(AcsDevicePageDto dto) {
+        try {
+            IPage<AcsDeviceListVO> page = acsDeviceService.getDeviceList(dto);
+            return Result.ok(page);
+        } catch (Exception e) {
+            log.error("获取门禁设备列表失败", e);
+            return Result.error("获取门禁设备列表失败: " + e.getMessage());
         }
     }
 }
