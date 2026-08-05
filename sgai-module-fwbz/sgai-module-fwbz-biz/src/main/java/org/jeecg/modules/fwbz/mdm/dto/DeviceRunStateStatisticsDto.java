@@ -8,6 +8,10 @@ import lombok.Data;
 @Data
 public class DeviceRunStateStatisticsDto {
 
+
+
+    private Long categoryId;
+
     /**
      * 总数
      */
