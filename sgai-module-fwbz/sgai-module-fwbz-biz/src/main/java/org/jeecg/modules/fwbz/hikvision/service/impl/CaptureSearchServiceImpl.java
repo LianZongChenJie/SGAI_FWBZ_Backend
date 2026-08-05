@@ -24,7 +24,7 @@ public class CaptureSearchServiceImpl implements ICaptureSearchService {
     private static final String CAPTURE_SEARCH_API = "/api/frs/v1/application/captureSearch";
 
     /** 固定最小相似度 */
-    private static final int MIN_SIMILARITY = 50;
+    private static final int MIN_SIMILARITY = 80;
 
     /** 固定页码 */
     private static final int PAGE_NO = 1;

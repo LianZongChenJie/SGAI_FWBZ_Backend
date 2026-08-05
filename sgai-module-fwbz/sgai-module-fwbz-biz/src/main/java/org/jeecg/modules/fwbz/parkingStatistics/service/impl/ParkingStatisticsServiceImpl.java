@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.interfaceStatistics.service.IInterfaceHistoryService;
 import org.jeecg.modules.fwbz.parkingStatistics.dto.ExternalParkingSpaceItemDto;
 import org.jeecg.modules.fwbz.parkingStatistics.entity.ParkingCount;
 import org.jeecg.modules.fwbz.parkingStatistics.mapper.ParkingCountMapper;
@@ -12,6 +13,7 @@ import org.jeecg.modules.fwbz.parkingStatistics.service.IParkingStatisticsServic
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingFlow24hVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingSpaceStatVO;
 import org.jeecg.modules.fwbz.parkingStatistics.vo.ParkingStatCardVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -98,6 +100,14 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     @Value("${parking.statistics.api.tempFlow24hPath:/fwbz/parkingStatistics/parkingFlow24h}")
     private String tempFlow24hPath;
 
+    @Autowired
+    private IInterfaceHistoryService interfaceHistoryService;
+
+    /**
+     * 停车系统ID（对应 table_http_system 中的 system_id）
+     */
+    private static final Long PARKING_SYSTEM_ID = 2L;
+
     private static final int TIMEOUT_MS = 5000;
 
     private final RestTemplate restTemplate;
@@ -144,14 +154,10 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     @Override
     public List<ParkingSpaceStatVO> getParkingSpaceDistribution() {
-        // 使用临时地址实时获取，不落库（后期替换为正式地址）
         try {
             String url = tempBaseUrl + tempSpaceDistributionPath;
-            log.info("url: {}", url);
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("停车场车位分布外部API响应: {}", body);
+            String body = doGet(url);
+            log.info("停车场车位分布API请求成功");
             if (body == null || body.trim().isEmpty()) {
                 return Collections.emptyList();
             }
@@ -180,13 +186,10 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     @Override
     public ParkingFlow24hVO getParkingFlow24h() {
-        // 使用临时地址实时获取，不落库（后期替换为正式地址）
         try {
             String url = tempBaseUrl + tempFlow24hPath;
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("24小时停车流量外部API响应: {}", body);
+            String body = doGet(url);
+            log.info("24小时停车流量API请求成功");
             if (body == null || body.trim().isEmpty()) {
                 return null;
             }
@@ -378,6 +381,38 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     // ==================== HTTP API请求 ====================
 
     /**
+     * 执行 HTTP GET 请求并记录请求历史到 table_interface_history。
+     *
+     * @param url     请求地址
+     * @param headers 可选请求头，格式为 key1, value1, key2, value2...
+     * @return 响应体字符串
+     */
+    private String doGet(String url, String... headers) {
+        long start = System.currentTimeMillis();
+        try {
+            RequestEntity<?> req;
+            if (headers != null && headers.length > 0) {
+                RequestEntity.HeadersBuilder<?> builder = RequestEntity.get(URI.create(url));
+                for (int i = 0; i < headers.length; i += 2) {
+                    builder.header(headers[i], headers[i + 1]);
+                }
+                req = builder.build();
+            } else {
+                req = RequestEntity.get(URI.create(url)).build();
+            }
+            ResponseEntity<String> response = restTemplate.exchange(req, String.class);
+            String body = response.getBody();
+            long elapsed = System.currentTimeMillis() - start;
+            interfaceHistoryService.saveHistory(PARKING_SYSTEM_ID, url, elapsed, body);
+            return body;
+        } catch (Exception e) {
+            long elapsed = System.currentTimeMillis() - start;
+            interfaceHistoryService.saveHistory(PARKING_SYSTEM_ID, url, elapsed, null);
+            throw e;
+        }
+    }
+
+    /**
      * 请求停车场车辆统计API获取今日进场车辆数
      * <p>
      * 请求地址: car_total_amount，需携带 appKey/appSecret 请求头，
@@ -385,13 +420,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
      */
     private Long fetchTodayEntryFromCarTotalAmountApi() {
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(carTotalAmountUrl))
-                    .header("appKey", appKey)
-                    .header("appSecret", appSecret)
-                    .build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("停车场车辆统计API响应: {}", body);
+            String body = doGet(carTotalAmountUrl, "appKey", appKey, "appSecret", appSecret);
+            log.info("停车场车辆统计API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("停车场车辆统计API响应解析失败");
@@ -420,13 +450,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
      */
     private long[] fetchParkingNumberFromApi() {
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(parkingNumberUrl))
-                    .header("appKey", appKey)
-                    .header("appSecret", appSecret)
-                    .build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("停车场车位数量API响应: {}", body);
+            String body = doGet(parkingNumberUrl, "appKey", appKey, "appSecret", appSecret);
+            log.info("停车场车位数量API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("停车场车位数量API响应解析失败");
@@ -457,13 +482,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
      */
     private Double fetchAvgStopTimeFromApi() {
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(avgStopTimeUrl))
-                    .header("appKey", appKey)
-                    .header("appSecret", appSecret)
-                    .build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("平均停车时长API响应: {}", body);
+            String body = doGet(avgStopTimeUrl, "appKey", appKey, "appSecret", appSecret);
+            log.info("平均停车时长API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("平均停车时长API响应解析失败");
@@ -492,10 +512,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     private Long fetchTodayEntryFromTempApi() {
         try {
             String url = tempBaseUrl + tempTodayEntryPath;
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("临时-今日进场车辆API响应: {}", body);
+            String body = doGet(url);
+            log.info("临时-今日进场车辆API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("临时-今日进场车辆API响应解析失败");
@@ -524,10 +542,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     private long[] fetchParkingNumberFromTempApi() {
         try {
             String url = tempBaseUrl + tempRemainingSpacePath;
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("临时-停车场车位数量API响应: {}", body);
+            String body = doGet(url);
+            log.info("临时-停车场车位数量API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("临时-停车场车位数量API响应解析失败");
@@ -558,10 +574,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     private Double fetchAvgDurationFromTempApi() {
         try {
             String url = tempBaseUrl + tempAvgDurationPath;
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("临时-平均停车时长API响应: {}", body);
+            String body = doGet(url);
+            log.info("临时-平均停车时长API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("临时-平均停车时长API响应解析失败");
@@ -572,7 +586,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
                 log.error("临时-平均停车时长API响应中无result字段");
                 return null;
             }
-            // 尝试从 result 中获取平均停车时长，支持多种字段名
             if (result.containsKey("avgDuration")) {
                 return result.getDouble("avgDuration");
             }
@@ -592,10 +605,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     private Long fetchLongFromApi(String url, String fieldName) {
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("外部API响应 [{}]: {}", fieldName, body);
+            String body = doGet(url);
+            log.info("外部API请求成功 [{}]", fieldName);
             try {
                 com.alibaba.fastjson.JSONObject json = com.alibaba.fastjson.JSONObject.parseObject(body);
                 if (json.containsKey("data")) {
@@ -616,10 +627,8 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
 
     private Double fetchDoubleFromApi(String url, String fieldName) {
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
-            ResponseEntity<String> response = restTemplate.exchange(request, String.class);
-            String body = response.getBody();
-            log.debug("外部API响应 [{}]: {}", fieldName, body);
+            String body = doGet(url);
+            log.info("外部API请求成功 [{}]", fieldName);
             try {
                 com.alibaba.fastjson.JSONObject json = com.alibaba.fastjson.JSONObject.parseObject(body);
                 if (json.containsKey("data")) {

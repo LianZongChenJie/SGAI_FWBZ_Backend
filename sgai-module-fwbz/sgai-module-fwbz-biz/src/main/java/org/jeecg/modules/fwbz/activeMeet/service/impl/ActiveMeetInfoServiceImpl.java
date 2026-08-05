@@ -32,7 +32,8 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
                 new LambdaQueryWrapper<ActiveMeetInfo>()
                         .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
                         .eq(params.getVenueId() != null, ActiveMeetInfo::getVenueId, params.getVenueId())
-                        .orderByDesc(ActiveMeetInfo::getStartDate)
+                        .ge(params.getStartDate() != null, ActiveMeetInfo::getStartDate, params.getStartDate())
+                        .orderByAsc(ActiveMeetInfo::getStartDate)
                         .orderByAsc(ActiveMeetInfo::getStartTime)
         );
         fillVenueName(result.getRecords());
