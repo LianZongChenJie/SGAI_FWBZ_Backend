@@ -6,12 +6,17 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetPreparationInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetsDeviceType;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetPreparationInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetsDeviceTypeMapper;
 import org.jeecg.modules.fwbz.activeMeet.service.IActiveMeetInfoService;
 import org.jeecg.modules.fwbz.activeMeet.vo.WeekActivityVO;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,9 +25,15 @@ import java.util.stream.Collectors;
 public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper, ActiveMeetInfo> implements IActiveMeetInfoService {
 
     private final IVenueInfoService venueInfoService;
+    private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
+    private final ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper;
 
-    public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService) {
+    public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService,
+                                     ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
+                                     ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper) {
         this.venueInfoService = venueInfoService;
+        this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
+        this.activeMeetPreparationInfoMapper = activeMeetPreparationInfoMapper;
     }
 
     @Override
@@ -50,10 +61,44 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean save(ActiveMeetInfo entity) {
         entity.setId(null);
         check(entity);
-        return super.save(entity);
+        boolean result = super.save(entity);
+        // 创建会议后，自动将所有设备类型插入会前筹备信息表
+        initPreparationInfo(entity.getId());
+        return result;
+    }
+
+    /**
+     * 根据所有设备类型初始化会前筹备信息
+     */
+    private void initPreparationInfo(Long activeMeetId) {
+        List<ActiveMeetsDeviceType> deviceTypes = activeMeetsDeviceTypeMapper.selectList(null);
+        if (deviceTypes == null || deviceTypes.isEmpty()) {
+            return;
+        }
+        List<ActiveMeetPreparationInfo> list = new ArrayList<>();
+        for (ActiveMeetsDeviceType deviceType : deviceTypes) {
+            ActiveMeetPreparationInfo info = new ActiveMeetPreparationInfo();
+            info.setActiveMeetId(activeMeetId);
+            info.setActiveMeetsDeviceTypeId(deviceType.getId());
+            info.setStatus(0);
+            list.add(info);
+        }
+        for (ActiveMeetPreparationInfo info : list) {
+            activeMeetPreparationInfoMapper.insert(info);
+        }
+    }
+
+    @Override
+    public boolean removeById(java.io.Serializable id) {
+        // 删除会议时同时删除关联的筹备信息
+        activeMeetPreparationInfoMapper.delete(
+                new LambdaQueryWrapper<ActiveMeetPreparationInfo>()
+                        .eq(ActiveMeetPreparationInfo::getActiveMeetId, id));
+        return super.removeById(id);
     }
 
     @Override

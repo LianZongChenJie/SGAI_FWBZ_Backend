@@ -1,0 +1,274 @@
+package org.jeecg.modules.fwbz.activeMeetPreparation.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetPreparationInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetsDeviceType;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetPreparationInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetsDeviceTypeMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.entity.ActiveMeetPreparationType;
+import org.jeecg.modules.fwbz.activeMeetPreparation.entity.Device;
+import org.jeecg.modules.fwbz.activeMeetPreparation.entity.LightingCircuit;
+import org.jeecg.modules.fwbz.activeMeetPreparation.entity.SmokeDetector;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.ActiveMeetPreparationTypeMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.DeviceMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.LightingCircuitMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.SmokeDetectorMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.service.IActiveMeetPreparationService;
+import org.jeecg.modules.fwbz.activeMeetPreparation.vo.DeviceTypeGroupVO;
+import org.jeecg.modules.fwbz.activeMeetPreparation.vo.PreparationChecklistVO;
+import org.jeecg.modules.fwbz.activeMeetPreparation.vo.PreparationDetailVO;
+import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
+import org.jeecg.modules.fwbz.hikvision.mapper.AcsDeviceMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.DoorResourceMapper;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationService {
+
+    private final ActiveMeetInfoMapper activeMeetInfoMapper;
+    private final ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper;
+    private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
+    private final ActiveMeetPreparationTypeMapper activeMeetPreparationTypeMapper;
+    private final DeviceMapper deviceMapper;
+    private final CameraResourceMapper cameraResourceMapper;
+    private final DoorResourceMapper doorResourceMapper;
+    private final AcsDeviceMapper acsDeviceMapper;
+    private final SmokeDetectorMapper smokeDetectorMapper;
+    private final LightingCircuitMapper lightingCircuitMapper;
+
+    public ActiveMeetPreparationServiceImpl(ActiveMeetInfoMapper activeMeetInfoMapper,
+                                            ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper,
+                                            ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
+                                            ActiveMeetPreparationTypeMapper activeMeetPreparationTypeMapper,
+                                            DeviceMapper deviceMapper,
+                                            CameraResourceMapper cameraResourceMapper,
+                                            DoorResourceMapper doorResourceMapper,
+                                            AcsDeviceMapper acsDeviceMapper,
+                                            SmokeDetectorMapper smokeDetectorMapper,
+                                            LightingCircuitMapper lightingCircuitMapper) {
+        this.activeMeetInfoMapper = activeMeetInfoMapper;
+        this.activeMeetPreparationInfoMapper = activeMeetPreparationInfoMapper;
+        this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
+        this.activeMeetPreparationTypeMapper = activeMeetPreparationTypeMapper;
+        this.deviceMapper = deviceMapper;
+        this.cameraResourceMapper = cameraResourceMapper;
+        this.doorResourceMapper = doorResourceMapper;
+        this.acsDeviceMapper = acsDeviceMapper;
+        this.smokeDetectorMapper = smokeDetectorMapper;
+        this.lightingCircuitMapper = lightingCircuitMapper;
+    }
+
+    @Override
+    public PreparationChecklistVO getChecklist(Long activeMeetId) {
+        // 1. 获取会议信息
+        ActiveMeetInfo meetInfo = activeMeetInfoMapper.selectById(activeMeetId);
+        if (meetInfo == null) {
+            return null;
+        }
+
+        // 2. 获取该会议的所有筹备信息
+        List<ActiveMeetPreparationInfo> prepInfoList = activeMeetPreparationInfoMapper.selectList(
+                new LambdaQueryWrapper<ActiveMeetPreparationInfo>()
+                        .eq(ActiveMeetPreparationInfo::getActiveMeetId, activeMeetId));
+
+        // 3. 获取所有设备类型
+        List<ActiveMeetsDeviceType> allDeviceTypes = activeMeetsDeviceTypeMapper.selectList(null);
+
+        // 4. 构建设备类型id -> 筹备信息的映射
+        Map<Long, ActiveMeetPreparationInfo> infoMap = new HashMap<>();
+        if (prepInfoList != null) {
+            for (ActiveMeetPreparationInfo info : prepInfoList) {
+                infoMap.put(info.getActiveMeetsDeviceTypeId(), info);
+            }
+        }
+
+        // 5. 获取所有筹备类型
+        List<ActiveMeetPreparationType> prepTypes = activeMeetPreparationTypeMapper.selectList(null);
+
+        // 6. 按筹备类型分组构建数据
+        List<DeviceTypeGroupVO> data = new ArrayList<>();
+        Map<Long, List<ActiveMeetsDeviceType>> deviceTypeMap = new HashMap<>();
+        for (ActiveMeetsDeviceType dt : allDeviceTypes) {
+            deviceTypeMap.computeIfAbsent(dt.getTypeId(), k -> new ArrayList<>()).add(dt);
+        }
+
+        for (ActiveMeetPreparationType prepType : prepTypes) {
+            DeviceTypeGroupVO group = new DeviceTypeGroupVO();
+            group.setTypeId(prepType.getId());
+            group.setTypeName(prepType.getTypeName());
+
+            List<ActiveMeetsDeviceType> typeDevices = deviceTypeMap.get(prepType.getId());
+            if (typeDevices == null) {
+                group.setTypeData(Collections.emptyList());
+                group.setPreparationProgress("0%");
+            } else {
+                List<PreparationDetailVO> details = new ArrayList<>();
+                int completedCount = 0;
+                for (ActiveMeetsDeviceType dt : typeDevices) {
+                    ActiveMeetPreparationInfo info = infoMap.get(dt.getId());
+                    PreparationDetailVO detail = new PreparationDetailVO();
+                    detail.setPreparationInfoId(info != null ? info.getId() : null);
+                    detail.setPreparationInfoName(dt.getDeviceTypeName());
+                    detail.setStatus(info != null ? info.getStatus() : 0);
+                    detail.setCompleteTime(info != null ? info.getCompleteTime() : null);
+                    if (info != null && info.getStatus() != null && info.getStatus() == 1) {
+                        completedCount++;
+                    }
+
+                    // 计算设备数量：已完成直接用库数据，未完成则查各表
+                    if (info != null && info.getStatus() != null && info.getStatus() == 1) {
+                        detail.setPreparationValue(info.getPreparationValue() != null ? info.getPreparationValue() : 0L);
+                        detail.setRealValue(info.getRealValue() != null ? info.getRealValue() : 0L);
+                    } else {
+                        CountResult countResult = computeCount(dt);
+                        detail.setPreparationValue(countResult.total);
+                        detail.setRealValue(countResult.online);
+                    }
+                    details.add(detail);
+                }
+                group.setTypeData(details);
+                group.setPreparationProgress(calcGroupProgress(completedCount, details.size()));
+            }
+            data.add(group);
+        }
+
+        // 7. 计算总体进度（四大项各占25%）
+        String progress = calcOverallProgress(data);
+
+        PreparationChecklistVO result = new PreparationChecklistVO();
+        result.setActiveMeetId(activeMeetId);
+        result.setActiveName(meetInfo.getActiveName());
+        result.setPreparationProgress(progress);
+        result.setData(data);
+        return result;
+    }
+
+    /**
+     * 根据设备类型计算设备总数和在线数
+     */
+    private CountResult computeCount(ActiveMeetsDeviceType dt) {
+        if (dt.getDeviceTypeId() != null) {
+            // 从device表统计（category_id = device_type_id）
+            long total = deviceMapper.selectCount(
+                    new LambdaQueryWrapper<Device>()
+                            .eq(Device::getCategoryId, dt.getDeviceTypeId()));
+            long online = deviceMapper.selectCount(
+                    new LambdaQueryWrapper<Device>()
+                            .eq(Device::getCategoryId, dt.getDeviceTypeId())
+                            .eq(Device::getRunState, "在线"));
+            return new CountResult(total, online);
+        } else {
+            // device_type_id为空，根据device_type_name判断数据来源
+            String name = dt.getDeviceTypeName();
+            if (name == null) {
+                return CountResult.ZERO;
+            }
+            switch (name) {
+                case "摄像头":
+                    return countCamera();
+                case "门禁点位":
+                    return countDoor();
+                case "门禁设备":
+                    return countAcsDevice();
+                case "烟感设备":
+                    return countSmokeDetector("1");
+                case "温感设备":
+                    return countSmokeDetector("2");
+                case "照明设备":
+                    return countLighting();
+                default:
+                    return CountResult.ZERO;
+            }
+        }
+    }
+
+    private CountResult countCamera() {
+        long total = cameraResourceMapper.selectCount(null);
+        long online = cameraResourceMapper.selectCount(
+                new LambdaQueryWrapper<CameraResource>()
+                        .eq(CameraResource::getOnline, 1));
+        return new CountResult(total, online);
+    }
+
+    private CountResult countDoor() {
+        long total = doorResourceMapper.selectCount(null);
+        long online = doorResourceMapper.selectCount(
+                new LambdaQueryWrapper<DoorResource>()
+                        .ne(DoorResource::getDoorState, "3"));
+        return new CountResult(total, online);
+    }
+
+    private CountResult countAcsDevice() {
+        long total = acsDeviceMapper.selectCount(null);
+        long online = acsDeviceMapper.selectCount(
+                new LambdaQueryWrapper<AcsDevice>()
+                        .eq(AcsDevice::getOnline, "1"));
+        return new CountResult(total, online);
+    }
+
+    private CountResult countSmokeDetector(String deviceType) {
+        long total = smokeDetectorMapper.selectCount(
+                new LambdaQueryWrapper<SmokeDetector>()
+                        .eq(SmokeDetector::getDeviceType, deviceType));
+        return new CountResult(total, 0L);
+    }
+
+    private CountResult countLighting() {
+        long total = lightingCircuitMapper.selectCount(null);
+        long online = lightingCircuitMapper.selectCount(
+                new LambdaQueryWrapper<LightingCircuit>()
+                        .eq(LightingCircuit::getComstat, "1"));
+        return new CountResult(total, online);
+    }
+
+    /**
+     * 计算单个分组内的筹备进度（每项均分）
+     */
+    private String calcGroupProgress(int completedCount, int totalCount) {
+        if (totalCount == 0) {
+            return "0%";
+        }
+        return (completedCount * 100 / totalCount) + "%";
+    }
+
+    /**
+     * 计算总体进度（四大项各占25%）
+     */
+    private String calcOverallProgress(List<DeviceTypeGroupVO> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return "0%";
+        }
+        double totalProgress = 0;
+        for (DeviceTypeGroupVO group : groups) {
+            String gp = group.getPreparationProgress();
+            if (gp != null && gp.endsWith("%")) {
+                double groupPercent = Double.parseDouble(gp.replace("%", ""));
+                // 每个大项权重25%
+                totalProgress += groupPercent * 0.25;
+            }
+        }
+        return Math.round(totalProgress) + "%";
+    }
+
+    /**
+     * 设备计数结果
+     */
+    private static class CountResult {
+        static final CountResult ZERO = new CountResult(0L, 0L);
+
+        final long total;
+        final long online;
+
+        CountResult(long total, long online) {
+            this.total = total;
+            this.online = online;
+        }
+    }
+}
