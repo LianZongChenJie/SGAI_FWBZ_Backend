@@ -352,7 +352,11 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                     DeviceAttributeHistory e = new DeviceAttributeHistory();
                     e.setAttributeId(deviceAttribute.getId());
                     e.setCollectionTime(LocalDateTime.of(localDate, LocalTime.MIN));
-                    e.setValue(deviceAttribute.getValue());
+                    String value = deviceAttribute.getValue();
+                    if(value==null){
+                        value = "0";
+                    }
+                    e.setValue(value);
                     meterDataList.add(e);
                 }
             }
@@ -460,7 +464,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 if (!sum.containsKey(field)) {
                     sum.put(field, BigDecimal.ZERO);
                 }
-                BigDecimal value = dateTimeBigDecimalMap == null ? BigDecimal.ZERO : BigDecimal.valueOf(Long.parseLong(dateTimeBigDecimalMap.getOrDefault(localDateTime, "0")));
+                BigDecimal value = dateTimeBigDecimalMap == null ? BigDecimal.ZERO : BigDecimal.valueOf(Double.parseDouble(dateTimeBigDecimalMap.getOrDefault(localDateTime, "0")));
                 tableData.put(field, value);
                 sum.put(field, ((BigDecimal) sum.get(field)).add(value));
             }
