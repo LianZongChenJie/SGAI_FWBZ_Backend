@@ -2,7 +2,7 @@ package org.jeecg.modules.fwbz.securityStatistics.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
+
 import org.jeecg.modules.fwbz.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.patorlPlan.entity.PatrolHistory;
@@ -29,7 +29,6 @@ public class SecurityStatisticsServiceImpl implements ISecurityStatisticsService
     private final ICameraResourceService cameraResourceService;
     private final IPatrolPlanService patrolPlanService;
     private final PatrolHistoryMapper patrolHistoryMapper;
-    private final IAlarmRecordService alarmRecordService;
 
     @Override
     public SecurityStatCardVO cameraTotal() {
@@ -107,13 +106,11 @@ public class SecurityStatisticsServiceImpl implements ISecurityStatisticsService
         LocalDateTime yesterdayStart = todayStart.minusDays(1);
         LocalDateTime yesterdayEnd = todayStart.minusSeconds(1);
 
-        long todayCount = alarmRecordService.countByAlarmTimeRange(todayStart, todayEnd);
-        long yesterdayCount = alarmRecordService.countByAlarmTimeRange(yesterdayStart, yesterdayEnd);
 
         SecurityStatCardVO vo = new SecurityStatCardVO();
         vo.setTitle("AI分析事件");
-        vo.setValue(String.valueOf(todayCount));
-        vo.setContext(buildCompareContext(todayCount, yesterdayCount) + " 较昨日");
+        vo.setValue(String.valueOf(0));
+        vo.setContext(buildCompareContext(0, 0) + " 较昨日");
         return vo;
     }
 
