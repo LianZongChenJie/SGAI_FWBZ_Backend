@@ -1,7 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.jeecg.modules.fwbz.entity.DoorEvent;
+import org.jeecg.modules.fwbz.hikvision.entity.DoorEvent;
 
 /**
  * 门禁点事件同步服务接口

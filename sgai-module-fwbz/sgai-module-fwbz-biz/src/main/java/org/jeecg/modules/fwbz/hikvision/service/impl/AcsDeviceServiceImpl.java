@@ -6,14 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.entity.AcsDevice;
+import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.IAcsDeviceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
-import org.jeecg.modules.fwbz.mapper.AcsDeviceMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.AcsDeviceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

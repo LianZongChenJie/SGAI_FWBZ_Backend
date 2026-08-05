@@ -1,8 +1,8 @@
-package org.jeecg.modules.fwbz.mapper;
+package org.jeecg.modules.fwbz.hikvision.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.jeecg.modules.fwbz.entity.EventNotify;
+import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
 
 /**
  * 事件订阅通知表 Mapper

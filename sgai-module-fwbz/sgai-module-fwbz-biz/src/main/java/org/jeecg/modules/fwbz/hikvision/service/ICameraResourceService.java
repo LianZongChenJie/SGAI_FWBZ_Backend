@@ -1,7 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 

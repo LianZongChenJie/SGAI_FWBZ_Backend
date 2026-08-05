@@ -1,8 +1,8 @@
-package org.jeecg.modules.fwbz.mapper;
+package org.jeecg.modules.fwbz.hikvision.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 
 /**
  * 监控点资源表 Mapper

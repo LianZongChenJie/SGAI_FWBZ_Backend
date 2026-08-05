@@ -3,7 +3,7 @@ package org.jeecg.modules.fwbz.securityStatistics.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
 
-import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.patorlPlan.entity.PatrolHistory;
 import org.jeecg.modules.fwbz.patorlPlan.entity.PatrolPlan;

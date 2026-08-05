@@ -1,7 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.jeecg.modules.fwbz.entity.DoorResource;
+import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
 
 /**
  * 门禁点资源同步服务接口

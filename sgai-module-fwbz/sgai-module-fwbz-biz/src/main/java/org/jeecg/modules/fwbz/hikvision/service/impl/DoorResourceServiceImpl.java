@@ -6,14 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.entity.DoorResource;
+import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusResponse;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
-import org.jeecg.modules.fwbz.mapper.DoorResourceMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.DoorResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

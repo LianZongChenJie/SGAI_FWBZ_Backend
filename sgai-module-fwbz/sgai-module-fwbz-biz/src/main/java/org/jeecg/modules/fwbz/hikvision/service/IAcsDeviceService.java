@@ -1,7 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.jeecg.modules.fwbz.entity.AcsDevice;
+import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 
 /**
  * 门禁设备同步服务接口

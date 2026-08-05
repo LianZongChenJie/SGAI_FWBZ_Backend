@@ -2,7 +2,7 @@ package org.jeecg.modules.fwbz.personnelManagement.service.impl;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CaptureSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.FaceGroupSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;

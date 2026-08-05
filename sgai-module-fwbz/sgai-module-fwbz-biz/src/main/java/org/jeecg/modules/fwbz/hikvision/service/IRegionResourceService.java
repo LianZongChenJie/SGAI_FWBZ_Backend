@@ -1,7 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.jeecg.modules.fwbz.entity.RegionResource;
+import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionTreeVO;
 
 import java.util.List;

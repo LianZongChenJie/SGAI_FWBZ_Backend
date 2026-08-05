@@ -4,12 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.entity.EventNotify;
+import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
 import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest.EventNotifyEvent;
 import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest.EventNotifyParams;
 import org.jeecg.modules.fwbz.hikvision.service.IEventNotifyService;
-import org.jeecg.modules.fwbz.mapper.EventNotifyMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.EventNotifyMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

@@ -6,14 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
-import org.jeecg.modules.fwbz.mapper.CameraResourceMapper;
+import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

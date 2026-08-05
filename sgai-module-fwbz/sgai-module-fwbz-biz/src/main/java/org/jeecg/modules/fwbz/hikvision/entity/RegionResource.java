@@ -1,4 +1,4 @@
-package org.jeecg.modules.fwbz.entity;
+package org.jeecg.modules.fwbz.hikvision.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
