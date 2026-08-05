@@ -73,6 +73,15 @@ public class TableUtil {
     }
 
 
+    public static List<TableHeader> only(int year, int month, int day) {
+        List<TableHeader> result = baseHeaders();
+        TableHeader e = new TableHeader();
+        LocalDate localDate = LocalDate.of(year, month, day);
+        e.setField(LocalDateTime.of(localDate, LocalTime.MIN).format(filedForMatter));
+        e.setLabel("");
+        result.add(e);
+        return result;
+    }
     public static List<TableHeader> dayOnly(int year, int month, int day) {
         DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("d日");
         List<TableHeader> result = baseHeaders();

@@ -116,6 +116,16 @@ public class OperationSupportController {
         return Result.ok(new MeteringPointDataChartVo(service.returnAirTemperature(param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 
+    /**
+     * 新风机组- pm25
+     * @param
+     * @return
+     */
+    @GetMapping("/pm25")
+    public Result<MeteringPointDataChartVo> pm25(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.pm25(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
 
 
 }

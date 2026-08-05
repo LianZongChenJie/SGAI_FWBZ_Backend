@@ -26,6 +26,7 @@ public interface IOperationSupportService {
 
     Table supplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate);
     Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate);
+    Table pm25(String energyFlowDiagramIds, LocalDate localDate);
 
 //    EnergyMeteringStatisticsDto statistics();
 
