@@ -269,7 +269,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_COLUMNS);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_POWER_POINT_ID);
 
         MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
         BigDecimal energyConsumption = BigDecimal.ZERO;

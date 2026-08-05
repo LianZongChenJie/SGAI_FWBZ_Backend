@@ -135,6 +135,12 @@ public class BusinessConfigConstant {
 
 
     /**
+     *运行保障-配电系统-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_POWER_POINT_ID = "operationSupport:power:pointId";
+
+
+    /**
      *运行保障-配电系统-列表配置
      */
     public static final String OPERATIONSUPPORT_POWER_COLUMNS = "operationSupport:power:columns";
