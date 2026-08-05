@@ -72,4 +72,27 @@ public class OperationSupportController {
     }
 
 
+    /**
+     * 空调机组-送风温度
+     * @param
+     * @return
+     */
+    @GetMapping("/supplyAirTemperature")
+    public Result<MeteringPointDataChartVo> supplyAirTemperature(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.supplyAirTemperature(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    /**
+     * 空调机组-回风温度
+     * @param
+     * @return
+     */
+    @GetMapping("/returnAirTemperature")
+    public Result<MeteringPointDataChartVo> returnAirTemperature(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.returnAirTemperature(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+
 }

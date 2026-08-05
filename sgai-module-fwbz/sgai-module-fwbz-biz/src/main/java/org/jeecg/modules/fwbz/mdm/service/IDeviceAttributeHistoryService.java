@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface IDeviceAttributeHistoryService extends IService<DeviceAttributeHistory> {
     List<DeviceAttributeHistory> listByAttributeId(DeviceAttributeHistoryQueryDto param);
+    List<DeviceAttributeHistory> listByAttributeIds(DeviceAttributeHistoryQueryDto param);
 
     void saveAttributeHistory(Collection<DeviceAttribute> attributes);
 }

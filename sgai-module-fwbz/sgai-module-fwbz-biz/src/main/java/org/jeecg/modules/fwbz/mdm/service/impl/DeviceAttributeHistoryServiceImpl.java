@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceAttributeHistoryQueryDto;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttributeHistory;
 import org.jeecg.modules.fwbz.mdm.mapper.DeviceAttributeHistoryMapper;
@@ -13,9 +15,11 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -32,6 +36,16 @@ public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttribu
                 .between(DeviceAttributeHistory::getCollectionTime, param.getStartTime(), param.getEndTime())
                 .orderByDesc(DeviceAttributeHistory::getCollectionTime)
         );
+    }
+    @Override
+    public List<DeviceAttributeHistory> listByAttributeIds(DeviceAttributeHistoryQueryDto param) {
+        if (param.getDeviceAttributeIds() == null) {
+            return Collections.emptyList();
+        }
+        return super.list(new LambdaQueryWrapper<DeviceAttributeHistory>()
+                .in(DeviceAttributeHistory::getAttributeId, param.getDeviceAttributeIds())
+                .between(DeviceAttributeHistory::getCollectionTime, param.getStartTime(), param.getEndTime())
+                .orderByDesc(DeviceAttributeHistory::getCollectionTime));
     }
 
     @Override

@@ -7,7 +7,6 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public interface IOperationSupportService {
 
@@ -21,6 +20,8 @@ public interface IOperationSupportService {
 
     Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate);
 
+    Table supplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate);
+    Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate);
 
 //    EnergyMeteringStatisticsDto statistics();
 

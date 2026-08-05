@@ -6,32 +6,29 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
-import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.TableData;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.TableHeader;
-import org.jeecg.modules.fwbz.entity.DayData;
-import org.jeecg.modules.fwbz.entity.MonthData;
-import org.jeecg.modules.fwbz.entity.RealData;
-import org.jeecg.modules.fwbz.mdm.constant.CategoryConstant;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
-import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
+import org.jeecg.modules.fwbz.mdm.dto.DeviceAttributeHistoryQueryDto;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
-import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttributeHistory;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -39,8 +36,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,12 +47,14 @@ import static java.util.stream.Collectors.groupingBy;
 @AllArgsConstructor
 @Slf4j
 public class OperationSupportServiceImpl implements IOperationSupportService {
+    private final DateTimeFormatter filedForMatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final IDeviceService deviceService;
     private final IMeteringPointService meteringPointService;
     private final IMeteringPointDataDayService meteringPointDataDayService;
     private final IDeviceAttributeService deviceAttributeService;
     private final IMeteringPointDataService meteringPointDataService;
+    private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
 
     private final IBusinessConfigService businessConfigService;
     @Override
@@ -156,6 +154,75 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         return meteringPointDataService.findDay(longByKey2, localDate);
     }
 
+    /**
+     * 送风温度当天的温度曲线
+     * @param energyFlowDiagramIds
+     * @param localDate
+     * @return
+     */
+    @Override
+    public Table supplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_SUPPLYAIR);
+        return findAttrHistoryDay(localDate, category, attrCode);
+
+    }
+
+    /**
+     * 回风温度当天的温度曲线
+     * @param energyFlowDiagramIds
+     * @param localDate
+     * @return
+     */
+    @Override
+    public Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_RETURNAIR);
+        return findAttrHistoryDay(localDate, category, attrCode);
+
+    }
+
+    /**
+     * 根据分类id 和属性Code 和时间查询当天的分时间变化曲线
+     * @param localDate
+     * @param categoryId
+     * @param attrCode
+     * @return
+     */
+    @NotNull
+    private Table findAttrHistoryDay(LocalDate localDate, String categoryId, String attrCode) {
+
+        DeviceDataFindDto params = new DeviceDataFindDto();
+        params.setCategoryId(Long.valueOf(categoryId));
+        params.setPageNo(1);
+        params.setPageSize(9999);
+        IPage<DeviceDataVo> deviceDataVoIPage = equipmentList(params);
+        if(localDate ==null){
+            localDate = LocalDate.now();
+        }
+
+        List<DeviceDataVo> records = deviceDataVoIPage.getRecords();
+
+        Map<Long, String> deviceProperties = new HashMap<>();
+        for (DeviceDataVo record : records) {
+            List<DeviceAttribute> deviceAttributeList = record.getDeviceAttributeList();
+            for (DeviceAttribute deviceAttribute : deviceAttributeList) {
+                if(deviceAttribute.getAttributeCode().equals(attrCode)){
+                    deviceProperties.put(deviceAttribute.getId(), record.getDeviceCode());
+                }
+            }
+        }
+
+        DeviceAttributeHistoryQueryDto param = new DeviceAttributeHistoryQueryDto();
+        param.setDeviceAttributeIds(deviceProperties.keySet().stream().toList());
+        param.setStartTime(LocalDateTime.of(localDate, LocalTime.MIN));
+        param.setEndTime(LocalDateTime.of(localDate, LocalTime.MIN.withHour(23)));
+        List<DeviceAttributeHistory> deviceAttributeHistories = deviceAttributeHistoryService.listByAttributeIds(param);
+
+        List<TableHeader> tableHeaderList = TableUtil.dayHeaders(localDate);
+        Table table = createTable(tableHeaderList, deviceProperties, deviceAttributeHistories);
+        return table;
+    }
 
 
 //    @Override
@@ -295,6 +362,49 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 .map(String::trim)
                 .filter(id -> !id.isEmpty())
                 .collect(Collectors.toList());
+    }
+    private Table createTable(List<TableHeader> tableHeaderList, Map<Long, String> configs, List<DeviceAttributeHistory> meterDataList) {
+        Map<Long, Map<LocalDateTime, String>> dataMap = meterDataList.stream()
+                .collect(Collectors.groupingBy(DeviceAttributeHistory::getAttributeId,
+                        Collectors.toMap(DeviceAttributeHistory::getCollectionTime, DeviceAttributeHistory::getValue)));
+        List<TableData> tableDataList = new ArrayList<>();
+        // 表格尾行合计
+        TableData sum = new TableData();
+        sum.put("name", "合计");
+        sum.put("sum", BigDecimal.ZERO);
+
+        for (Long key : configs.keySet()) {
+            String name = configs.get(key);
+
+
+            TableData tableData = new TableData();
+            Map<LocalDateTime, String> dateTimeBigDecimalMap = dataMap.get(key);
+            for(TableHeader header : tableHeaderList){
+                String field = header.getField();
+                if (field.equals("sum")) {
+                    continue;
+                }
+                if (field.equals("name")) {
+                    tableData.put(field, name);
+                    continue;
+                }
+                LocalDateTime localDateTime = LocalDateTime.parse(field, filedForMatter);
+                if(!sum.containsKey(field)){
+                    sum.put(field,BigDecimal.ZERO);
+                }
+                BigDecimal value = dateTimeBigDecimalMap == null ? BigDecimal.ZERO : BigDecimal.valueOf(Long.parseLong(dateTimeBigDecimalMap.getOrDefault(localDateTime, "0")));
+                tableData.put(field, value);
+                sum.put(field,((BigDecimal)sum.get(field)).add(value));
+            }
+            tableData.calculateSum();
+            sum.put("sum",((BigDecimal) sum.get("sum")).add((BigDecimal) tableData.get("sum")));
+            tableDataList.add(tableData);
+        }
+        tableDataList.add(sum);
+        Table table = new Table();
+        table.setTableHeaderList(tableHeaderList);
+        table.setTableDataList(tableDataList);
+        return table;
     }
 
 }
