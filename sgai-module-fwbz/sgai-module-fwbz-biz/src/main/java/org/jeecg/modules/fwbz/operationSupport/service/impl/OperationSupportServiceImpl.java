@@ -111,7 +111,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     public IPage<DeviceDataVo> airList(DeviceDataFindDto params) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
-        String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_COLUMNS);
+        String columns = "STOP_RUN,SA_TEMP_SETPOINT";
         IPage<DeviceDataVo> deviceWithAttr = findDeviceWithAttr(params, longByKey, columns);
         //空调机组冗余展示字段 启停状态
         for (DeviceDataVo record : deviceWithAttr.getRecords()) {
