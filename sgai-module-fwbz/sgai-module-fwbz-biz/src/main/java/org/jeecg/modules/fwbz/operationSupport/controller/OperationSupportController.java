@@ -9,6 +9,7 @@ import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
@@ -25,13 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperationSupportController {
 
     private final IOperationSupportService service;
-
-
-    @GetMapping("/equipmentList")
-    public Result<IPage<DeviceDataVo>> equipmentList(DeviceDataFindDto params) {
-        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
-        return Result.ok(service.equipmentListWithAttr(params));
-    }
 
     /**
      * 空调机组-列表
@@ -82,6 +76,15 @@ public class OperationSupportController {
     public Result<FreshAirStatisticsDto> freshAirStatistics() {
         return Result.ok(service.freshAirStatistics());
     }
+    /**
+     * 配电系统-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/powerStatistics")
+    public Result<PowerStatisticsDto> powerStatistics() {
+        return Result.ok(service.powerStatistics());
+    }
 
 
     /**
@@ -126,6 +129,37 @@ public class OperationSupportController {
         return Result.ok(new MeteringPointDataChartVo(service.pm25(param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 
+    /**
+     * 新风机组-送风温度
+     * @param
+     * @return
+     */
+    @GetMapping("/freshSupplyAirTemperature")
+    public Result<MeteringPointDataChartVo> freshSupplyAirTemperature(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.freshSupplyAirTemperature(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    /**
+     * 新风机组-回风温度
+     * @param
+     * @return
+     */
+    @GetMapping("/freshReturnAirTemperature")
+    public Result<MeteringPointDataChartVo> freshReturnAirTemperature(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.freshReturnAirTemperature(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    /**
+     * 配电系统- 有功功率
+     * @param
+     * @return
+     */
+    @GetMapping("/activePower")
+    public Result<MeteringPointDataChartVo> activePower(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.activePower(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
 
 
 }

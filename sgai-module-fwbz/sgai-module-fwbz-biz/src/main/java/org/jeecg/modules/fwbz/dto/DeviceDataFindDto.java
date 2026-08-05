@@ -23,6 +23,8 @@ public class DeviceDataFindDto {
 
     private Long spaceId;
 
+    private String ids;
+
     private String spaceIds;
 
     private String categoryIds;

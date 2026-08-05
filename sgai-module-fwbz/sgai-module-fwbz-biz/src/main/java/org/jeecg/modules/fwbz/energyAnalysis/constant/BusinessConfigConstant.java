@@ -109,12 +109,22 @@ public class BusinessConfigConstant {
 
 
     /**
-     *运行保障tab页新风机组-回风温度趋势属性名
+     *运行保障tab页新风机组-PM2.5趋势属性名
      */
     public static final String OPERATIONSUPPORT_TAB_FRESHAIR_PM25 = "operationSupport:tab:freshAir:pm25";
 
 
+    /**
+     *运行保障tab页空调机组-送风温度趋势属性名
+     */
+    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_SUPPLYAIR = "operationSupport:tab:freshAir:supplyAir";
 
+
+
+    /**
+     *运行保障tab页空调机组-回风温度趋势属性名
+     */
+    public static final String OPERATIONSUPPORT_TAB_FRESHAIR_RETURNAIR = "operationSupport:tab:freshAir:returnAir";
 
 
 
@@ -130,6 +140,10 @@ public class BusinessConfigConstant {
     public static final String OPERATIONSUPPORT_TAB_POWER_COLUMNS = "operationSupport:tab:power:columns";
 
 
+    /**
+     *运行保障tab页配电系统-有功功率属性名
+     */
+    public static final String OPERATIONSUPPORT_TAB_POWER_ACTIVE = "operationSupport:tab:power:active";
 
 
 }

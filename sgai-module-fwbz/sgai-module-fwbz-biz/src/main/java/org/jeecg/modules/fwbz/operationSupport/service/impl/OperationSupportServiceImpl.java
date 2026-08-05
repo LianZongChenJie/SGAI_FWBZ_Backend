@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
@@ -61,14 +63,15 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IBusinessConfigService businessConfigService;
 
     @Override
-    public IPage<DeviceDataVo> equipmentListWithAttr(DeviceDataFindDto params) {
+    public IPage<DeviceDataVo> deviceListWithAttrBycategoryId(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
-                .eq(Device::getDeviceType, params.getDeviceType())
                 .eq(Device::getCategoryId, params.getCategoryId())
                 .eq(params.getSpaceId() != null, Device::getSpaceId, params.getSpaceId())
                 .eq(params.getRunState() != null, Device::getRunState, params.getRunState())
                 .orderByDesc(Device::getSort);
-
+        if (StringUtils.isNotEmpty(params.getIds())){
+            wrapper.in(Device::getId, Arrays.stream(params.getIds().split(",")).map(Long::parseLong).collect(Collectors.toList()));
+        }
         IPage<Device> page = new Page<>(params.getPageNo(), params.getPageSize());
         IPage<DeviceDataVo> listPage = deviceService.page(page, wrapper).convert(DeviceDataVo::convert);
         ;
@@ -92,21 +95,18 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public IPage<DeviceDataVo> airConditioningUnitList(DeviceDataFindDto params) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
         String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_COLUMNS);
-        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
     public IPage<DeviceDataVo> freshAirHandlingUnitList(DeviceDataFindDto params) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
         String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_COLUMNS);
-        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
     public IPage<DeviceDataVo> powerDistributionSystemList(DeviceDataFindDto params) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
         String columns = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_COLUMNS);
-        params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
         return findDeviceWithAttr(params, longByKey, columns);
     }
 
@@ -114,7 +114,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @NotNull
     private IPage<DeviceDataVo> findDeviceWithAttr(DeviceDataFindDto params, String longByKey, String columns) {
         params.setCategoryId(Long.valueOf(longByKey));
-        IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
+        IPage<DeviceDataVo> deviceDataVoIPage = deviceListWithAttrBycategoryId(params);
         //查询 空调机组展示配置项 然后过滤， 只展示配置的属性列
         Set<String> strings = stream(columns.split(","))
                 .map(String::trim)
@@ -223,6 +223,63 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     }
 
+   @Override
+    public PowerStatisticsDto powerStatistics() {
+
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(longByKey)));
+
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_COLUMNS);
+
+        MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if (byId != null) {
+            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+            if (byDateAndPointId != null) {
+                if (byDateAndPointId.getValue() != null) {
+                    energyConsumption = byDateAndPointId.getValue();
+                }
+            }
+        }
+        PowerStatisticsDto dto = new PowerStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
+
+        //分批次查询属性信息
+        int i = list.size() / 200;
+
+        BigDecimal total = BigDecimal.ZERO;
+        int count = 0;
+        for (int j = 0; j < i + 1; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 200; k++) {
+                Device device = list.get(j * k);
+                deviceIds.add(device.getId());
+            }
+            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute byDeviceId : byDeviceIds) {
+                if (byDeviceId.getAttributeCode().equals("13Cs")) {
+                    total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    count++;
+                }
+            }
+        }
+
+        BigDecimal average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
+        dto.setAvgPowerFactor(average);
+
+        return dto;
+
+    }
+
 
     @Override
     public Table airEnergyFindDay(String energyFlowDiagramIds, LocalDate localDate) {
@@ -251,6 +308,21 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     }
 
     /**
+     * 送风温度当天的温度曲线
+     *
+     * @param energyFlowDiagramIds
+     * @param localDate
+     * @return
+     */
+    @Override
+    public Table freshSupplyAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_SUPPLYAIR);
+        return findAttrHistoryDay(localDate, category, attrCode);
+
+    }
+
+    /**
      * 回风温度当天的温度曲线
      *
      * @param energyFlowDiagramIds
@@ -259,6 +331,21 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_RETURNAIR);
+        return findAttrHistoryDay(localDate, category, attrCode);
+
+    }
+
+    /**
+     * 回风温度当天的温度曲线
+     *
+     * @param energyFlowDiagramIds
+     * @param localDate
+     * @return
+     */
+    @Override
+    public Table freshReturnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
         String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_CATEGORYID);
         String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_AIR_RETURNAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
@@ -269,7 +356,34 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public Table pm25(String energyFlowDiagramIds, LocalDate localDate) {
         String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESH_AIR_CATEGORYID);
         String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_FRESHAIR_PM25);
-        return findAttrReal(localDate, category, attrCode);
+
+        DeviceDataFindDto params = new DeviceDataFindDto();
+        params.setCategoryId(Long.valueOf(category));
+        params.setPageNo(1);
+        params.setPageSize(9999);
+        if (StringUtils.isNotBlank(energyFlowDiagramIds)) {
+            params.setIds(energyFlowDiagramIds);
+        }
+
+        return findAttrReal(params,localDate, attrCode);
+
+    }
+
+    @Override
+    public Table activePower(String energyFlowDiagramIds, LocalDate localDate) {
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_TAB_POWER_ACTIVE);
+
+        DeviceDataFindDto params = new DeviceDataFindDto();
+        params.setCategoryId(Long.valueOf(category));
+        params.setPageNo(1);
+        params.setPageSize(3);
+        if (StringUtils.isNotBlank(energyFlowDiagramIds)) {
+            params.setIds(energyFlowDiagramIds);
+        }
+
+        return findAttrReal(params,localDate, attrCode);
+
 
     }
 
@@ -290,7 +404,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         params.setPageSize(9999);
         params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
 
-        IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
+        IPage<DeviceDataVo> deviceDataVoIPage = deviceListWithAttrBycategoryId(params);
         if (localDate == null) {
             localDate = LocalDate.now();
         }
@@ -327,15 +441,9 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      * @return
      */
     @NotNull
-    private Table findAttrReal(LocalDate localDate, String categoryId, String attrCode) {
+    private Table findAttrReal(DeviceDataFindDto params,LocalDate localDate,  String attrCode) {
 
-        DeviceDataFindDto params = new DeviceDataFindDto();
-        params.setCategoryId(Long.valueOf(categoryId));
-        params.setPageNo(1);
-        params.setPageSize(9999);
-        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
-
-        IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
+        IPage<DeviceDataVo> deviceDataVoIPage = deviceListWithAttrBycategoryId(params);
         if (localDate == null) {
             localDate = LocalDate.now();
         }
