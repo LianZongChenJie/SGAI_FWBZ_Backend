@@ -10,6 +10,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDt
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,7 @@ public class OperationSupportController {
 
     @GetMapping("/equipmentList")
     public Result<IPage<DeviceDataVo>> equipmentList(DeviceDataFindDto params) {
+        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
         return Result.ok(service.equipmentListWithAttr(params));
     }
 

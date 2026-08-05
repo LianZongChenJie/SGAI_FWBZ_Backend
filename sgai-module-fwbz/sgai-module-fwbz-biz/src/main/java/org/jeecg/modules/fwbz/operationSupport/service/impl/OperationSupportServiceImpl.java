@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.parallelSetAll;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -63,7 +64,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public IPage<DeviceDataVo> equipmentListWithAttr(DeviceDataFindDto params) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
-                .eq(Device::getDeviceType, Device.DEVICE_TYPE_EQUIPMENT)
+                .eq(Device::getDeviceType,params.getDeviceType())
                 .eq(Device::getCategoryId, params.getCategoryId())
                 .eq(params.getSpaceId() != null, Device::getSpaceId, params.getSpaceId())
                 .eq(params.getRunState() != null, Device::getRunState, params.getRunState())
@@ -111,6 +112,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @NotNull
     private IPage<DeviceDataVo> findDeviceWithAttr(DeviceDataFindDto params, String longByKey, String columns) {
         params.setCategoryId(Long.valueOf(longByKey));
+        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
+
         IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
         //查询 空调机组展示配置项 然后过滤， 只展示配置的属性列
         Set<String> strings = stream(columns.split(","))
@@ -285,6 +288,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         params.setCategoryId(Long.valueOf(categoryId));
         params.setPageNo(1);
         params.setPageSize(9999);
+        params.setDeviceType(Device.DEVICE_TYPE_EQUIPMENT);
+
         IPage<DeviceDataVo> deviceDataVoIPage = equipmentListWithAttr(params);
         if (localDate == null) {
             localDate = LocalDate.now();
