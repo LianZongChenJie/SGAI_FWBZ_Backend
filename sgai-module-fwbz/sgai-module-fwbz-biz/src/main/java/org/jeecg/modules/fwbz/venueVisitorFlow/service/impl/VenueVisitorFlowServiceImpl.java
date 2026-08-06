@@ -1,47 +1,39 @@
 package org.jeecg.modules.fwbz.venueVisitorFlow.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VisitorFlow;
-import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VisitorFlowMapper;
+import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
+import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.jeecg.modules.fwbz.venueVisitorFlow.service.IVenueVisitorFlowService;
 import org.jeecg.modules.fwbz.venueVisitorFlow.vo.VisitorFlowCardVO;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 场馆客流统计 Service 实现
  * <p>
- * 逻辑：调取 HTTP API（今日总客流 / 当前在场 / 峰值客流 / 平均停留）
- * → 同步入库（一天一行，失败项跳过不影响其他项）
- * → 从数据库读取构建卡片 VO 返回前端，含较昨日对比。
+ * 数据来源：table_venue_flow_hour（各场馆客流分时统计表）。
+ * 统计逻辑：取每个场馆当日最新一条记录，汇总计算四张卡片。
  * </p>
  *
  * @author fwbz
  */
 @Slf4j
 @Service
-public class VenueVisitorFlowServiceImpl extends ServiceImpl<VisitorFlowMapper, VisitorFlow>
+public class VenueVisitorFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, VenueFlowHour>
         implements IVenueVisitorFlowService {
 
-    /**
-     * 场馆整体客流统计 HTTP API 地址（假地址，替换为实际地址）。
-     */
-    private static final String OVERALL_FLOW_API_URL = "http://api.example.com/api/visitorFlow/overall";
-
-    private final RestTemplate restTemplate;
-
-    public VenueVisitorFlowServiceImpl() {
-        this.restTemplate = new RestTemplate();
+    @Override
+    public int syncFromApi() {
+        log.info("syncFromApi: 数据来源已切换至 table_venue_flow_hour，不需要此同步逻辑");
+        return 0;
     }
 
-    // ==================== 卡片查询（仅读库，同步由定时任务负责） ====================
+    // ==================== 卡片查询（从 table_venue_flow_hour 统计） ====================
 
     @Override
     public VisitorFlowCardVO queryTodayVisitorCount() {
@@ -65,186 +57,125 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VisitorFlowMapper, 
 
     @Override
     public List<VisitorFlowCardVO> querySummary() {
-        return java.util.Arrays.asList(
-                doQueryTodayVisitorCount(),
-                doQueryCurrentVisitorCount(),
-                doQueryPeakVisitorCount(),
-                doQueryAverageStopDuration()
+        // 一次查询，批量计算四项，避免重复查库
+        List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
+        List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
+
+        // 今日进场 = 各馆最新 todayInCount 之和
+        long todayInTotal = todayLatest.stream().mapToLong(v -> nvl(v.getTodayInCount())).sum();
+        long yesterdayInTotal = yesterdayLatest.stream().mapToLong(v -> nvl(v.getTodayInCount())).sum();
+
+        // 当前在场 = 各馆最新 todayNowCount 之和
+        long todayNowTotal = todayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
+        long yesterdayNowTotal = yesterdayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
+
+        // 峰值客流 = 各馆最新 maxCount 的平均值
+        long todayPeakAvg = todayLatest.isEmpty() ? 0L :
+                Math.round(todayLatest.stream().mapToLong(v -> nvl(v.getMaxCount())).average().orElse(0));
+        long yesterdayPeakAvg = yesterdayLatest.isEmpty() ? 0L :
+                Math.round(yesterdayLatest.stream().mapToLong(v -> nvl(v.getMaxCount())).average().orElse(0));
+
+        // 平均时长 = 各馆最新 averageDuration 的平均值
+        double todayAvgDuration = todayLatest.stream()
+                .filter(v -> v.getAverageDuration() != null)
+                .mapToDouble(VenueFlowHour::getAverageDuration)
+                .average().orElse(0);
+        double yesterdayAvgDuration = yesterdayLatest.stream()
+                .filter(v -> v.getAverageDuration() != null)
+                .mapToDouble(VenueFlowHour::getAverageDuration)
+                .average().orElse(0);
+
+        return Arrays.asList(
+                buildCard("今日总客流", todayInTotal, "",
+                        compareRate(todayInTotal, yesterdayInTotal) + " 较昨日"),
+                buildCard("当前在场", todayNowTotal, "",
+                        compareRate(todayNowTotal, yesterdayNowTotal) + " 较昨日"),
+                buildCard("峰值客流", todayPeakAvg, "",
+                        compareRate(todayPeakAvg, yesterdayPeakAvg) + " 较昨日"),
+                buildCard("平均停留", round(todayAvgDuration, 1), "h",
+                        compareChange(todayAvgDuration, yesterdayAvgDuration) + " 较昨日")
         );
     }
 
-    // ==================== 同步 HTTP API → 写入数据库 ====================
-
-    @Override
-    public int syncFromApi() {
-        log.info("开始从 HTTP API 同步四个客流数据项...");
-        VisitorFlow entity = getOrCreateToday();
-        int successCount = 0;
-
-        // 调用统一接口获取四项整体客流数据
-        JSONObject apiData = fetchOverallFlowFromApi();
-        if (apiData != null) {
-            // 1. 今日总客流
-            Long todayCount = apiData.getLong("todayCount");
-            if (todayCount != null) {
-                entity.setTodayCount(todayCount);
-                successCount++;
-            }
-
-            // 2. 当前在场人数
-            Long nowCount = apiData.getLong("nowCount");
-            if (nowCount != null) {
-                entity.setNowCount(nowCount);
-                successCount++;
-            }
-
-            // 3. 峰值客流
-            Long maxCount = apiData.getLong("maxCount");
-            if (maxCount != null) {
-                entity.setMaxCount(maxCount);
-                successCount++;
-            }
-
-            // 4. 平均停留时长（小时）
-            Double avgStop = apiData.getDouble("averageStopDuration");
-            if (avgStop != null) {
-                entity.setAverageStopDuration(avgStop);
-                successCount++;
-            }
-        }
-
-        // 任意一项成功则写库
-        if (successCount > 0) {
-            insertOrUpdate(entity);
-        }
-
-        log.info("HTTP API 客流同步完成: todayCount={}, nowCount={}, maxCount={}, averageStop={}",
-                entity.getTodayCount(), entity.getNowCount(),
-                entity.getMaxCount(), entity.getAverageStopDuration());
-        return successCount;
-    }
-
-    /**
-     * 调用 HTTP API 获取整体客流数据。
-     * <p>响应格式示例：
-     * {"code":200,"msg":"success","data":{"todayCount":12345,"nowCount":678,"maxCount":1000,"averageStopDuration":1.5}}
-     * </p>
-     *
-     * @return data 节点 JSONObject，失败返回 null
-     */
-    private JSONObject fetchOverallFlowFromApi() {
-        try {
-            ResponseEntity<String> response = restTemplate.getForEntity(OVERALL_FLOW_API_URL, String.class);
-            String responseBody = response.getBody();
-            log.debug("HTTP API 整体客流响应: {}", responseBody);
-
-            JSONObject json = JSONObject.parseObject(responseBody);
-            if (json == null || json.getInteger("code") == null || json.getInteger("code") != 200) {
-                log.error("请求 HTTP API 整体客流失败: {}", responseBody);
-                return null;
-            }
-            return json.getJSONObject("data");
-        } catch (Exception e) {
-            log.error("请求 HTTP API 整体客流异常", e);
-            return null;
-        }
-    }
-
-    // ==================== 数据库操作 ====================
-
-    /**
-     * 获取今天的客流记录，没有则返回新对象（未入库）。
-     */
-    private VisitorFlow getOrCreateToday() {
-        VisitorFlow today = getOne(new LambdaQueryWrapper<VisitorFlow>()
-                .eq(VisitorFlow::getDate, LocalDate.now()));
-        if (today == null) {
-            today = new VisitorFlow();
-            today.setDate(LocalDate.now());
-        }
-        return today;
-    }
-
-    /**
-     * 保存或更新：有 id 则更新，无 id 则插入。
-     */
-    private void insertOrUpdate(VisitorFlow entity) {
-        if (entity.getId() != null) {
-            updateById(entity);
-        } else {
-            save(entity);
-        }
-    }
-
-    /**
-     * 获取今天的记录（从数据库重新读取）。
-     */
-    private VisitorFlow getToday() {
-        return getOne(new LambdaQueryWrapper<VisitorFlow>()
-                .eq(VisitorFlow::getDate, LocalDate.now()));
-    }
-
-    /**
-     * 获取昨天的记录。
-     */
-    private VisitorFlow getYesterday() {
-        return getOne(new LambdaQueryWrapper<VisitorFlow>()
-                .eq(VisitorFlow::getDate, LocalDate.now().minusDays(1)));
-    }
-
-    // ==================== 从 DB 构建返回 VO ====================
+    // ==================== 单独查询方法 ====================
 
     private VisitorFlowCardVO doQueryTodayVisitorCount() {
-        VisitorFlow today = getToday();
-        VisitorFlow yesterday = getYesterday();
-        long todayVal = today == null ? 0L : nvl(today.getTodayCount());
-        long yesterdayVal = yesterday == null ? 0L : nvl(yesterday.getTodayCount());
+        List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
+        List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
+
+        long todayVal = todayLatest.stream().mapToLong(v -> nvl(v.getTodayInCount())).sum();
+        long yesterdayVal = yesterdayLatest.stream().mapToLong(v -> nvl(v.getTodayInCount())).sum();
 
         return buildCard("今日总客流", todayVal, "",
                 compareRate(todayVal, yesterdayVal) + " 较昨日");
     }
 
     private VisitorFlowCardVO doQueryCurrentVisitorCount() {
-        VisitorFlow today = getToday();
-        VisitorFlow yesterday = getYesterday();
-        long todayVal = today == null ? 0L : nvl(today.getNowCount());
-        long yesterdayVal = yesterday == null ? 0L : nvl(yesterday.getNowCount());
+        List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
+        List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
+
+        long todayVal = todayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
+        long yesterdayVal = yesterdayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
 
         return buildCard("当前在场", todayVal, "",
                 compareRate(todayVal, yesterdayVal) + " 较昨日");
     }
 
     private VisitorFlowCardVO doQueryPeakVisitorCount() {
-        VisitorFlow today = getToday();
-        VisitorFlow yesterday = getYesterday();
-        long todayVal = today == null ? 0L : nvl(today.getMaxCount());
-        long yesterdayVal = yesterday == null ? 0L : nvl(yesterday.getMaxCount());
+        List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
+        List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
+
+        long todayVal = todayLatest.isEmpty() ? 0L :
+                Math.round(todayLatest.stream().mapToLong(v -> nvl(v.getMaxCount())).average().orElse(0));
+        long yesterdayVal = yesterdayLatest.isEmpty() ? 0L :
+                Math.round(yesterdayLatest.stream().mapToLong(v -> nvl(v.getMaxCount())).average().orElse(0));
 
         return buildCard("峰值客流", todayVal, "",
                 compareRate(todayVal, yesterdayVal) + " 较昨日");
     }
 
     private VisitorFlowCardVO doQueryAverageStopDuration() {
-        VisitorFlow today = getToday();
-        VisitorFlow yesterday = getYesterday();
-        double todayVal = today == null ? 0.0 : nvl(today.getAverageStopDuration());
-        double yesterdayVal = yesterday == null ? 0.0 : nvl(yesterday.getAverageStopDuration());
+        List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
+        List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
+
+        double todayVal = todayLatest.stream()
+                .filter(v -> v.getAverageDuration() != null)
+                .mapToDouble(VenueFlowHour::getAverageDuration)
+                .average().orElse(0);
+        double yesterdayVal = yesterdayLatest.stream()
+                .filter(v -> v.getAverageDuration() != null)
+                .mapToDouble(VenueFlowHour::getAverageDuration)
+                .average().orElse(0);
 
         return buildCard("平均停留", round(todayVal, 1), "h",
                 compareChange(todayVal, yesterdayVal) + " 较昨日");
     }
 
-    // ==================== 通用对比 & 格式化 ====================
+    // ==================== 数据获取：取每个场馆当日最新一条记录 ====================
 
     /**
-     * 数值型卡片增减率对比（百分比），参考 activeMeetStatistics 实现。
+     * 查询指定日期每个场馆的最新一条分时记录。
+     * <p>按 venueId 分组，取 id 最大的记录（代表最新）。</p>
      */
+    private List<VenueFlowHour> getLatestPerVenue(LocalDate date) {
+        List<VenueFlowHour> all = list(new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getDataDate, date));
+        if (all == null || all.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(all.stream()
+                .collect(Collectors.toMap(
+                        VenueFlowHour::getVenueId,
+                        v -> v,
+                        (a, b) -> a.getId() > b.getId() ? a : b))
+                .values());
+    }
+
+    // ==================== 通用对比 & 格式化 ====================
+
     private String compareRate(long today, long yesterday) {
         if (yesterday == 0) {
-            if (today == 0) {
-                return "—";
-            }
-            return "↑100%";
+            return today == 0 ? "—" : "↑100%";
         }
         double rate = (today - yesterday) * 100.0 / yesterday;
         String arrow = rate >= 0 ? "↑" : "↓";
@@ -252,15 +183,9 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VisitorFlowMapper, 
         return arrow + (abs == (long) abs ? String.valueOf((long) abs) : String.format("%.1f", abs)) + "%";
     }
 
-    /**
-     * 时长型卡片增减对比（绝对差值，保留 1 位小数）。
-     */
     private String compareChange(double today, double yesterday) {
         if (yesterday == 0) {
-            if (today == 0) {
-                return "—";
-            }
-            return "↑" + formatValue(today) + "h";
+            return today == 0 ? "—" : "↑" + formatValue(today) + "h";
         }
         double change = today - yesterday;
         String arrow = change >= 0 ? "↑" : "↓";
@@ -279,10 +204,6 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VisitorFlowMapper, 
 
     private long nvl(Long v) {
         return v == null ? 0L : v;
-    }
-
-    private double nvl(Double v) {
-        return v == null ? 0.0 : v;
     }
 
     private VisitorFlowCardVO buildCard(String title, Number value, String unit, String context) {

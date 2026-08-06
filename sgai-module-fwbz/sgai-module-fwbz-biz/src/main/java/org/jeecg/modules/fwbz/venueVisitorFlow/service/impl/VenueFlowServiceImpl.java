@@ -7,8 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
-import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlow;
-import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowMapper;
+import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
+import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.jeecg.modules.fwbz.venueVisitorFlow.service.IVenueFlowService;
 import org.jeecg.modules.fwbz.venueVisitorFlow.vo.VenueFlowVO;
 import org.springframework.http.HttpEntity;
@@ -21,27 +21,25 @@ import org.springframework.web.client.RestTemplate;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * 各场馆客流统计 Service 实现
  * <p>
- * 逻辑：调用 HTTP API（今日进场 / 当前在场 / 峰值人数 / 峰值时间 / 平均停留）
- * → 按 (dataDate, venueId) 唯一键写入各场馆流量表，前端从 DB 读取展示较昨日对比。
+ * 数据来源：table_venue_flow_hour（各场馆客流分时统计表）。
+ * 查询逻辑：按日期 + venueId 分组，取每个场馆最新一条记录展示。
  * </p>
  *
  * @author fwbz
  */
 @Slf4j
 @Service
-public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow>
+public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, VenueFlowHour>
         implements IVenueFlowService {
 
     /**
-     * 各场馆客流统计 HTTP API 地址（假地址，替换为实际地址）。
+     * 各场馆客流统计 HTTP API 地址。
      */
     private static final String VENUE_FLOW_API_URL = "http://api.example.com/api/visitorFlow/venueList";
 
@@ -53,7 +51,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
         this.venueInfoService = venueInfoService;
     }
 
-    // ==================== 查询 ====================
+    // ==================== 查询（从 table_venue_flow_hour 取各场馆最新一条） ====================
 
     @Override
     public List<VenueFlowVO> queryToday() {
@@ -62,27 +60,39 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
 
     @Override
     public List<VenueFlowVO> queryByDate(LocalDate date) {
-        LambdaQueryWrapper<VenueFlow> qw = new LambdaQueryWrapper<>();
-        qw.eq(VenueFlow::getDataDate, date);
-        List<VenueFlow> list = list(qw);
+        // 查询当日所有分时数据
+        List<VenueFlowHour> all = list(new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getDataDate, date));
 
-        if (list == null || list.isEmpty()) {
+        if (all == null || all.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // 构建 venueId → venueName 映射
+        // 按 venueId 分组，取每组中 id 最大的（最新记录）
+        Map<Long, VenueFlowHour> latestMap = all.stream()
+                .collect(Collectors.toMap(
+                        VenueFlowHour::getVenueId,
+                        v -> v,
+                        (a, b) -> a.getId() > b.getId() ? a : b));
+
+        // 场馆名称映射
         Map<Long, String> venueNameMap = buildVenueNameMap();
 
-        // 昨日数据
+        // 昨日数据（也取各场馆最新）
         LocalDate yesterday = date.minusDays(1);
-        LambdaQueryWrapper<VenueFlow> yesterdayQw = new LambdaQueryWrapper<>();
-        yesterdayQw.eq(VenueFlow::getDataDate, yesterday);
-        List<VenueFlow> yesterdayList = list(yesterdayQw);
-        Map<Long, VenueFlow> yesterdayMap = (yesterdayList == null ? new ArrayList<VenueFlow>() : yesterdayList)
-                .stream().collect(Collectors.toMap(VenueFlow::getVenueId, v -> v, (a, b) -> a));
+        List<VenueFlowHour> yesterdayAll = list(new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getDataDate, yesterday));
+        Map<Long, VenueFlowHour> yesterdayLatestMap = new HashMap<>();
+        if (yesterdayAll != null && !yesterdayAll.isEmpty()) {
+            yesterdayLatestMap = yesterdayAll.stream()
+                    .collect(Collectors.toMap(
+                            VenueFlowHour::getVenueId,
+                            v -> v,
+                            (a, b) -> a.getId() > b.getId() ? a : b));
+        }
 
         List<VenueFlowVO> result = new ArrayList<>();
-        for (VenueFlow today : list) {
+        for (VenueFlowHour today : latestMap.values()) {
             VenueFlowVO vo = new VenueFlowVO();
             vo.setVenueId(today.getVenueId());
             vo.setVenueName(venueNameMap.getOrDefault(today.getVenueId(), "未知场馆"));
@@ -92,7 +102,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
             vo.setMaxTime(today.getMaxTime());
             vo.setAverageDuration(round(today.getAverageDuration(), 1));
 
-            VenueFlow yesterdayRow = yesterdayMap.get(today.getVenueId());
+            VenueFlowHour yesterdayRow = yesterdayLatestMap.get(today.getVenueId());
             vo.setYesterdayInCount(yesterdayRow == null ? 0L : nvl(yesterdayRow.getTodayInCount()));
             vo.setYesterdayNowCount(yesterdayRow == null ? 0L : nvl(yesterdayRow.getTodayNowCount()));
 
@@ -109,11 +119,11 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
                 .collect(Collectors.toMap(VenueInfo::getId, VenueInfo::getVenueName, (a, b) -> a));
     }
 
-    // ==================== 同步：HTTP API → 写库 ====================
+    // ==================== 同步：HTTP API → 写 table_venue_flow_hour ====================
 
     @Override
     public int syncAllVenueFlowFromApi() {
-        log.info("开始从 HTTP API 同步各场馆客流数据...");
+        log.info("开始从 HTTP API 同步各场馆客流数据(写入 table_venue_flow_hour)...");
         int successCount = 0;
 
         JSONObject resp = fetchVenueFlowListFromApi();
@@ -137,11 +147,11 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
                     continue;
                 }
 
-                VenueFlow flow = parseVenueFlowItem(item, venueId);
-                upsertVenueFlow(flow);
+                VenueFlowHour flow = parseVenueFlowHourItem(item, venueId);
+                upsertVenueFlowHour(flow);
                 successCount++;
 
-                log.info("场馆客流入库成功 venueId={}, venueName={}, nowCount={}, maxCount={}",
+                log.info("场馆客流入库(flow_hour)成功 venueId={}, venueName={}, nowCount={}, maxCount={}",
                         venueId, item.getString("venueName"), flow.getTodayNowCount(), flow.getMaxCount());
 
             } catch (Exception e) {
@@ -170,8 +180,8 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
             Long itemVenueId = item.getLong("venueId");
             if (venueId.equals(itemVenueId)) {
                 try {
-                    VenueFlow flow = parseVenueFlowItem(item, venueId);
-                    upsertVenueFlow(flow);
+                    VenueFlowHour flow = parseVenueFlowHourItem(item, venueId);
+                    upsertVenueFlowHour(flow);
                     return true;
                 } catch (Exception e) {
                     log.error("同步单个场馆客流失败 venueId={}", venueId, e);
@@ -185,13 +195,6 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
 
     /**
      * 调用 HTTP API 获取各场馆客流列表。
-     * <p>响应格式示例：
-     * {"code":200,"msg":"success","data":{"list":[
-     *   {"venueId":1,"venueName":"XX场馆","todayInCount":500,"nowCount":100,"maxCount":300,"maxTime":"14:30","averageDuration":1.2}
-     * ]}}
-     * </p>
-     *
-     * @return data 节点 JSONObject，失败返回 null
      */
     private JSONObject fetchVenueFlowListFromApi() {
         try {
@@ -216,10 +219,10 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
     }
 
     /**
-     * 将 API 返回的 JSON 解析为 VenueFlow 实体（仅数据库字段，不含 venueName）。
+     * 将 API 返回的 JSON 解析为 VenueFlowHour 实体。
      */
-    private VenueFlow parseVenueFlowItem(JSONObject item, Long venueId) {
-        VenueFlow flow = new VenueFlow();
+    private VenueFlowHour parseVenueFlowHourItem(JSONObject item, Long venueId) {
+        VenueFlowHour flow = new VenueFlowHour();
         flow.setDataDate(LocalDate.now());
         flow.setVenueId(venueId);
         flow.setTodayInCount(item.getLong("todayInCount"));
@@ -242,10 +245,10 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowMapper, VenueFlow
     /**
      * 按 (dataDate, venueId) 唯一键 upsert：存在则更新，否则插入。
      */
-    private void upsertVenueFlow(VenueFlow flow) {
-        VenueFlow exist = getOne(new LambdaQueryWrapper<VenueFlow>()
-                .eq(VenueFlow::getDataDate, LocalDate.now())
-                .eq(VenueFlow::getVenueId, flow.getVenueId()));
+    private void upsertVenueFlowHour(VenueFlowHour flow) {
+        VenueFlowHour exist = getOne(new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getDataDate, LocalDate.now())
+                .eq(VenueFlowHour::getVenueId, flow.getVenueId()));
         if (exist != null) {
             flow.setId(exist.getId());
             updateById(flow);

@@ -16,13 +16,29 @@ import java.util.List;
 public interface IVenueFlowHourService extends IService<VenueFlowHour> {
 
     /**
-     * 查询指定日期各场馆分时客流趋势（用于图表展示）。
+     * 查询指定日期各场馆分时客流趋势（按小时，用于本日图表展示）。
      * <p>返回横轴时间标签、每个场馆在场人数序列、合计序列及今日进出汇总。</p>
      *
      * @param date 数据日期，为空默认今天
      * @return 分时趋势数据
      */
     VenueHourlyTrendVO queryHourlyTrend(LocalDate date);
+
+    /**
+     * 查询本周各场馆日度客流趋势（周一到周日，按天取各馆最新在场人数）。
+     *
+     * @param date 参考日期，用于确定是哪一周
+     * @return 日度趋势数据
+     */
+    VenueHourlyTrendVO queryWeeklyTrend(LocalDate date);
+
+    /**
+     * 查询本月各场馆日度客流趋势（1日到月末，按天取各馆最新在场人数）。
+     *
+     * @param date 参考日期，用于确定是哪一月
+     * @return 日度趋势数据
+     */
+    VenueHourlyTrendVO queryMonthlyTrend(LocalDate date);
 
     /**
      * 查询各场馆今日最新在场人数（用于热力图展示）。
