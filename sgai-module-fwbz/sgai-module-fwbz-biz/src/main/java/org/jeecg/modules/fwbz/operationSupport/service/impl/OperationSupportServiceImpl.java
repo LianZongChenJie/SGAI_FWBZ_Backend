@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.system.vo.SelectTreeModel;
+import org.jeecg.modules.fwbz.bc.entity.BuildingControlPointSendHistory;
+import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointSendHistoryService;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
@@ -69,6 +71,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IMeteringPointDataService meteringPointDataService;
     private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
     private final DeviceAttributeOperationService deviceAttributeOperationService;
+    private final IBuildingControlPointSendHistoryService buildingControlPointSendHistoryService;
 
     private final IBusinessConfigService businessConfigService;
 
@@ -329,13 +332,24 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId, Device::getRunState));
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        Map<String, Long> runStateMap2 = list.stream().filter(item -> item.getDeviceType() != null).collect(Collectors.groupingBy(Device::getDeviceType, Collectors.counting()));
+
+
+        LocalDate now = LocalDate.now();
+        LocalDateTime startOfDay = now.atStartOfDay();
+        LocalDateTime endOfDay = now.atTime(LocalTime.MAX);
+
+        long count = buildingControlPointSendHistoryService.count(new LambdaQueryWrapper<BuildingControlPointSendHistory>()
+                .between(BuildingControlPointSendHistory::getCollectionTime, startOfDay, endOfDay));
+
 
         OverViewStatisticsDto dto = new OverViewStatisticsDto();
 
         dto.setCount((long) selectTreeModels.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
-        dto.setRemoteControlEquipment("2456");
-        dto.setTodayInstructionWasIssued("1234");
+        dto.setRemoteControlEquipment(runStateMap2.getOrDefault(EquipmentCategory.TYPE_EQUIPMENT, 0L));
+
+        dto.setTodayInstructionWasIssued(count);
 
 
         return dto;
@@ -452,20 +466,30 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     @Override
     public List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId) {
+
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_OVERVIEW_CATEGORYIDS);
+        List<Long> longs = strToLongList(category);
         ArrayList<DeviceRunStateStatisticsDto> objects = new ArrayList<>();
-        if (categoryId == null) {
+        for (Long aLong : longs) {
             List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
-                    .eq(EquipmentCategory::getPid, 0L));
-            for (EquipmentCategory selectTreeModel : selectTreeModels) {
-                DeviceRunStateStatisticsDto dto = getDto(selectTreeModel);
-                objects.add(dto);
-            }
-        } else {
-            List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
-                    .eq(EquipmentCategory::getId, categoryId));
+                    .eq(EquipmentCategory::getId, aLong));
             DeviceRunStateStatisticsDto dto = getDto(selectTreeModels.get(0));
             objects.add(dto);
         }
+
+//        if (categoryId == null) {
+//            List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
+//                    .eq(EquipmentCategory::getPid, 0L));
+//            for (EquipmentCategory selectTreeModel : selectTreeModels) {
+//                DeviceRunStateStatisticsDto dto = getDto(selectTreeModel);
+//                objects.add(dto);
+//            }
+//        } else {
+//            List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
+//                    .eq(EquipmentCategory::getId, categoryId));
+//            DeviceRunStateStatisticsDto dto = getDto(selectTreeModels.get(0));
+//            objects.add(dto);
+//        }
 
         return objects;
     }

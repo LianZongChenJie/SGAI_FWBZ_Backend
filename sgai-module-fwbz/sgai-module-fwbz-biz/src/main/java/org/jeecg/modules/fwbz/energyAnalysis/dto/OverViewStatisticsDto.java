@@ -23,11 +23,11 @@ public class OverViewStatisticsDto {
     /**
      * 远程控制设备
      */
-    private String remoteControlEquipment;
+    private Long remoteControlEquipment;
 
     /**
      * 今日指令下发
      */
-    private String todayInstructionWasIssued;
+    private Long todayInstructionWasIssued;
 
 }

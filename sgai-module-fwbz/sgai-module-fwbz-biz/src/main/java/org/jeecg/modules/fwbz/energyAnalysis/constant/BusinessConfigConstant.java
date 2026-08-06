@@ -150,6 +150,10 @@ public class BusinessConfigConstant {
      *运行保障-配电系统-有功功率
      */
     public static final String OPERATIONSUPPORT_POWER_ACTIVE = "operationSupport:power:active";
+    /**
+     *运行保障-概览-设备总览
+     */
+    public static final String OPERATIONSUPPORT_OVERVIEW_CATEGORYIDS = "operationSupport:overview:categoryIds";
 
 
 }
