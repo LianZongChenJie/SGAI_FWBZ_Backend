@@ -38,13 +38,25 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
 
     @Override
     public IPage<ActiveMeetInfo> listPage(ActiveMeetInfo params) {
+        LambdaQueryWrapper<ActiveMeetInfo> wrapper = new LambdaQueryWrapper<ActiveMeetInfo>()
+                .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
+                .eq(params.getVenueId() != null, ActiveMeetInfo::getVenueId, params.getVenueId());
+
+        // 日期范围过滤：都为空查全部；startDate有值→开始日期之后；endDate有值→开始日期之前；都有→之间
+        boolean hasStart = params.getStartDate() != null;
+        boolean hasEnd = params.getEndDate() != null;
+        if (hasStart && hasEnd) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, params.getStartDate())
+                   .le(ActiveMeetInfo::getStartDate, params.getEndDate());
+        } else if (hasStart) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, params.getStartDate());
+        } else if (hasEnd) {
+            wrapper.le(ActiveMeetInfo::getStartDate, params.getEndDate());
+        }
+
         IPage<ActiveMeetInfo> result = page(
                 new Page<ActiveMeetInfo>(params.getPageNo(), params.getPageSize()),
-                new LambdaQueryWrapper<ActiveMeetInfo>()
-                        .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
-                        .eq(params.getVenueId() != null, ActiveMeetInfo::getVenueId, params.getVenueId())
-                        .ge(params.getStartDate() != null, ActiveMeetInfo::getStartDate, params.getStartDate())
-                        .orderByAsc(ActiveMeetInfo::getStartDate)
+                wrapper.orderByAsc(ActiveMeetInfo::getStartDate)
                         .orderByAsc(ActiveMeetInfo::getStartTime)
         );
         fillVenueName(result.getRecords());

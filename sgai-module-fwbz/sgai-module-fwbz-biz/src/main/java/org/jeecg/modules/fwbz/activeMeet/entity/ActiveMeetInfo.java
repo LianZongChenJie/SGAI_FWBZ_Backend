@@ -66,6 +66,14 @@ public class ActiveMeetInfo extends BaseEntity {
     private Double activeProgress;
 
     /**
+     * 查询用结束日期（非数据库字段）
+     */
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
+    @TableField(exist = false)
+    private Date endDate;
+
+    /**
      * 场馆名称（非数据库字段）
      */
     @TableField(exist = false)

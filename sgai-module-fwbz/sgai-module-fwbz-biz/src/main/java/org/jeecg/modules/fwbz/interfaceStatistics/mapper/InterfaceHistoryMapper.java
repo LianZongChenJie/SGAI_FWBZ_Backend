@@ -14,4 +14,10 @@ public interface InterfaceHistoryMapper extends BaseMapper<InterfaceHistory> {
      */
     @Select("SELECT NVL(SUM(data_size), 0) FROM table_interface_history WHERE TRUNC(clinet_date) = TRUNC(#{date})")
     Double selectDataSizeSum(@Param("date") Date date);
+
+    /**
+     * 查询指定接口的最新一条历史记录
+     */
+    @Select("SELECT * FROM table_interface_history WHERE system_id = #{systemId} ORDER BY clinet_date DESC, clinet_time DESC LIMIT 1")
+    InterfaceHistory selectLatestBySystemId(@Param("systemId") Long systemId);
 }

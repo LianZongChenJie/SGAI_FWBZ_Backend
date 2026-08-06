@@ -78,4 +78,19 @@ public class InterfaceInfo extends BaseEntity {
      * 响应时间(ms)
      */
     private Long responseTime;
+
+    /**
+     * 测试地址
+     */
+    private String testPath;
+
+    /**
+     * 采集周期
+     */
+    private String cycle;
+
+    /**
+     * 采集点位
+     */
+    private Long collectionPointLocation;
 }
