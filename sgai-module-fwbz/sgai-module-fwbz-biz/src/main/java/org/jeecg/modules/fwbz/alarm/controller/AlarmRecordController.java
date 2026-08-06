@@ -31,7 +31,7 @@ public class AlarmRecordController {
     }
 
     @PostMapping("/elimination")
-    @RequiresPermissions("Fwbz:alarmRecord:elimination")
+//    @RequiresPermissions("Fwbz:alarmRecord:elimination")
     @AutoLog(value = "告警记录-消除")
     public Result<String> elimination(@RequestParam(name = "id") Long id){
         service.elimination(id);
