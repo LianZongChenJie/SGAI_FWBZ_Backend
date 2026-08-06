@@ -26,8 +26,10 @@ import org.jeecg.modules.fwbz.hikvision.mapper.AcsDeviceMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.DoorResourceMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationService {
@@ -148,6 +150,78 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
         result.setPreparationProgress(progress);
         result.setData(data);
         return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void completePreparation(Long preparationInfoId, Long preparationValue, Long realValue) {
+        // 1. 查询并更新筹备信息
+        ActiveMeetPreparationInfo info = activeMeetPreparationInfoMapper.selectById(preparationInfoId);
+        if (info == null) {
+            throw new RuntimeException("筹备信息不存在");
+        }
+        info.setPreparationValue(preparationValue);
+        info.setRealValue(realValue);
+        info.setStatus(1);
+        info.setCompleteTime(new Date());
+        activeMeetPreparationInfoMapper.updateById(info);
+
+        // 2. 重算并更新活动总体进度
+        Double progress = calcActiveProgress(info.getActiveMeetId());
+        ActiveMeetInfo meetInfo = new ActiveMeetInfo();
+        meetInfo.setId(info.getActiveMeetId());
+        meetInfo.setActiveProgress(progress);
+        activeMeetInfoMapper.updateById(meetInfo);
+    }
+
+    /**
+     * 重新计算活动的筹备总体进度，并返回百分比数值（如 50.0）
+     */
+    private Double calcActiveProgress(Long activeMeetId) {
+        // 查询该会议的所有筹备信息
+        List<ActiveMeetPreparationInfo> prepInfoList = activeMeetPreparationInfoMapper.selectList(
+                new LambdaQueryWrapper<ActiveMeetPreparationInfo>()
+                        .eq(ActiveMeetPreparationInfo::getActiveMeetId, activeMeetId));
+
+        // 获取所有设备类型及其所属的筹备类型
+        List<ActiveMeetsDeviceType> allDeviceTypes = activeMeetsDeviceTypeMapper.selectList(null);
+        Map<Long, Long> deviceTypeToPrepType = new HashMap<>();
+        Map<Long, List<Long>> prepTypeToDeviceTypes = new HashMap<>();
+        for (ActiveMeetsDeviceType dt : allDeviceTypes) {
+            deviceTypeToPrepType.put(dt.getId(), dt.getTypeId());
+            prepTypeToDeviceTypes.computeIfAbsent(dt.getTypeId(), k -> new ArrayList<>()).add(dt.getId());
+        }
+
+        // 构建 deviceTypeId -> prepInfo 映射
+        Map<Long, ActiveMeetPreparationInfo> infoMap = new HashMap<>();
+        if (prepInfoList != null) {
+            for (ActiveMeetPreparationInfo info : prepInfoList) {
+                infoMap.put(info.getActiveMeetsDeviceTypeId(), info);
+            }
+        }
+
+        // 按筹备类型计算每组进度
+        double totalProgress = 0;
+        List<ActiveMeetPreparationType> prepTypes = activeMeetPreparationTypeMapper.selectList(null);
+        for (ActiveMeetPreparationType pt : prepTypes) {
+            List<Long> dtIds = prepTypeToDeviceTypes.get(pt.getId());
+            if (dtIds == null || dtIds.isEmpty()) {
+                continue;
+            }
+            int total = dtIds.size();
+            int completed = 0;
+            for (Long dtId : dtIds) {
+                ActiveMeetPreparationInfo info = infoMap.get(dtId);
+                if (info != null && info.getStatus() != null && info.getStatus() == 1) {
+                    completed++;
+                }
+            }
+            double groupPercent = total == 0 ? 0 : (completed * 100.0 / total);
+            // 每个大项权重25%
+            totalProgress += groupPercent * 0.25;
+        }
+
+        return Math.round(totalProgress * 100.0) / 100.0;
     }
 
     /**

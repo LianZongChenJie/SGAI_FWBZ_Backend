@@ -27,4 +27,13 @@ public class ActiveMeetPreparationController {
         }
         return Result.ok(checklist);
     }
+
+    @PutMapping("/complete")
+    @ApiOperation("完成筹备项")
+    public Result<String> complete(@RequestParam(name = "preparationInfoId") Long preparationInfoId,
+                                   @RequestParam(name = "preparationValue") Long preparationValue,
+                                   @RequestParam(name = "realValue") Long realValue) {
+        preparationService.completePreparation(preparationInfoId, preparationValue, realValue);
+        return Result.ok("修改成功");
+    }
 }

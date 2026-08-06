@@ -61,6 +61,11 @@ public class ActiveMeetInfo extends BaseEntity {
     private Long peopleQuantity;
 
     /**
+     * 活动进展
+     */
+    private Double activeProgress;
+
+    /**
      * 场馆名称（非数据库字段）
      */
     @TableField(exist = false)
