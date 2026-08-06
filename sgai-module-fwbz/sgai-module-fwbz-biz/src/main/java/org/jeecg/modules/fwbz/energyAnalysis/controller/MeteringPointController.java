@@ -77,14 +77,6 @@ public class MeteringPointController {
         return Result.OK(service.getPermissionTree(type));
     }
 
-//
-//    @AutoLog(value = "计量点位-权限树")
-//    @ApiOperation(value = "计量点位-权限树", notes = "根据当前用户数据权限查询计量点位树，父级节点会被标记为不在权限范围内")
-//    @GetMapping("/getPermissionTree")
-//    public Result<List<PermissionMeteringPointTreeModel>> getPermissionTree(@RequestParam(required = false) String type){
-//        return Result.OK(service.getPermissionTree(type));
-//    }
-
 
     @GetMapping("/list")
     @ApiOperation(value="计量点位-列表",notes="计量点位-列表")

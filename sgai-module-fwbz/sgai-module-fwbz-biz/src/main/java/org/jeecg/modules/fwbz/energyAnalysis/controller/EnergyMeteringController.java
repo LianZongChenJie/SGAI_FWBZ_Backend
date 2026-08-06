@@ -18,11 +18,11 @@ public class EnergyMeteringController {
 
 
     /**
-     * 状态统计
+     * 数据统计
      * @return 统计结果
      */
     @GetMapping("/statistics")
-    public Result<?> deviceRunStateStatistics(){
+    public Result<?> statistics(){
         return Result.ok(service.statistics());
     }
 

@@ -41,7 +41,7 @@ public class BuildingControlPointController {
 
     @PostMapping("/control")
     public Result<String> control(@RequestBody BuildingControlPoint entity){
-        buildingControlPointSendHistoryService.save(entity.getId(),entity.getValue(),entity.getCollectionTime());
+        buildingControlPointSendHistoryService.save(entity.getId(),entity.getValue(), LocalDateTime.now());
         mqSendService.sendBuildingControlOperation(entity.getGatewayAdr(),entity.getBacnetAdr(),entity.getValue());
         return Result.ok();
     }
