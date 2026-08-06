@@ -11,16 +11,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.alarm.dto.AlarmRecordDto;
 import org.jeecg.modules.fwbz.alarm.dto.TransferEventDto;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmLevel;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRulePoint;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
+import org.jeecg.modules.fwbz.alarm.entity.*;
 import org.jeecg.modules.fwbz.alarm.mapper.AlarmRecordMapper;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmLevelService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRulePointService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRulesService;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataYear;
@@ -43,7 +42,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -86,7 +88,21 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
      */
     @Override
     public void elimination(Long id) {
-        update(new LambdaUpdateWrapper<AlarmRecord>().set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_TREATED)
+        update(new LambdaUpdateWrapper<AlarmRecord>()
+                .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_TREATED)
+                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
+                .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_UNTREATED)
+                .eq(AlarmRecord::getId, id));
+    }    /**
+     * 报警消除
+     *
+     * @param id 报警记录id
+     */
+    @Override
+    public void confirm(Long id) {
+        update(new LambdaUpdateWrapper<AlarmRecord>()
+                .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED)
+                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
                 .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_UNTREATED)
                 .eq(AlarmRecord::getId, id));
     }
@@ -136,6 +152,14 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         return count(
                 new LambdaQueryWrapper<AlarmRecord>()
                         .between(AlarmRecord::getAlarmTime, startTime, endTime)
+        );
+    }
+    @Override
+    public Long countByAlarmTimeRangeAndStatus(LocalDateTime startTime, LocalDateTime endTime,String status) {
+        return count(
+                new LambdaQueryWrapper<AlarmRecord>()
+                        .between(AlarmRecord::getAlarmTime, startTime, endTime)
+                        .eq(AlarmRecord::getAlarmStatus, status)
         );
     }
 
@@ -358,6 +382,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 .eq(AlarmRecord::getId, data.getRecordId())
                 .set(AlarmRecord::getEventId, eventId)
                 .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_EVENT)
+                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
         );
     }
 
@@ -606,5 +631,33 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         }
         // 获取该设备该点位该时间段内是否已经生成过告警记录
         return count(new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmRulePointId,point.getId()).gt(AlarmRecord::getAlarmTime, time)) > 0L;
+    }
+    @Override
+    public AlarmRecordStatisticsDto statistics() {
+        LocalDate now = LocalDate.now();
+        LocalDateTime startOfDay = now.atStartOfDay();
+        LocalDateTime endOfDay = now.atTime(LocalTime.MAX);
+        Long l = countByAlarmTimeRangeAndStatus(startOfDay, endOfDay,AlarmRecord.ALARM_STATUS_UNTREATED);
+        Long l2 = countByAlarmTimeRangeAndStatus(startOfDay, endOfDay,AlarmRecord.ALARM_STATUS_EVENT);
+
+        List<AlarmRecord> list = list(new LambdaQueryWrapper<AlarmRecord>()
+                .select(AlarmRecord::getCreateTime, AlarmRecord::getProcessTime)
+                .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED));
+
+
+// 计算平均处理时长（分钟）
+        double avgMillis = list.stream()
+                .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getProcessTime()).toMinutes())
+                .average()
+                .orElse(0);
+
+        AlarmRecordStatisticsDto dto = new AlarmRecordStatisticsDto();
+        dto.setUntreatedCount(l);
+        dto.setEventCount(l2);
+        dto.setCompletedCount((long) list.size());
+        dto.setAverageProcessingTime(avgMillis);
+
+        return dto;
+
     }
 }

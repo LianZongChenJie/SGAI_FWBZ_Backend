@@ -10,6 +10,8 @@ import org.jeecg.modules.fwbz.alarm.dto.TransferEventDto;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +46,19 @@ public class AlarmRecordController {
         ids.forEach(service::elimination);
         return Result.ok();
     }
+    @PostMapping("/confirm")
+    @AutoLog(value = "告警记录-确认")
+    public Result<String> confirm(@RequestParam(name = "id") Long id){
+        service.confirm(id);
+        return Result.ok();
+    }
+
+    @PostMapping("/confirms")
+    @AutoLog(value = "告警记录-批量确认")
+    public Result<String> confirms(@RequestBody List<Long> ids){
+        ids.forEach(service::confirm);
+        return Result.ok();
+    }
 
     /**
      * 告警级别统计
@@ -68,4 +83,19 @@ public class AlarmRecordController {
         service.transferEvent(data);
         return Result.ok();
     }
+
+
+
+    /**
+     * 数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/statistics")
+    public Result<AlarmRecordStatisticsDto> overviewStatistics() {
+        return Result.ok(service.statistics());
+    }
+
+
+
 }

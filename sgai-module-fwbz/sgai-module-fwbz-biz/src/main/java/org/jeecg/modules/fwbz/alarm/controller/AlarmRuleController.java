@@ -7,6 +7,8 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRulesService;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -70,5 +72,15 @@ public class AlarmRuleController {
         return Result.ok(service.listPage(params));
     }
 
+
+    /**
+     * 数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/statistics")
+    public Result<AlarmRuleStatisticsDto> overviewStatistics() {
+        return Result.ok(service.statistics());
+    }
 
 }

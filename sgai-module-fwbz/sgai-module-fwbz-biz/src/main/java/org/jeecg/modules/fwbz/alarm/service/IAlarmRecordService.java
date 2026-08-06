@@ -6,6 +6,8 @@ import org.jeecg.modules.fwbz.alarm.dto.AlarmRecordDto;
 import org.jeecg.modules.fwbz.alarm.dto.TransferEventDto;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 
 import java.time.LocalDateTime;
@@ -15,6 +17,8 @@ public interface IAlarmRecordService extends IService<AlarmRecord> {
     IPage<AlarmRecord> listPage(AlarmRecordDto params);
 
     void elimination(Long id);
+
+    void confirm(Long id);
 
     List<AlarmRecordStatisticsVo> levelStatistics(AlarmRecordDto params);
 
@@ -33,6 +37,8 @@ public interface IAlarmRecordService extends IService<AlarmRecord> {
      * @return 告警记录数量
      */
     Long countByAlarmTimeRange(LocalDateTime startTime,LocalDateTime endTime);
+
+    Long countByAlarmTimeRangeAndStatus(LocalDateTime startTime,LocalDateTime endTime,String status);
 
     /**
      * 设备告警检测
@@ -82,4 +88,10 @@ public interface IAlarmRecordService extends IService<AlarmRecord> {
      * @param eventId 事件id
      */
     void completed(String eventId);
+
+
+    AlarmRecordStatisticsDto statistics() ;
+
+
+
 }

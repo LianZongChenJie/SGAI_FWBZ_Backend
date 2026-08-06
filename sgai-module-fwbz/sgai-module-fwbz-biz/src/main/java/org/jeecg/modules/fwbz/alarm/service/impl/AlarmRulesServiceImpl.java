@@ -9,21 +9,35 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.common.exception.JeecgCloudException;
+import org.jeecg.common.system.vo.SelectTreeModel;
+import org.jeecg.modules.fwbz.alarm.entity.AlarmCategory;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmLevel;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmRulePoint;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
 import org.jeecg.modules.fwbz.alarm.mapper.AlarmRulesMapper;
+import org.jeecg.modules.fwbz.alarm.service.IAlarmCategoryService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmLevelService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRulePointService;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmRulesService;
+import org.jeecg.modules.fwbz.bc.entity.BuildingControlPointSendHistory;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
+import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -32,6 +46,7 @@ public class AlarmRulesServiceImpl extends ServiceImpl<AlarmRulesMapper, AlarmRu
     private final IAlarmRulePointService alarmRulePointService;
 
     private final IAlarmLevelService alarmLevelService;
+    private final IAlarmCategoryService alarmCategoryService;
 
     @Override
     @Transactional
@@ -173,4 +188,25 @@ public class AlarmRulesServiceImpl extends ServiceImpl<AlarmRulesMapper, AlarmRu
                 .eq(AlarmRules::getEnabledStatus, AlarmRules.ENABLED_STATUS_ENABLE)
                 .in(AlarmRules::getId, ids));
     }
+
+
+    @Override
+    public AlarmRuleStatisticsDto statistics() {
+        List<AlarmRules> list = list();
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getEnabledStatus() != null).collect(Collectors.groupingBy(AlarmRules::getEnabledStatus, Collectors.counting()));
+
+        List<AlarmCategory> list1 = alarmCategoryService.list();
+        List<AlarmLevel> list2 = alarmLevelService.list();
+
+        AlarmRuleStatisticsDto dto = new AlarmRuleStatisticsDto();
+        dto.setCount((long) list.size());
+        dto.setEnableCount(runStateMap.getOrDefault(AlarmRules.ENABLED_STATUS_ENABLE, 0L));
+        dto.setCategoryCount((long) list1.size());
+        dto.setLevelCount((long) list2.size());
+        return dto;
+
+    }
+
+
+
 }
