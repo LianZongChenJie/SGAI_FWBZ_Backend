@@ -2,9 +2,14 @@ package org.jeecg.modules.fwbz.patterned.service;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import dm.jdbc.util.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.common.util.RedisUtil;
+import org.jeecg.modules.fwbz.bc.entity.BuildingControlPoint;
+import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointSendHistoryService;
+import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointService;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
@@ -32,6 +37,9 @@ public class DeviceAttributeOperationService {
     private final IDeviceAttributeService deviceAttributeService;
 
     private final MqSendService mqSendService;
+    private final IBuildingControlPointSendHistoryService buildingControlPointSendHistoryService;
+    private final IBuildingControlPointService buildingControlPointService;
+    private final RedisUtil redisUtil;
 
     /**
      * 设备属性操作
@@ -72,8 +80,15 @@ public class DeviceAttributeOperationService {
         if(split.length != 2){
             return;
         }
+        String gatewayAdr = split[0];
+        String bacnetAdr = split[1];
+        //查询楼控信息
+        BuildingControlPoint one = getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
+        //保存楼控发送历史
+        buildingControlPointSendHistoryService.save(one.getId(),one.getValue(),one.getCollectionTime());
+
         // 发送消息
-        mqSendService.sendBuildingControlOperation(split[0],split[1],value);
+        mqSendService.sendBuildingControlOperation(gatewayAdr,bacnetAdr,value);
     }
 
     public void operationDeviceAttribute(Long attributeId,String value){
@@ -90,7 +105,31 @@ public class DeviceAttributeOperationService {
         if(split.length != 2){
             return;
         }
-        mqSendService.sendBuildingControlOperation(split[0],split[1],value);
+        String gatewayAdr = split[0];
+        String bacnetAdr = split[1];
+        //查询楼控信息
+        BuildingControlPoint one = getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
+        //保存楼控发送历史
+        buildingControlPointSendHistoryService.save(one.getId(),one.getValue(),one.getCollectionTime());
+
+        mqSendService.sendBuildingControlOperation(gatewayAdr, bacnetAdr,value);
     }
+
+
+    private BuildingControlPoint getByGatewayAdrAndBacnetAdr(String gatewayAdr,String bacnetAdr){
+        // 缓存
+        Object o = redisUtil.get(getRedisKey(gatewayAdr, bacnetAdr));
+        if(o != null){
+            return (BuildingControlPoint) o;
+        }
+        return buildingControlPointService.getOne(new LambdaQueryWrapper<BuildingControlPoint>().eq(BuildingControlPoint::getGatewayAdr, gatewayAdr).eq(BuildingControlPoint::getBacnetAdr, bacnetAdr));
+    }
+
+    private String getRedisKey(String gatewayAdr,String bacnetAdr){
+        return "bc:"+gatewayAdr+"-"+bacnetAdr;
+    }
+
+
+
 
 }
