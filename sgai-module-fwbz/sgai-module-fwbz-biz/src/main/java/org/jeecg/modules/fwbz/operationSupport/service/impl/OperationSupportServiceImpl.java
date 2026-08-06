@@ -35,6 +35,7 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
+import org.jeecg.modules.fwbz.patterned.service.DeviceAttributeOperationService;
 import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +68,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     private final IDeviceAttributeService deviceAttributeService;
     private final IMeteringPointDataService meteringPointDataService;
     private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
+    private final DeviceAttributeOperationService deviceAttributeOperationService;
 
     private final IBusinessConfigService businessConfigService;
 
@@ -107,7 +109,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         //空调机组冗余展示字段 启停状态
         for (DeviceDataVo record : deviceWithAttr.getRecords()) {
             for (DeviceAttribute deviceAttribute : record.getDeviceAttributeList()) {
-                if(deviceAttribute.getAttributeCode().equals("STOP_RUN")){
+                if (deviceAttribute.getAttributeCode().equals("STOP_RUN")) {
                     record.setRunStop(deviceAttribute.getValue());
                 }
             }
@@ -122,10 +124,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         //空调机组冗余展示字段 启停状态
         for (DeviceDataVo record : deviceWithAttr.getRecords()) {
             for (DeviceAttribute deviceAttribute : record.getDeviceAttributeList()) {
-                if(deviceAttribute.getAttributeCode().equals("STOP_RUN")){
+                if (deviceAttribute.getAttributeCode().equals("STOP_RUN")) {
                     record.setRunStop(deviceAttribute.getValue());
                 }
-                if(deviceAttribute.getAttributeCode().equals("SA_TEMP_SETPOINT")){
+                if (deviceAttribute.getAttributeCode().equals("SA_TEMP_SETPOINT")) {
                     record.setSetTemperature(deviceAttribute.getValue());
                 }
             }
@@ -320,11 +322,12 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         return dto;
 
     }
+
     @Override
     public OverViewStatisticsDto overviewStatistics() {
         List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
 
-        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState));
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId, Device::getRunState));
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
         OverViewStatisticsDto dto = new OverViewStatisticsDto();
@@ -450,14 +453,14 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId) {
         ArrayList<DeviceRunStateStatisticsDto> objects = new ArrayList<>();
-        if(categoryId==null){
+        if (categoryId == null) {
             List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
                     .eq(EquipmentCategory::getPid, 0L));
             for (EquipmentCategory selectTreeModel : selectTreeModels) {
                 DeviceRunStateStatisticsDto dto = getDto(selectTreeModel);
                 objects.add(dto);
             }
-        }else{
+        } else {
             List<EquipmentCategory> selectTreeModels = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
                     .eq(EquipmentCategory::getId, categoryId));
             DeviceRunStateStatisticsDto dto = getDto(selectTreeModels.get(0));
@@ -469,7 +472,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     @NotNull
     private DeviceRunStateStatisticsDto getDto(EquipmentCategory selectTreeModel) {
-        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId)
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId, Device::getRunState, Device::getSpaceId)
                 .eq(selectTreeModel.getId() != null, Device::getCategoryId, selectTreeModel.getId()));
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
@@ -529,7 +532,6 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      * 根据分类id 和属性Code 和时间查询实时数据
      *
      * @param localDate
-     * @param categoryId
      * @param attrCode
      * @return
      */
@@ -566,6 +568,25 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         List<TableHeader> tableHeaderList = TableUtil.only(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
         Table table = createTable(tableHeaderList, deviceProperties, meterDataList);
         return table;
+    }
+
+    @Override
+    public void airControl(List<DeviceAttribute> params) {
+        if (CollectionUtils.isEmpty(params)) {
+            return;
+        }
+        for (DeviceAttribute param : params) {
+            DeviceAttribute byDeviceIdAndCode = deviceAttributeService.findByDeviceIdAndCode(param.getDeviceId(), param.getAttributeCode());
+
+            //保存设备属性值
+            DeviceAttribute entity = new DeviceAttribute();
+            entity.setValue(param.getValue());
+            deviceAttributeService.update(entity,
+                    new LambdaQueryWrapper<DeviceAttribute>().eq(DeviceAttribute::getId, byDeviceIdAndCode.getId()));
+
+            //发送楼控数据
+            deviceAttributeOperationService.operationDeviceAttribute(byDeviceIdAndCode.getId(), param.getValue());
+        }
     }
 
 

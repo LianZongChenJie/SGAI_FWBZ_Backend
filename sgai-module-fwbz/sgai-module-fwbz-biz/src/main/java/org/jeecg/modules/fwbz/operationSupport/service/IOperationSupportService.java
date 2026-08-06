@@ -8,6 +8,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
 
 import java.time.LocalDate;
@@ -38,4 +39,8 @@ public interface IOperationSupportService {
     Table pm25(String energyFlowDiagramIds, LocalDate localDate);
     Table activePower(String energyFlowDiagramIds, LocalDate localDate);
     List<DeviceRunStateStatisticsDto> equipmentOverview(Long categoryId);
+
+    void airControl(List<DeviceAttribute> params);
+
+
 }

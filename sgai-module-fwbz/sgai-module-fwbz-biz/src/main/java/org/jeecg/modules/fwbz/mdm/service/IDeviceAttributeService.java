@@ -57,4 +57,6 @@ public interface IDeviceAttributeService extends IService<DeviceAttribute> {
     void addRunStateAttribute(Long deviceId);
 
     List<DeviceAttribute> findByDeviceIdsAndCode(Collection<Long> deviceIds,String code);
+
+    DeviceAttribute findByDeviceIdAndCode(Long deviceIds,String code);
 }

@@ -2,18 +2,20 @@ package org.jeecg.modules.fwbz.operationSupport.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.*;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.vo.DeviceDataVo;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/fwbz/operationSupport")
@@ -190,6 +192,19 @@ public class OperationSupportController {
     public Result<OverViewStatisticsDto> overviewStatistics() {
         return Result.ok(service.overviewStatistics());
     }
+
+    /**
+     * 空调控制
+     *
+     */
+    @PostMapping("/airControl")
+    public Result<String> airControl(@RequestBody List<DeviceAttribute> params){
+        service.airControl(params);
+        return Result.ok();
+    }
+
+
+
 
 
 }

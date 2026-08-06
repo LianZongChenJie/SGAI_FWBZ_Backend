@@ -256,6 +256,12 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
                 .eq(DeviceAttribute::getAttributeCode,code)
                 .in(DeviceAttribute::getDeviceId,deviceIds));
     }
+    @Override
+    public DeviceAttribute findByDeviceIdAndCode(Long deviceId, String code) {
+        return getOne(new LambdaQueryWrapper<DeviceAttribute>()
+                .eq(DeviceAttribute::getAttributeCode,code)
+                .eq(DeviceAttribute::getDeviceId,deviceId));
+    }
 
     private String getBuildingControlPointKey(String gatewayAdr,String bacnetAdr){
         return gatewayAdr + "-" + bacnetAdr;
