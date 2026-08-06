@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.dataCollection.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.dataCollection.service.IDataCollectionService;
 import org.jeecg.modules.fwbz.dataCollection.vo.InterfaceListVO;
 import org.jeecg.modules.fwbz.dataInterface.entity.InterfaceInfo;
@@ -82,6 +83,119 @@ public class DataCollectionServiceImpl implements IDataCollectionService {
         return result;
     }
 
+    @Override
+    public StatCardVO collectionPointCount() {
+        List<InterfaceInfo> all = interfaceInfoMapper.selectList(null);
+        long totalPoints = all.stream()
+                .mapToLong(i -> i.getCollectionPointLocation() != null ? i.getCollectionPointLocation() : 0)
+                .sum();
+
+        Date todayStart = getTodayStart();
+        List<InterfaceInfo> todayNew = interfaceInfoMapper.selectList(
+                new LambdaQueryWrapper<InterfaceInfo>()
+                        .ge(InterfaceInfo::getCreateTime, todayStart));
+        long newPoints = todayNew.stream()
+                .mapToLong(i -> i.getCollectionPointLocation() != null ? i.getCollectionPointLocation() : 0)
+                .sum();
+
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("采集点位数");
+        vo.setValue(totalPoints);
+        vo.setContext(newPoints > 0 ? "↑" + newPoints + " 新增" : "全部覆盖");
+        return vo;
+    }
+
+    @Override
+    public StatCardVO todayCollectionAmount() {
+        Double todaySum = interfaceHistoryMapper.selectDataSizeSum(new Date());
+        Double yesterdaySum = interfaceHistoryMapper.selectDataSizeSum(getYesterdayDate());
+
+        todaySum = todaySum != null ? todaySum : 0;
+        yesterdaySum = yesterdaySum != null ? yesterdaySum : 0;
+
+        double diff = yesterdaySum > 0 ? (todaySum - yesterdaySum) / yesterdaySum * 100 : 0;
+
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("今日采集量");
+        vo.setValue(Math.round(todaySum * 100) / 100.0);
+        if (diff > 0) {
+            vo.setContext("↑" + String.format("%.2f", diff) + "% 较昨日");
+        } else if (diff < 0) {
+            vo.setContext("↓" + String.format("%.2f", -diff) + "% 较昨日");
+        } else {
+            vo.setContext("较昨日持平");
+        }
+        return vo;
+    }
+
+    @Override
+    public StatCardVO dataCompletenessRate() {
+        List<InterfaceInfo> all = interfaceInfoMapper.selectList(null);
+        if (all.isEmpty()) {
+            StatCardVO vo = new StatCardVO();
+            vo.setTitle("数据完整率");
+            vo.setValue(0);
+            vo.setContext("暂无接口");
+            return vo;
+        }
+
+        int total = all.size();
+        int online = (int) all.stream().filter(i -> InterfaceInfo.STATE_ONLINE.equals(i.getState())).count();
+        double todayRate = (double) online * 100 / total;
+
+        Date todayStart = getTodayStart();
+        List<InterfaceInfo> beforeToday = interfaceInfoMapper.selectList(
+                new LambdaQueryWrapper<InterfaceInfo>()
+                        .lt(InterfaceInfo::getCreateTime, todayStart));
+
+        double yesterdayRate;
+        if (beforeToday.isEmpty()) {
+            yesterdayRate = todayRate;
+        } else {
+            int totalBefore = beforeToday.size();
+            int onlineBefore = (int) beforeToday.stream().filter(i -> InterfaceInfo.STATE_ONLINE.equals(i.getState())).count();
+            yesterdayRate = (double) onlineBefore * 100 / totalBefore;
+        }
+
+        double diff = todayRate - yesterdayRate;
+
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("数据完整率");
+        vo.setValue(Math.round(todayRate * 100) / 100.0);
+        if (diff > 0) {
+            vo.setContext("↑" + String.format("%.1f", diff) + "% 较昨日");
+        } else if (diff < 0) {
+            vo.setContext("↓" + String.format("%.1f", -diff) + "% 较昨日");
+        } else {
+            vo.setContext("较昨日持平");
+        }
+        return vo;
+    }
+
+    @Override
+    public StatCardVO storageCapacity() {
+        Double total = interfaceHistoryMapper.selectTotalDataSizeSum();
+        total = total != null ? total : 0;
+
+        Date monthStart = getMonthStart();
+        Date monthEnd = getMonthEnd();
+        Double monthSum = interfaceHistoryMapper.selectDataSizeSumByRange(monthStart, monthEnd);
+        monthSum = monthSum != null ? monthSum : 0;
+
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("存储容量");
+        vo.setValue(Math.round(total * 100) / 100.0);
+        vo.setContext("↑" + formatSize(monthSum) + " 本月");
+        return vo;
+    }
+
+    @Override
+    public List<StatCardVO> getSummary() {
+        return Arrays.asList(collectionPointCount(), todayCollectionAmount(), dataCompletenessRate(), storageCapacity());
+    }
+
+    // ============ helper methods ============
+
     private Date getTodayStart() {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -98,5 +212,46 @@ public class DataCollectionServiceImpl implements IDataCollectionService {
         cal.set(Calendar.SECOND, 59);
         cal.set(Calendar.MILLISECOND, 999);
         return cal.getTime();
+    }
+
+    private Date getYesterdayDate() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+        return cal.getTime();
+    }
+
+    private Date getMonthStart() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
+
+    private Date getMonthEnd() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        return cal.getTime();
+    }
+
+    private String formatSize(double kb) {
+        if (kb >= 1024 * 1024 * 1024) {
+            return String.format("%.1fTB", kb / (1024 * 1024 * 1024));
+        } else if (kb >= 1024 * 1024) {
+            return String.format("%.1fGB", kb / (1024 * 1024));
+        } else if (kb >= 1024) {
+            return String.format("%.1fMB", kb / 1024);
+        }
+        return String.format("%.1fKB", kb);
     }
 }

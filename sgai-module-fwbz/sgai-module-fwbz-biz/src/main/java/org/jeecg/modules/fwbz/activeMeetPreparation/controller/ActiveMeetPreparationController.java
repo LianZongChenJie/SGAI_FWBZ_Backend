@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.activeMeetPreparation.service.IActiveMeetPreparationService;
+import org.jeecg.modules.fwbz.activeMeetPreparation.vo.CompletePreparationDTO;
 import org.jeecg.modules.fwbz.activeMeetPreparation.vo.PreparationChecklistVO;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +29,10 @@ public class ActiveMeetPreparationController {
         return Result.ok(checklist);
     }
 
-    @PutMapping("/complete")
+    @PostMapping("/complete")
     @ApiOperation("完成筹备项")
-    public Result<String> complete(@RequestParam(name = "preparationInfoId") Long preparationInfoId,
-                                   @RequestParam(name = "preparationValue") Long preparationValue,
-                                   @RequestParam(name = "realValue") Long realValue) {
-        preparationService.completePreparation(preparationInfoId, preparationValue, realValue);
+    public Result<String> complete(@RequestBody CompletePreparationDTO dto) {
+        preparationService.completePreparation(dto.getPreparationInfoId(), dto.getPreparationValue(), dto.getRealValue());
         return Result.ok("修改成功");
     }
 }
