@@ -8,7 +8,7 @@ import org.jeecg.modules.fwbz.activeMeetPreparation.vo.PreparationChecklistVO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/activeMeet/preparation")
+@RequestMapping("/fwbz/activeMeet/preparation")
 @Api(tags = "会前筹备")
 public class ActiveMeetPreparationController {
 
