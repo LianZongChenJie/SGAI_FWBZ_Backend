@@ -83,4 +83,8 @@ public class EventNotify implements Serializable {
     /** 记录更新时间 */
     @TableField("gmt_modified")
     private LocalDateTime gmtModified;
+
+    /** 事件类型名称（联动table_event_type，非数据库字段） */
+    @TableField(exist = false)
+    private String eventTypeName;
 }

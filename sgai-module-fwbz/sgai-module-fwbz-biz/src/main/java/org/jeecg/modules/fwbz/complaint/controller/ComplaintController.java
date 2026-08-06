@@ -19,8 +19,14 @@ import org.jeecg.modules.fwbz.complaint.service.IComplaintInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+
 import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
  /**
@@ -44,6 +50,16 @@ public class ComplaintController {
     private ComplaintStatusMapper complaintStatusMapper;
 
     /**
+     * 注册Date类型属性编辑器，处理空字符串绑定问题
+     */
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setLenient(false);
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));
+    }
+
+    /**
      * 分页列表查询
      *
      * @param complaintInfo
@@ -61,7 +77,7 @@ public class ComplaintController {
         QueryWrapper<ComplaintInfo> queryWrapper = QueryGenerator.initQueryWrapper(complaintInfo, req.getParameterMap());
         queryWrapper.orderByDesc("gmt_create");
         Page<ComplaintInfo> page = new Page<>(pageNo, pageSize);
-        IPage<ComplaintInfo> pageList = complaintInfoService.page(page, queryWrapper);
+        IPage<ComplaintInfo> pageList = complaintInfoService.pageWithTypeName(page, queryWrapper);
         return Result.OK(pageList);
     }
 
