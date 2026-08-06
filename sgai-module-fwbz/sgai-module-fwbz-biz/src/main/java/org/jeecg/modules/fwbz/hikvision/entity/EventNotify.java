@@ -1,17 +1,14 @@
 package org.jeecg.modules.fwbz.hikvision.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 事件订阅通知表
@@ -19,78 +16,71 @@ import java.util.Date;
  * @author fwbz
  */
 @Data
-@TableName("table_event_notify")
 @Accessors(chain = true)
-@EqualsAndHashCode(callSuper = false)
-@ApiModel(value = "table_event_notify对象", description = "事件订阅通知表")
+@TableName("table_event_notify")
 public class EventNotify implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
-    /** 主键，自增 */
     @TableId(type = IdType.AUTO)
-    @ApiModelProperty(value = "主键ID")
     private Long id;
 
-    /** 事件从接收者（程序处理后）发出的时间，ISO8601格式 */
-    @ApiModelProperty(value = "发送时间")
+    /** 事件从接收者发出的时间，ISO8601格式 */
+    @TableField("send_time")
     private String sendTime;
 
     /** 事件类别，如：视频事件 */
-    @ApiModelProperty(value = "事件类别")
+    @TableField("ability")
     private String ability;
 
-    /** 事件唯一标识，同一事件若上报多次则eventId相同 */
-    @ApiModelProperty(value = "事件唯一标识")
+    /** 事件唯一标识 */
+    @TableField("event_id")
     private String eventId;
 
-    /** 事件源编号，物理设备是资源编号 */
-    @ApiModelProperty(value = "事件源编号")
+    /** 事件源编号 */
+    @TableField("src_index")
     private String srcIndex;
 
     /** 事件源类型 */
-    @ApiModelProperty(value = "事件源类型")
+    @TableField("src_type")
     private String srcType;
 
     /** 事件源名称 */
-    @ApiModelProperty(value = "事件源名称")
+    @TableField("src_name")
     private String srcName;
 
     /** 事件类型，数值编码 */
-    @ApiModelProperty(value = "事件类型")
+    @TableField("event_type")
     private Integer eventType;
 
-    /** 事件状态：0-瞬时 1-开始 2-停止 4-事件联动结果更新 5-事件图片异步上传 */
-    @ApiModelProperty(value = "事件状态")
+    /** 事件状态：0-瞬时 1-开始 2-停止 */
+    @TableField("status")
     private Integer status;
 
     /** 事件等级：0-未配置 1-低 2-中 3-高 */
-    @ApiModelProperty(value = "事件等级")
+    @TableField("event_lvl")
     private Integer eventLvl;
 
     /** 脉冲超时时间，单位：秒 */
-    @ApiModelProperty(value = "脉冲超时时间")
+    @TableField("timeout")
     private Integer timeout;
 
     /** 事件发生时间（设备时间），ISO8601格式 */
-    @ApiModelProperty(value = "事件发生时间")
+    @TableField("happen_time")
     private String happenTime;
 
-    /** 事件发生的事件源父设备编码 */
-    @ApiModelProperty(value = "父设备编码")
+    /** 事件源父设备编码 */
+    @TableField("src_parent_index")
     private String srcParentIndex;
 
     /** 事件其它扩展信息，JSON格式存储 */
-    @ApiModelProperty(value = "事件扩展数据")
+    @TableField("event_data")
     private String eventData;
 
     /** 记录创建时间 */
-    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    @ApiModelProperty(value = "记录创建时间")
-    private Date gmtCreate;
+    @TableField("gmt_create")
+    private LocalDateTime gmtCreate;
 
     /** 记录更新时间 */
-    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
-    @ApiModelProperty(value = "记录更新时间")
-    private Date gmtModified;
+    @TableField("gmt_modified")
+    private LocalDateTime gmtModified;
 }

@@ -1,103 +1,104 @@
 package org.jeecg.modules.fwbz.hikvision.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.*;
-import org.jeecg.modules.fwbz.hikvision.service.IHikvisionDashboardService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
+import org.jeecg.modules.fwbz.hikvision.entity.PersonRecognition;
+import org.jeecg.modules.fwbz.hikvision.service.IHikvisionDashboardTaskService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
- * 海康数据看板控制器
- * <p>提供今日进场人数、当前在场人数、人员识别记录、异常行为预警四个看板接口。</p>
+ * 海康数据看板接口
+ * <p>全部统计数据从数据库读取，由定时任务 HikvisionDashboardJob 每5分钟同步。</p>
  *
  * @author fwbz
  */
-@Slf4j
-@RestController
-@AllArgsConstructor
-@RequestMapping("/fwbz/hikvision/dashboard")
 @Api(tags = "海康数据看板")
+@RestController
+@RequestMapping("/fwbz/hikvision/dashboard")
+@AllArgsConstructor
 public class HikvisionDashboardController {
 
-    private final IHikvisionDashboardService dashboardService;
+    private final IHikvisionDashboardTaskService dashboardTaskService;
 
     /**
-     * 获取今日进场人数
-     * <p>查询海康ACS门禁系统中今日进场的总人数。</p>
-     *
-     * @return 今日进场人数
+     * 获取今日进场人数（从 table_personnel_statistics 读取）
      */
-    @PostMapping("/todayEntryCount")
-    @ApiOperation(value = "获取今日进场人数", notes = "查询今日ACS门禁进场事件总数")
+    @GetMapping("/todayEntryCount")
+    @ApiOperation(value = "获取今日进场人数", notes = "从 table_personnel_statistics 查询，由定时任务每5分钟同步")
     public Result<TodayEntryCountVO> getTodayEntryCount() {
-        try {
-            TodayEntryCountVO result = dashboardService.getTodayEntryCount();
-            return Result.ok(result);
-        } catch (Exception e) {
-            log.error("获取今日进场人数失败", e);
-            return Result.error("获取今日进场人数失败: " + e.getMessage());
-        }
+        return Result.OK(dashboardTaskService.queryTodayEntryCount());
     }
 
     /**
-     * 获取当前在场人数
-     * <p>查询当前各区域/场所内的实时在场人数。</p>
-     *
-     * @return 当前在场人数
+     * 获取当前在场人数（从 table_personnel_statistics 读取）
      */
-    @PostMapping("/currentOnsiteCount")
-    @ApiOperation(value = "获取当前在场人数", notes = "查询当前区域/场所实时在场人数")
+    @GetMapping("/currentOnsiteCount")
+    @ApiOperation(value = "获取当前在场人数", notes = "从 table_personnel_statistics 查询，由定时任务每5分钟同步")
     public Result<CurrentOnsiteCountVO> getCurrentOnsiteCount() {
-        try {
-            CurrentOnsiteCountVO result = dashboardService.getCurrentOnsiteCount();
-            return Result.ok(result);
-        } catch (Exception e) {
-            log.error("获取当前在场人数失败", e);
-            return Result.error("获取当前在场人数失败: " + e.getMessage());
-        }
+        return Result.OK(dashboardTaskService.queryCurrentOnsiteCount());
     }
 
     /**
-     * 查询人员识别记录
-     * <p>根据时间范围分页查询人脸识别事件记录。</p>
-     *
-     * @param request 查询参数（startTime, endTime, pageNo, pageSize）
-     * @return 人员识别记录列表
+     * 查询人员识别记录（从 table_person_recognition 分页读取）
      */
     @PostMapping("/recognitionRecords")
-    @ApiOperation(value = "查询人员识别记录", notes = "根据时间范围分页查询人脸识别事件记录")
-    public Result<RecognitionRecordResponse> getRecognitionRecords(@RequestBody RecognitionRecordRequest request) {
-        try {
-            RecognitionRecordResponse result = dashboardService.getRecognitionRecords(request);
-            return Result.ok(result);
-        } catch (Exception e) {
-            log.error("查询人员识别记录失败", e);
-            return Result.error("查询人员识别记录失败: " + e.getMessage());
-        }
+    @ApiOperation(value = "查询人员识别记录", notes = "从 table_person_recognition 分页查询今日记录")
+    public Result<Page<PersonRecognition>> getRecognitionRecords(
+            @RequestBody @ApiParam(value = "分页参数") RecognitionRecordRequest request) {
+        int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
+        int pageSize = request.getPageSize() != null ? request.getPageSize() : 10;
+        return Result.OK(dashboardTaskService.queryRecognitionRecords(pageNo, pageSize));
     }
 
     /**
-     * 查询异常行为预警
-     * <p>根据时间范围分页查询异常行为告警事件。</p>
-     *
-     * @param request 查询参数（startTime, endTime, pageNo, pageSize, eventTypes）
-     * @return 异常行为预警列表
+     * 查询异常行为预警（从 table_event_notify 分页读取）
      */
     @PostMapping("/abnormalBehaviorAlerts")
-    @ApiOperation(value = "查询异常行为预警", notes = "根据时间范围分页查询异常行为告警事件")
-    public Result<AbnormalBehaviorAlertResponse> getAbnormalBehaviorAlerts(@RequestBody AbnormalBehaviorAlertRequest request) {
-        try {
-            AbnormalBehaviorAlertResponse result = dashboardService.getAbnormalBehaviorAlerts(request);
-            return Result.ok(result);
-        } catch (Exception e) {
-            log.error("查询异常行为预警失败", e);
-            return Result.error("查询异常行为预警失败: " + e.getMessage());
-        }
+    @ApiOperation(value = "查询异常行为预警", notes = "从 table_event_notify 分页查询今日记录")
+    public Result<Page<EventNotify>> getAbnormalBehaviorAlerts(
+            @RequestBody @ApiParam(value = "分页参数") AbnormalBehaviorAlertRequest request) {
+        int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
+        int pageSize = request.getPageSize() != null ? request.getPageSize() : 10;
+        return Result.OK(dashboardTaskService.queryAbnormalAlerts(pageNo, pageSize));
+    }
+
+    // ==================== 看板统计卡片（从数据库读取，含较昨日趋势） ====================
+
+    @GetMapping("/stat/todayEntryCount")
+    @ApiOperation(value = "今日进场人数统计卡片", notes = "从 table_visitor_flow 读取今日进场人数及较昨日趋势")
+    public Result<StatCardVO> todayEntryCountCard() {
+        return Result.OK(dashboardTaskService.getTodayEntryCard());
+    }
+
+    @GetMapping("/stat/currentOnsiteCount")
+    @ApiOperation(value = "当前在场人数统计卡片", notes = "从 table_visitor_flow 读取当前在场人数及较昨日趋势")
+    public Result<StatCardVO> currentOnsiteCountCard() {
+        return Result.OK(dashboardTaskService.getCurrentOnsiteCard());
+    }
+
+    @GetMapping("/stat/recognitionRecordCount")
+    @ApiOperation(value = "人员识别记录统计卡片", notes = "从 table_person_recognition 读取今日人员识别记录数及较昨日趋势")
+    public Result<StatCardVO> recognitionRecordCountCard() {
+        return Result.OK(dashboardTaskService.getRecognitionRecordCard());
+    }
+
+    @GetMapping("/stat/abnormalAlertCount")
+    @ApiOperation(value = "异常行为预警统计卡片", notes = "从 table_event_notify 读取今日异常行为预警数及较昨日趋势")
+    public Result<StatCardVO> abnormalAlertCountCard() {
+        return Result.OK(dashboardTaskService.getAbnormalAlertCard());
+    }
+
+    @GetMapping("/stat/summary")
+    @ApiOperation(value = "看板统计卡片汇总", notes = "汇总返回四个看板统计卡片数据")
+    public Result<List<StatCardVO>> summaryCards() {
+        return Result.OK(dashboardTaskService.getSummaryCards());
     }
 }
