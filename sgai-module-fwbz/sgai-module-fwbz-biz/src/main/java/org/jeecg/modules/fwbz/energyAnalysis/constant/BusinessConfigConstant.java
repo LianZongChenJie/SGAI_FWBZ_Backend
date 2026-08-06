@@ -44,20 +44,17 @@ public class BusinessConfigConstant {
     /**
      * 能源计量场馆用电量计量规则ids，多个点位以英文逗号分隔
      */
-    public static final String METERPOINTDATA_VENUEELECTRICITY = "meterPointData:venueElectricity";
-
+    public static final String METERPOINTDATA_VENUEELECTRICITY_POINTIDS = "meterPointData:venueElectricity:pointIds";
 
     /**
      * 能源计量用能结构分析计量规则ids，多个点位以英文逗号分隔
      */
-    public static final String METERPOINTDATA_ENERGYSTRUCTURE = "meterPointData:energyStructure";
-    /**
-     * 能源计量-概览-今日用电量
-     */
-    public static final String ENERGYMETERING_DAY_ELECTRIC = "energyMetering:day:electric";
-    public static final String ENERGYMETERING_DAY_WATER = "energyMetering:day:water";
-    public static final String ENERGYMETERING_MONTH_ELECTRIC = "energyMetering:month:electric";
-    public static final String ENERGYMETERING_MONTH_WATER = "energyMetering:month:water";
+    public static final String METERPOINTDATA_ENERGYSTRUCTURE_POINTIDS = "meterPointData:energyStructure:pointIds";
+
+
+
+    public static final String ENERGYMETERING_ELECTRIC_POINTID = "energyMetering:electric:pointId";
+    public static final String ENERGYMETERING_WATER_POINTID = "energyMetering:water:pointId";
 
     /**
      *运行保障-空调机组-categoryId

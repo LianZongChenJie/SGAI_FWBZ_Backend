@@ -26,12 +26,6 @@ public interface IMeteringPointDataService {
     Table findMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
     Table findYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
 
-    List<PieChatSeriesData> findPieDayByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
-    List<PieChatSeriesData> findPieMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
-    List<PieChatSeriesData> findPieYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
-
-
-
     void calculateValue(LocalDateTime hour);
     void calculateValue(List<LocalDateTime> hours);
 

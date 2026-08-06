@@ -125,68 +125,19 @@ public class MeteringPointDataController {
     }
 
 
-    /**
-     * 各场馆用电量柱状图
-     * @param param
-     * @return
-     */
+
     @GetMapping("/findDayByConfig")
     public Result<MeteringPointDataChartVo> findDayByConfig(MeteringPointDataDto param){
         return Result.ok(new MeteringPointDataChartVo(service.findDayByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
-    /**
-     * 各场馆用电量柱状图
-     * @param param
-     * @return
-     */
+
     @GetMapping("/findMonthByConfig")
     public Result<MeteringPointDataChartVo> findMonthByConfig(MeteringPointDataDto param){
         return Result.ok(new MeteringPointDataChartVo(service.findMonthByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
-    /**
-     * 各场馆用电量柱状图
-     * @param param
-     * @return
-     */
+
     @GetMapping("/findYearByConfig")
     public Result<MeteringPointDataChartVo> findYearByConfig(MeteringPointDataDto param){
         return Result.ok(new MeteringPointDataChartVo(service.findYearByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
-
-
-
-
-    /**
-     * 用能结构分析
-     * @param param
-     * @return
-     */
-    @GetMapping("/findPieDayByConfig")
-    public Result<List<PieChatSeriesData>> findPieDayByConfig(MeteringPointDataDto param){
-        return Result.ok(service.findPieDayByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
-    }
-    /**
-     * 用能结构分析
-     * @param param
-     * @return
-     */
-    @GetMapping("/findPieMonthByConfig")
-    public Result<List<PieChatSeriesData>> findPieMonthByConfig(MeteringPointDataDto param){
-        return Result.ok(service.findPieMonthByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
-    }
-    /**
-     * 用能结构分析
-     * @param param
-     * @return
-     */
-    @GetMapping("/findPieYearByConfig")
-    public Result<List<PieChatSeriesData>> findPieYearByConfig(MeteringPointDataDto param){
-        return Result.ok(service.findPieYearByConfig(param.getBusinessConfigKey(), param.getEnergyFlowDiagramIds(), param.getDay()));
-
-    }
-
-
-
-
-
 }

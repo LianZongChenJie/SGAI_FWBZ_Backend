@@ -59,12 +59,12 @@ public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
 
         //查询计量点位数据
 
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_ELECTRIC);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
         MeteringPointDataDay todayElectric = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey));
         MeteringPointDataDay yestodayElectric = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey));
 
 
-        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_DAY_WATER);
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_WATER_POINTID);
         MeteringPointDataDay todayWater = dayDataService.findByDateAndPointId(now, Long.valueOf(longByKey2));
         MeteringPointDataDay yestodayWater = dayDataService.findByDateAndPointId(yestoday, Long.valueOf(longByKey2));
 
