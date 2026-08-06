@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
@@ -13,14 +12,9 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
-import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
-import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
-import org.jeecg.modules.fwbz.service.IBusinessConfigService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 
 @Api(tags = "计量点位数据信息")
@@ -126,18 +120,34 @@ public class MeteringPointDataController {
 
 
 
-    @GetMapping("/findDayByConfig")
-    public Result<MeteringPointDataChartVo> findDayByConfig(MeteringPointDataDto param){
-        return Result.ok(new MeteringPointDataChartVo(service.findDayByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    @GetMapping("/findDayVenueElectricity")
+    public Result<MeteringPointDataChartVo> findDayVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findDayVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 
-    @GetMapping("/findMonthByConfig")
-    public Result<MeteringPointDataChartVo> findMonthByConfig(MeteringPointDataDto param){
-        return Result.ok(new MeteringPointDataChartVo(service.findMonthByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    @GetMapping("/findMonthVenueElectricity")
+    public Result<MeteringPointDataChartVo> findMonthVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonthVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 
-    @GetMapping("/findYearByConfig")
-    public Result<MeteringPointDataChartVo> findYearByConfig(MeteringPointDataDto param){
-        return Result.ok(new MeteringPointDataChartVo(service.findYearByConfig(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    @GetMapping("/findYearVenueElectricity")
+    public Result<MeteringPointDataChartVo> findYearVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYearVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    @GetMapping("/findDayEnergyStructure")
+    public Result<MeteringPointDataChartVo> findDayEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findDayEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findMonthEnergyStructure")
+    public Result<MeteringPointDataChartVo> findMonthEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonthEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findYearEnergyStructure")
+    public Result<MeteringPointDataChartVo> findYearEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYearEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
 }

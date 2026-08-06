@@ -2,12 +2,9 @@ package org.jeecg.modules.fwbz.energyAnalysis.service;
 
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
-import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,9 +19,14 @@ public interface IMeteringPointDataService {
     Table findYear(String energyFlowDiagramIds,LocalDate localDate);
 
 
-    Table findDayByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
-    Table findMonthByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
-    Table findYearByConfig(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findDayVenueElectricity(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findMonthVenueElectricity(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findYearVenueElectricity(String key, String energyFlowDiagramIds, LocalDate localDate);
+
+
+    Table findDayEnergyStructure(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findMonthEnergyStructure(String key, String energyFlowDiagramIds, LocalDate localDate);
+    Table findYearEnergyStructure(String key, String energyFlowDiagramIds, LocalDate localDate);
 
     void calculateValue(LocalDateTime hour);
     void calculateValue(List<LocalDateTime> hours);
