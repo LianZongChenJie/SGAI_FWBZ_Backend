@@ -242,23 +242,24 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setEnergyConsumption(energyConsumption);
 
-        //分批次查询属性信息
-        int i = list.size() / 200;
-
-        BigDecimal total = BigDecimal.ZERO;
+//        int i = list.size() / 200;
+//
+//        for (int j = 0; j < i + 1; j++) {
+//            ArrayList<Long> deviceIds = new ArrayList<>();
+//            for (int k = 0; k < 200; k++) {
+//                Device device = list.get(j * k);
+//                deviceIds.add(device.getId());
+//            }
+//
+//        }
         int count = 0;
-        for (int j = 0; j < i + 1; j++) {
-            ArrayList<Long> deviceIds = new ArrayList<>();
-            for (int k = 0; k < 200; k++) {
-                Device device = list.get(j * k);
-                deviceIds.add(device.getId());
-            }
-            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
-            for (DeviceAttribute byDeviceId : byDeviceIds) {
-                if (byDeviceId.getAttributeCode().equals("PM25")) {
-                    total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
-                    count++;
-                }
+        BigDecimal total = BigDecimal.ZERO;
+        List<Long> deviceIds = list.stream().map(Device::getId).toList();
+        List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+        for (DeviceAttribute byDeviceId : byDeviceIds) {
+            if (byDeviceId.getAttributeCode().equals("PM25")) {
+                total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                count++;
             }
         }
 
@@ -300,13 +301,13 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         dto.setEnergyConsumption(energyConsumption);
 
         //分批次查询属性信息
-        int i = list.size() / 200;
+        int i = list.size() / 1000;
 
         BigDecimal total = BigDecimal.ZERO;
         int count = 0;
         for (int j = 0; j < i + 1; j++) {
             ArrayList<Long> deviceIds = new ArrayList<>();
-            for (int k = 0; k < 200; k++) {
+            for (int k = 0; k < 1000; k++) {
                 Device device = list.get(j * k);
                 deviceIds.add(device.getId());
             }
