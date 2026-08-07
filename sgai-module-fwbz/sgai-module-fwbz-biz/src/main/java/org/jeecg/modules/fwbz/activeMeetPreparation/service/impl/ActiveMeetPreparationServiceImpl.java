@@ -291,7 +291,13 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
         long total = smokeDetectorMapper.selectCount(
                 new LambdaQueryWrapper<SmokeDetector>()
                         .eq(SmokeDetector::getDeviceType, deviceType));
-        return new CountResult(total, 0L);
+        // 除了"离线"和"故障"的，都算在线
+        long online = smokeDetectorMapper.selectCount(
+                new LambdaQueryWrapper<SmokeDetector>()
+                        .eq(SmokeDetector::getDeviceType, deviceType)
+                        .ne(SmokeDetector::getStatus, "离线")
+                        .ne(SmokeDetector::getStatus, "故障"));
+        return new CountResult(total, online);
     }
 
     private CountResult countLighting() {

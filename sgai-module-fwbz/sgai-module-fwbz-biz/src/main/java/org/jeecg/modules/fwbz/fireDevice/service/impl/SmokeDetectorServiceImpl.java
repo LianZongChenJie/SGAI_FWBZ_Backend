@@ -5,14 +5,21 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.fireDevice.entity.FireAlarmRecord;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetector;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetectorType;
+import org.jeecg.modules.fwbz.fireDevice.mapper.FireAlarmRecordMapper;
 import org.jeecg.modules.fwbz.fireDevice.mapper.FireSmokeDetectorMapper;
 import org.jeecg.modules.fwbz.fireDevice.mapper.FireSmokeDetectorTypeMapper;
+import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.service.ISmokeDetectorService;
+import org.jeecg.modules.fwbz.venue.VenueInfo;
+import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,6 +35,8 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
         implements ISmokeDetectorService {
 
     private final FireSmokeDetectorTypeMapper fireSmokeDetectorTypeMapper;
+    private final FireAlarmRecordMapper fireAlarmRecordMapper;
+    private final IVenueInfoService venueInfoService;
 
     @Override
     public IPage<SmokeDetector> getSmokeDetectorPage(IPage<SmokeDetector> page,
@@ -53,31 +62,150 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
 
         IPage<SmokeDetector> result = page(page, qw);
 
-        // 联动消防设备类型：收集 deviceType 值，批量查询 typeName
         List<SmokeDetector> records = result.getRecords();
         if (!records.isEmpty()) {
-            Set<Long> typeIds = records.stream()
-                    .map(SmokeDetector::getDeviceType)
-                    .filter(Objects::nonNull)
-                    .filter(t -> t.matches("\\d+"))
-                    .map(Long::valueOf)
-                    .collect(Collectors.toSet());
-
-            if (!typeIds.isEmpty()) {
-                List<SmokeDetectorType> types = fireSmokeDetectorTypeMapper.selectBatchIds(typeIds);
-                Map<Long, String> typeNameMap = types.stream()
-                        .collect(Collectors.toMap(SmokeDetectorType::getId, SmokeDetectorType::getTypeName, (a, b) -> a));
-
-                records.forEach(record -> {
-                    if (record.getDeviceType() != null && record.getDeviceType().matches("\\d+")) {
-                        record.setTypeName(typeNameMap.getOrDefault(Long.valueOf(record.getDeviceType()), "未知类型"));
-                    } else {
-                        record.setTypeName(record.getDeviceType());
-                    }
-                });
-            }
+            populateTypeName(records);
+            populateVenueName(records);
         }
 
         return result;
+    }
+
+    @Override
+    public IPage<FireAlarmRecord> getAlarmRecordsByDeviceId(IPage<FireAlarmRecord> page, Long deviceId) {
+        log.info("根据设备ID查询报警记录, deviceId={}", deviceId);
+
+        LambdaQueryWrapper<FireAlarmRecord> qw = new LambdaQueryWrapper<FireAlarmRecord>()
+                .eq(FireAlarmRecord::getDeviceId, String.valueOf(deviceId))
+                .eq(FireAlarmRecord::getStatus, 1)
+                .orderByDesc(FireAlarmRecord::getAlarmDate)
+                .orderByDesc(FireAlarmRecord::getAlarmTime);
+
+        return fireAlarmRecordMapper.selectPage(page, qw);
+    }
+
+    private long doCountTotal() {
+        return count();
+    }
+
+    private long doCountOnline() {
+        LambdaQueryWrapper<SmokeDetector> qw = new LambdaQueryWrapper<SmokeDetector>()
+                .ne(SmokeDetector::getStatus, "离线")
+                .ne(SmokeDetector::getStatus, "故障");
+        return count(qw);
+    }
+
+    private long doCountTodayCheck() {
+        Date todayStart = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date todayEnd = Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        LambdaQueryWrapper<SmokeDetector> qw = new LambdaQueryWrapper<SmokeDetector>()
+                .ge(SmokeDetector::getLastCheckTime, todayStart)
+                .lt(SmokeDetector::getLastCheckTime, todayEnd);
+        return count(qw);
+    }
+
+    private long doCountPendingAlarm() {
+        LambdaQueryWrapper<FireAlarmRecord> qw = new LambdaQueryWrapper<FireAlarmRecord>()
+                .eq(FireAlarmRecord::getHandleStatus, 0)
+                .eq(FireAlarmRecord::getStatus, 1);
+        return fireAlarmRecordMapper.selectCount(qw);
+    }
+
+    @Override
+    public StatCardVO countTotal() {
+        long total = doCountTotal();
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("消防设备总数");
+        vo.setValue(total);
+        return vo;
+    }
+
+    @Override
+    public StatCardVO countOnline() {
+        long total = doCountTotal();
+        long online = doCountOnline();
+        double onlineRate = total == 0 ? 0 : Math.round(online * 1000.0 / total) / 10.0;
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("设备在线率");
+        vo.setValue(onlineRate);
+        vo.setContext(online + "/" + total + " 在线");
+        return vo;
+    }
+
+    @Override
+    public StatCardVO countTodayCheck() {
+        long total = doCountTotal();
+        long todayCheck = doCountTodayCheck();
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("今日巡检完成");
+        vo.setValue(todayCheck);
+        vo.setContext(todayCheck + "/" + total);
+        return vo;
+    }
+
+    @Override
+    public StatCardVO countPendingAlarm() {
+        long pendingAlarm = doCountPendingAlarm();
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("待处理告警");
+        vo.setValue(pendingAlarm);
+        return vo;
+    }
+
+    @Override
+    public List<StatCardVO> getSummary() {
+        List<StatCardVO> list = new ArrayList<>();
+        list.add(countTotal());
+        list.add(countOnline());
+        list.add(countTodayCheck());
+        list.add(countPendingAlarm());
+        return list;
+    }
+
+    private void populateTypeName(List<SmokeDetector> records) {
+        Set<Long> typeIds = records.stream()
+                .map(SmokeDetector::getDeviceType)
+                .filter(Objects::nonNull)
+                .filter(t -> t.matches("\\d+"))
+                .map(Long::valueOf)
+                .collect(Collectors.toSet());
+
+        if (typeIds.isEmpty()) {
+            return;
+        }
+
+        List<SmokeDetectorType> types = fireSmokeDetectorTypeMapper.selectBatchIds(typeIds);
+        Map<Long, String> typeNameMap = types.stream()
+                .collect(Collectors.toMap(SmokeDetectorType::getId, SmokeDetectorType::getTypeName, (a, b) -> a));
+
+        records.forEach(record -> {
+            if (record.getDeviceType() != null && record.getDeviceType().matches("\\d+")) {
+                record.setTypeName(typeNameMap.getOrDefault(Long.valueOf(record.getDeviceType()), "未知类型"));
+            } else {
+                record.setTypeName(record.getDeviceType());
+            }
+        });
+    }
+
+    private void populateVenueName(List<SmokeDetector> records) {
+        Set<Long> venueIds = records.stream()
+                .map(SmokeDetector::getVenueId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (venueIds.isEmpty()) {
+            return;
+        }
+
+        List<VenueInfo> venueList = venueInfoService.listByIds(venueIds);
+        Map<Long, String> venueNameMap = venueList.stream()
+                .collect(Collectors.toMap(VenueInfo::getId, VenueInfo::getVenueName, (a, b) -> a));
+
+        records.forEach(record -> {
+            if (record.getVenueId() != null) {
+                record.setVenueName(venueNameMap.getOrDefault(record.getVenueId(), "未知场馆"));
+            }
+        });
     }
 }

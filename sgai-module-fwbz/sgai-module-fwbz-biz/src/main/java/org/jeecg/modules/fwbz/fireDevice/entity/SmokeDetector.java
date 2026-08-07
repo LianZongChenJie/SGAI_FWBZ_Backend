@@ -67,4 +67,9 @@ public class SmokeDetector implements Serializable {
     @TableField(exist = false)
     @ApiModelProperty("设备类型名称")
     private String typeName;
+
+    /** 场馆名称（联动 table_venue_info，非数据库字段） */
+    @TableField(exist = false)
+    @ApiModelProperty("场馆名称")
+    private String venueName;
 }

@@ -10,9 +10,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.PersonRecognition;
 import org.jeecg.modules.fwbz.hikvision.mapper.PersonRecognitionMapper;
 import org.jeecg.modules.fwbz.hikvision.service.IPersonRecognitionService;
+import org.jeecg.modules.fwbz.venue.VenueInfo;
+import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 人员识别记录服务实现
@@ -24,6 +28,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PersonRecognitionServiceImpl extends ServiceImpl<PersonRecognitionMapper, PersonRecognition>
         implements IPersonRecognitionService {
+
+    private final IVenueInfoService venueInfoService;
 
     @Override
     public IPage<PersonRecognition> getRecognitionList(int pageNo, int pageSize,
@@ -47,7 +53,42 @@ public class PersonRecognitionServiceImpl extends ServiceImpl<PersonRecognitionM
 
         IPage<PersonRecognition> resultPage = page(new Page<>(pageNo, pageSize), wrapper);
 
+        // 联动场馆信息：收集 venue 中的场馆ID，批量查询 venueName
+        populateVenueName(resultPage.getRecords());
+
         log.info("分页查询人员识别记录完成, 共{}条, 当前页{}条", resultPage.getTotal(), resultPage.getRecords().size());
         return resultPage;
+    }
+
+    /**
+     * 批量填充场馆名称。
+     * venue 字段存放的是场馆 ID（字符串），联动 table_venue_info 获取名称。
+     */
+    private void populateVenueName(List<PersonRecognition> records) {
+        if (records.isEmpty()) {
+            return;
+        }
+        Set<Long> venueIds = records.stream()
+                .map(PersonRecognition::getVenue)
+                .filter(Objects::nonNull)
+                .filter(v -> v.matches("\\d+"))
+                .map(Long::valueOf)
+                .collect(Collectors.toSet());
+
+        if (venueIds.isEmpty()) {
+            return;
+        }
+
+        List<VenueInfo> venueList = venueInfoService.listByIds(venueIds);
+        Map<Long, String> venueNameMap = venueList.stream()
+                .collect(Collectors.toMap(VenueInfo::getId, VenueInfo::getVenueName, (a, b) -> a));
+
+        records.forEach(record -> {
+            if (record.getVenue() != null && record.getVenue().matches("\\d+")) {
+                record.setVenueName(venueNameMap.getOrDefault(Long.valueOf(record.getVenue()), record.getVenue()));
+            } else {
+                record.setVenueName(record.getVenue());
+            }
+        });
     }
 }
