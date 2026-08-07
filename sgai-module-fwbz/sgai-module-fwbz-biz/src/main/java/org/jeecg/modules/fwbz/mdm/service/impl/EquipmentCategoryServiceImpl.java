@@ -323,7 +323,7 @@ public class EquipmentCategoryServiceImpl extends ServiceImpl<EquipmentCategoryM
         LambdaQueryWrapper<EquipmentCategory> wrapper = new LambdaQueryWrapper<EquipmentCategory>()
                 .eq(StringUtils.isNotEmpty(type), EquipmentCategory::getType, type);
         List<EquipmentCategory> allCategories = list(wrapper);
-
+        categoryIds = allCategories.stream().map(EquipmentCategory::getId).toList();
         // 3. 构建ID->EquipmentCategory的映射
         Map<Long, EquipmentCategory> categoryMap = allCategories.stream()
                 .collect(Collectors.toMap(EquipmentCategory::getId, c -> c));

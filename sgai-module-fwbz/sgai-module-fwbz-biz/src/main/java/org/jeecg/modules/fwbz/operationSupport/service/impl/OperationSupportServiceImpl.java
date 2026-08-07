@@ -408,8 +408,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table returnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_RETURNAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_RETURNAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
@@ -423,8 +423,8 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
      */
     @Override
     public Table freshReturnAirTemperature(String energyFlowDiagramIds, LocalDate localDate) {
-        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_CATEGORYID);
-        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_AIR_RETURNAIR);
+        String category = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESH_AIR_CATEGORYID);
+        String attrCode = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_FRESHAIR_RETURNAIR);
         return findAttrHistoryDay(localDate, category, attrCode);
 
     }
@@ -541,12 +541,15 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 }
             }
         }
+        List<DeviceAttributeHistory> deviceAttributeHistories = new ArrayList<DeviceAttributeHistory>();
+        if(!deviceProperties.isEmpty()){
+            DeviceAttributeHistoryQueryDto param = new DeviceAttributeHistoryQueryDto();
+            param.setDeviceAttributeIds(deviceProperties.keySet().stream().toList());
+            param.setStartTime(LocalDateTime.of(localDate, LocalTime.MIN));
+            param.setEndTime(LocalDateTime.of(localDate, LocalTime.MIN.withHour(23)));
+            deviceAttributeHistories = deviceAttributeHistoryService.listByAttributeIds(param);
 
-        DeviceAttributeHistoryQueryDto param = new DeviceAttributeHistoryQueryDto();
-        param.setDeviceAttributeIds(deviceProperties.keySet().stream().toList());
-        param.setStartTime(LocalDateTime.of(localDate, LocalTime.MIN));
-        param.setEndTime(LocalDateTime.of(localDate, LocalTime.MIN.withHour(23)));
-        List<DeviceAttributeHistory> deviceAttributeHistories = deviceAttributeHistoryService.listByAttributeIds(param);
+        }
 
         List<TableHeader> tableHeaderList = TableUtil.dayHeaders(localDate);
         Table table = createTable(tableHeaderList, deviceProperties, deviceAttributeHistories);
