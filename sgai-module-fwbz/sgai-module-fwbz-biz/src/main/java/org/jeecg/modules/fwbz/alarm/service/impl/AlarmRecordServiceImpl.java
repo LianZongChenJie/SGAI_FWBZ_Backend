@@ -642,30 +642,46 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
 
     @Override
     public AlarmRecordStatisticsDto statistics() {
+//      查询今日告警列表
         LocalDate now = LocalDate.now();
         LocalDateTime startOfDay = now.atStartOfDay();
         LocalDateTime endOfDay = now.atTime(LocalTime.MAX);
-        Long l = countByAlarmTimeRangeAndStatus(startOfDay, endOfDay, AlarmRecord.ALARM_STATUS_UNTREATED);
-        Long l2 = countByAlarmTimeRangeAndStatus(startOfDay, endOfDay, AlarmRecord.ALARM_STATUS_EVENT);
+        List<AlarmRecord> list = list(new LambdaQueryWrapper<AlarmRecord>().between(AlarmRecord::getAlarmTime, startOfDay, endOfDay));
+        //根据状态分组
+        Map<String, List<AlarmRecord>> collect = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmStatus));
+        Map<String, Long> collect1 = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmStatus, Collectors.counting()));
 
-        List<AlarmRecord> list = list(new LambdaQueryWrapper<AlarmRecord>()
-                .select(AlarmRecord::getAlarmTime, AlarmRecord::getProcessTime)
-                .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED));
+        Map<Long, Long> categoryIdMap= list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmCategoryId, Collectors.counting()));
 
+        Map<Long, Long> levelIdMap = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmLevelId, Collectors.counting()));
+        List<AlarmLevel> list1 = alarmLevelService.list();
+        Long orDefault = 0L;
+        for (AlarmLevel alarmLevel : list1) {
+            if(alarmLevel.getAlarmLevelName().equals("非常紧急")){
+                orDefault = levelIdMap.getOrDefault(alarmLevel.getId(), 0L);
+            }
+        }
 
-// 计算平均处理时长（分钟）
-        double avgMillis = list.stream()
-                .filter(a -> a.getAlarmTime() != null && a.getProcessTime() != null)
-                .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getProcessTime()).toMinutes())
-                .average()
-                .orElse(0);
+        // 计算平均处理时长（分钟）
+        double avgMillis = 0;
+        List<AlarmRecord> alarmRecords = collect.get(AlarmRecord.ALARM_STATUS_COMPLETED);
+        if(org.apache.commons.collections.CollectionUtils.isNotEmpty(alarmRecords)){
+            avgMillis = alarmRecords.stream()
+                    .filter(a -> a.getAlarmTime() != null && a.getProcessTime() != null)
+                    .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getProcessTime()).toMinutes())
+                    .average()
+                    .orElse(0);
+        }
+
 
         AlarmRecordStatisticsDto dto = new AlarmRecordStatisticsDto();
-        dto.setUntreatedCount(l);
-        dto.setEventCount(l2);
-        dto.setCompletedCount((long) list.size());
+        dto.setCount((long) list.size());
+        dto.setUntreatedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_UNTREATED,0L));
+        dto.setEventCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_EVENT,0L));
+        dto.setCompletedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_COMPLETED,0L));
         dto.setAverageProcessingTime(avgMillis);
-
+        dto.setCategoryIdMap(categoryIdMap);
+        dto.setSeriousCount(orDefault);
         return dto;
 
     }
