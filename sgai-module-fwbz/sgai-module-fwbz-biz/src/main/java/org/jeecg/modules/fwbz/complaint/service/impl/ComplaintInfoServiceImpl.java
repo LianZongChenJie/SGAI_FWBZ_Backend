@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.complaint.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,6 +14,7 @@ import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintRecordMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
 import org.jeecg.modules.fwbz.complaint.service.IComplaintInfoService;
+import org.jeecg.modules.fwbz.complaint.vo.ComplaintDetailVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,5 +95,33 @@ public class ComplaintInfoServiceImpl extends ServiceImpl<ComplaintInfoMapper, C
         record.setStatusTo(dto.getStatus());
         record.setHandler(dto.getHandler());
         complaintRecordMapper.insert(record);
+    }
+
+    @Override
+    public ComplaintDetailVO getDetailById(String id) {
+        ComplaintDetailVO vo = new ComplaintDetailVO();
+        // 查询投诉信息
+        ComplaintInfo complaintInfo = getById(id);
+        if (complaintInfo == null) {
+            return null;
+        }
+        // 填充类型名称
+        if (complaintInfo.getTypeId() != null) {
+            ComplaintType type = complaintTypeMapper.selectById(complaintInfo.getTypeId());
+            if (type != null) {
+                complaintInfo.setTypeName(type.getTypeName());
+            }
+        }
+        vo.setComplaintInfo(complaintInfo);
+
+        // 查询处理记录，按处理日期和创建时间倒序
+        LambdaQueryWrapper<ComplaintRecord> qw = new LambdaQueryWrapper<ComplaintRecord>()
+                .eq(ComplaintRecord::getComplaintId, complaintInfo.getId())
+                .orderByDesc(ComplaintRecord::getHandleDate)
+                .orderByDesc(ComplaintRecord::getGmtCreate);
+        List<ComplaintRecord> records = complaintRecordMapper.selectList(qw);
+        vo.setRecords(records);
+
+        return vo;
     }
 }

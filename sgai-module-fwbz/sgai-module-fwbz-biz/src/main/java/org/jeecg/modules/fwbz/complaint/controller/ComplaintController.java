@@ -16,6 +16,7 @@ import org.jeecg.modules.fwbz.complaint.entity.ComplaintType;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintStatusMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
 import org.jeecg.modules.fwbz.complaint.service.IComplaintInfoService;
+import org.jeecg.modules.fwbz.complaint.vo.ComplaintDetailVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -152,19 +153,19 @@ public class ComplaintController {
     }
 
     /**
-     * 通过id查询
+     * 通过id查询（含处理记录）
      *
      * @param id
      * @return
      */
-    @ApiOperation(value="投诉建议-通过id查询", notes="投诉建议-通过id查询")
+    @ApiOperation(value="投诉建议-通过id查询", notes="投诉建议-通过id查询（含处理记录）")
     @GetMapping(value = "/queryById")
-    public Result<ComplaintInfo> queryById(@RequestParam(name="id", required=true) String id) {
-        ComplaintInfo complaintInfo = complaintInfoService.getById(id);
-        if (complaintInfo == null) {
+    public Result<ComplaintDetailVO> queryById(@RequestParam(name="id", required=true) String id) {
+        ComplaintDetailVO vo = complaintInfoService.getDetailById(id);
+        if (vo == null) {
             return Result.error("未找到对应数据");
         }
-        return Result.OK(complaintInfo);
+        return Result.OK(vo);
     }
 
     /**

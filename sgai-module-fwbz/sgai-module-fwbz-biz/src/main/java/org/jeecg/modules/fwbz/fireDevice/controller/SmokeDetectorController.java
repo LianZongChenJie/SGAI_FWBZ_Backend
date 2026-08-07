@@ -12,6 +12,7 @@ import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.entity.FireAlarmRecord;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetector;
 import org.jeecg.modules.fwbz.fireDevice.service.ISmokeDetectorService;
+import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -131,5 +132,13 @@ public class SmokeDetectorController {
     public Result<List<StatCardVO>> summary() {
         log.info("查询消防设备统计汇总");
         return Result.ok(smokeDetectorService.getSummary());
+    }
+
+    @AutoLog(value = "统计-按设备状态统计")
+    @ApiOperation("按设备状态统计数量")
+    @GetMapping("/countByStatus")
+    public Result<List<StatusCountVO>> countByStatus() {
+        log.info("查询设备状态统计");
+        return Result.ok(smokeDetectorService.countByStatus());
     }
 }

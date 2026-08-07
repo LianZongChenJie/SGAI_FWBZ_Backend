@@ -38,12 +38,7 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
 
     /** 演示流地址池 */
     private static final String[] STREAM_URLS = {
-            "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8",
-            "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-            "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
-            "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8",
-            "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8",
-            "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8"
+            "http://10.168.47.23:4000/index.html?id=0096142642007010010193b98d3214a64af5b516d49cfbb97160",
     };
 
     @Override

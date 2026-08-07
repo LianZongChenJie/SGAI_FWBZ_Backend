@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.complaint.dto.ComplaintHandleDTO;
 import org.jeecg.modules.fwbz.complaint.entity.ComplaintInfo;
+import org.jeecg.modules.fwbz.complaint.vo.ComplaintDetailVO;
 
 /**
  * @Description: 投诉建议信息
@@ -30,4 +31,12 @@ public interface IComplaintInfoService extends IService<ComplaintInfo> {
      * @return 包含typeName的分页结果
      */
     IPage<ComplaintInfo> pageWithTypeName(Page<ComplaintInfo> page, QueryWrapper<ComplaintInfo> queryWrapper);
+
+    /**
+     * 通过id查询投诉建议详情（含处理记录）。
+     *
+     * @param id 投诉建议ID
+     * @return 投诉信息及处理记录
+     */
+    ComplaintDetailVO getDetailById(String id);
 }
