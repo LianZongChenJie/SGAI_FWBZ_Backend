@@ -935,7 +935,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         // 横坐标
         List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7-i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
         // 获取能耗数据
-        Map<String,BigDecimal> dataMap =  dayDataService.findByTimeRangeAndPointId(date.minusDays(7), date.minusDays(1), pointId)
+        Map<String,BigDecimal> dataMap =  dayDataService.findByTimeRangeAndPointId(date.minusDays(7), date, pointId)
                 .stream()
                 .filter(item -> item.getTime() != null && item.getValue() != null)
                 .collect(Collectors.groupingBy(item -> item.getTime().format(DateTimeFormatter.ofPattern("MM-dd")),
