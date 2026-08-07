@@ -8,6 +8,7 @@ import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 
 import java.time.LocalDateTime;
@@ -91,6 +92,7 @@ public interface IAlarmRecordService extends IService<AlarmRecord> {
 
 
     AlarmRecordStatisticsDto statistics() ;
+    Chat alarmTrendRecently() ;
 
 
 

@@ -11,20 +11,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.alarm.dto.AlarmRecordDto;
 import org.jeecg.modules.fwbz.alarm.dto.TransferEventDto;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmLevel;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRulePoint;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
+import org.jeecg.modules.fwbz.alarm.entity.*;
 import org.jeecg.modules.fwbz.alarm.mapper.AlarmRecordMapper;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmLevelService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRulePointService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRulesService;
+import org.jeecg.modules.fwbz.alarm.service.*;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
+import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ChatSeries;
 import org.jeecg.modules.fwbz.entity.DayData;
 import org.jeecg.modules.fwbz.entity.HourData;
 import org.jeecg.modules.fwbz.entity.MonthData;
@@ -47,14 +45,17 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, AlarmRecord> implements IAlarmRecordService {
     private final IAlarmLevelService alarmLevelService;
+    private final IAlarmCategoryService alarmCategoryService;
     private final IAlarmRulePointService alarmRulePointService;
     private final IAlarmRulesService alarmRulesService;
     private final IDeviceService deviceService;
@@ -654,6 +655,18 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         Map<Long, Long> categoryIdMap= list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmCategoryId, Collectors.counting()));
 
         Map<Long, Long> levelIdMap = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmLevelId, Collectors.counting()));
+
+
+        List<AlarmCategory> list2 = alarmCategoryService.list();
+        Map<String , Long> returnMap=new HashMap<>();
+        for (AlarmCategory alarmCategory : list2) {
+            Long l = categoryIdMap.get(alarmCategory.getId());
+            if(l!=null){
+                returnMap.put(alarmCategory.getAlarmCategoryName(), l);
+            }
+        }
+
+
         List<AlarmLevel> list1 = alarmLevelService.list();
         Long orDefault = 0L;
         for (AlarmLevel alarmLevel : list1) {
@@ -680,9 +693,37 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         dto.setEventCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_EVENT,0L));
         dto.setCompletedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_COMPLETED,0L));
         dto.setAverageProcessingTime(avgMillis);
-        dto.setCategoryIdMap(categoryIdMap);
+        dto.setCategoryIdMap(returnMap);
         dto.setSeriousCount(orDefault);
         return dto;
 
+    }
+
+    /**
+     * 近七日告警趋势
+     */
+    @Override
+    public Chat alarmTrendRecently() {
+        LocalDate date = LocalDate.now();
+        // 横坐标
+        List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7-i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
+        // 获取告警数据
+        Map<Object, Long> dataMap = listByAlarmTimeRange(date.minusDays(7).atStartOfDay(), date.atStartOfDay())
+                .stream()
+                .filter(item -> item.getAlarmTime() != null)
+                .collect(Collectors.groupingBy(item -> item.getAlarmTime().format(DateTimeFormatter.ofPattern("MM-dd")),
+                        Collectors.counting()));
+        Chat chat = new Chat();
+        chat.setXAxis(xAxis);
+        List<ChatSeries> chatSeriesList = new ArrayList<>();
+        List<Object> data = new ArrayList<>();
+        for(String day : xAxis){
+            data.add(dataMap.getOrDefault(day, 0L));
+
+        }
+        ChatSeries chatSeries = new ChatSeries("告警", data);
+        chatSeriesList.add(chatSeries);
+        chat.setChatSeriesList(chatSeriesList);
+        return chat;
     }
 }

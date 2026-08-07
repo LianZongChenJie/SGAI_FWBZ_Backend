@@ -39,7 +39,7 @@ public class AlarmRecordStatisticsDto {
     /**
      * 报警类别分类统计
      */
-    private Map<Long, Long> categoryIdMap;
+    private Map<String, Long> categoryIdMap;
 
     /**
      * 严重数量

@@ -12,6 +12,7 @@ import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.springframework.web.bind.annotation.*;
 
@@ -96,6 +97,14 @@ public class AlarmRecordController {
         return Result.ok(service.statistics());
     }
 
+
+    /**
+     * 近七日告警统计
+     */
+    @GetMapping("/alarmTrendRecently")
+    public Result<Chat> alarmTrendRecently(){
+        return Result.ok(service.alarmTrendRecently());
+    }
 
 
 }
