@@ -1,14 +1,25 @@
 package org.jeecg.modules.fwbz.venueVisitorFlow.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.venueVisitorFlow.service.IVenueFlowHourService;
+import org.jeecg.modules.fwbz.venueVisitorFlow.vo.AreaHeatDataItemVO;
+import org.jeecg.modules.fwbz.venueVisitorFlow.vo.AreaHeatResponseVO;
 import org.jeecg.modules.fwbz.venueVisitorFlow.vo.VenueHeatmapItemVO;
 import org.jeecg.modules.fwbz.venueVisitorFlow.vo.VenueHourlyTrendVO;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,14 +33,24 @@ import java.util.Map;
  *
  * @author fwbz
  */
+@Slf4j
 @RestController
 @RequestMapping("/fwbz/venueVisitorFlow/hourly")
 public class VenueFlowHourController {
 
+    /** 区域热力图外部API地址 */
+    private static final String AREA_HEAT_API_URL = "http://10.168.47.26:9999/sgai-api/openApi/tengxun/getAreaHeat";
+
+    /** 外部API认证头 */
+    private static final String APP_KEY = "R6VOSNoijW3o4WA5eFjW5l2bO";
+    private static final String APP_SECRET = "GDg18aNuWaKsIX33euL0maXbSVqZSp";
+
     private final IVenueFlowHourService venueFlowHourService;
+    private final RestTemplate restTemplate;
 
     public VenueFlowHourController(IVenueFlowHourService venueFlowHourService) {
         this.venueFlowHourService = venueFlowHourService;
+        this.restTemplate = new RestTemplate();
     }
 
     /**
@@ -83,5 +104,52 @@ public class VenueFlowHourController {
     @GetMapping("/heatmap")
     public Result<List<VenueHeatmapItemVO>> heatmap() {
         return Result.ok(venueFlowHourService.queryHeatmap());
+    }
+
+    /**
+     * 获取区域热力图数据（代理外部API）。
+     * <p>
+     * 调用腾讯区域热力API，根据areaId获取人员热力分布数据并直接返回。
+     * </p>
+     *
+     * @param areaId 区域ID
+     * @return 热力图响应，包含 maxweight 和 peopleHeatmapDataList
+     */
+    @GetMapping("/areaHeat")
+    public Result<AreaHeatResponseVO> areaHeat(@RequestParam String areaId) {
+        log.info("请求区域热力图数据, areaId={}", areaId);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("appKey", APP_KEY);
+            headers.set("appSecret", APP_SECRET);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            String url = AREA_HEAT_API_URL + "?areaId=" + areaId;
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            String body = response.getBody();
+            log.debug("区域热力图API响应: {}", body);
+
+            JSONObject json = JSON.parseObject(body);
+            JSONObject resultJson = json.getJSONObject("result");
+            if (resultJson == null) {
+                log.error("区域热力图API返回异常: {}", body);
+                return Result.error("获取区域热力图数据失败");
+            }
+
+            AreaHeatResponseVO vo = new AreaHeatResponseVO();
+            vo.setMaxweight(resultJson.getInteger("maxweight"));
+
+            JSONArray dataList = resultJson.getJSONArray("peopleHeatmapDataList");
+            if (dataList != null) {
+                List<AreaHeatDataItemVO> items = dataList.toJavaList(AreaHeatDataItemVO.class);
+                vo.setPeopleHeatmapDataList(items);
+            }
+
+            return Result.ok(vo);
+        } catch (Exception e) {
+            log.error("请求区域热力图API异常", e);
+            return Result.error("请求区域热力图服务异常: " + e.getMessage());
+        }
     }
 }
