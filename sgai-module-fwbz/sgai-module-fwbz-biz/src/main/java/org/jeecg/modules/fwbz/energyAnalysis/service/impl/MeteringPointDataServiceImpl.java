@@ -10,6 +10,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
 import org.jeecg.modules.fwbz.energyAnalysis.util.Jexl3Util;
@@ -37,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 @Service
@@ -911,6 +913,45 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
                 .divide(previous, 4, RoundingMode.HALF_UP)  // 先除，保留4位小数提高精度
                 .multiply(new BigDecimal("100"))
                 .setScale(2, RoundingMode.HALF_UP);  // 最终保留2位小数
+    }
+
+    /**
+     * 近七日电能耗趋势
+     */
+    @Override
+    public Chat energyConsumptionPSDElectricity() {
+        Long pointId = businessConfigService.getLongByKey(BusinessConfigConstant.ENERGY_CONSUMPTION_PSD_ELECTRICITY);
+        return energyConsumptionPSD(pointId);
+    }
+
+
+
+    /**
+     * 近七日能耗趋势
+     * @param pointId 点位id
+     */
+    private Chat energyConsumptionPSD(Long pointId){
+        LocalDate date = LocalDate.now();
+        // 横坐标
+        List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7-i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
+        // 获取能耗数据
+        Map<String,BigDecimal> dataMap =  dayDataService.findByTimeRangeAndPointId(date.minusDays(7), date.minusDays(1), pointId)
+                .stream()
+                .filter(item -> item.getTime() != null && item.getValue() != null)
+                .collect(Collectors.groupingBy(item -> item.getTime().format(DateTimeFormatter.ofPattern("MM-dd")),
+                        Collectors.mapping(MeteringPointDataDay::getValue,
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+        Chat chat = new Chat();
+        chat.setXAxis(xAxis);
+        List<ChatSeries> chatSeriesList = new ArrayList<>();
+        List<Object> data = new ArrayList<>();
+        for(String day : xAxis){
+            data.add(dataMap.getOrDefault(day, BigDecimal.ZERO));
+        }
+        ChatSeries chatSeries = new ChatSeries("能耗", data);
+        chatSeriesList.add(chatSeries);
+        chat.setChatSeriesList(chatSeriesList);
+        return chat;
     }
 
 

@@ -153,4 +153,10 @@ public class BusinessConfigConstant {
     public static final String OPERATIONSUPPORT_OVERVIEW_CATEGORYIDS = "operationSupport:overview:categoryIds";
 
 
+
+    /**
+     *大屏-节能低碳-近7日用电
+     */
+    public static final String ENERGY_CONSUMPTION_PSD_ELECTRICITY = "data_board:energyConsumptionPSD:electricity";
+
 }

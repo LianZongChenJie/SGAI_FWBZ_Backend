@@ -78,4 +78,11 @@ public interface IMeteringPointDataService {
      */
     MeteringPointDataStatisticsDto statistics();
 
+
+    /**
+     * 近七日电能耗趋势
+     */
+    Chat energyConsumptionPSDElectricity();
+
+
 }

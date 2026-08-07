@@ -150,4 +150,18 @@ public class MeteringPointDataController {
     public Result<MeteringPointDataChartVo> findYearEnergyStructure(MeteringPointDataDto param){
         return Result.ok(new MeteringPointDataChartVo(service.findYearEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
     }
+
+
+
+    /**
+     * 近七日能耗趋势-电
+     */
+    @GetMapping("/energyConsumptionPSDElectricity")
+    public Result<Chat> energyConsumptionPSDElectricity(){
+        return Result.ok(service.energyConsumptionPSDElectricity());
+    }
+
+
+
+
 }
