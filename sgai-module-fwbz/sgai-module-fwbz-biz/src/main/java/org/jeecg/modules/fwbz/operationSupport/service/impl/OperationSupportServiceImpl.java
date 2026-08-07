@@ -258,12 +258,17 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
         for (DeviceAttribute byDeviceId : byDeviceIds) {
             if (byDeviceId.getAttributeCode().equals("PM25")) {
-                total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
-                count++;
+                if (StringUtils.isNotBlank(byDeviceId.getValue())) {
+                    total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    count++;
+
+                }
             }
         }
-
-        BigDecimal average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
+        BigDecimal average = BigDecimal.ZERO;
+        if (count != 0) {
+            average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
+        }
         dto.setAvgPm25(average);
 
         return dto;
@@ -542,7 +547,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
             }
         }
         List<DeviceAttributeHistory> deviceAttributeHistories = new ArrayList<DeviceAttributeHistory>();
-        if(!deviceProperties.isEmpty()){
+        if (!deviceProperties.isEmpty()) {
             DeviceAttributeHistoryQueryDto param = new DeviceAttributeHistoryQueryDto();
             param.setDeviceAttributeIds(deviceProperties.keySet().stream().toList());
             param.setStartTime(LocalDateTime.of(localDate, LocalTime.MIN));
