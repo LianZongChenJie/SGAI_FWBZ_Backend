@@ -131,9 +131,9 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
 
             for (DeviceDataVo record : records) {
                 //从缓存中获取今日读数
-                RealData realData = (RealData) redisUtil.get(CACHE_KEY_PREFIX_MAX + record.getDeviceId());
-                if (realData != null) {
-                    record.setValue(realData.getValue());
+                RealData latest = realDataService.findLatest(record.getDeviceId());
+                if (latest != null) {
+                    record.setValue(latest.getValue());
                 }else{
                     record.setValue(BigDecimal.ZERO);
                 }

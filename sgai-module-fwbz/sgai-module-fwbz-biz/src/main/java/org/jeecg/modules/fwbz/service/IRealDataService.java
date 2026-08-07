@@ -11,6 +11,7 @@ import java.util.List;
 public interface IRealDataService extends IService<RealData> {
 
     void save(Long deviceId, LocalDateTime time, BigDecimal value);
+    RealData findLatest(Long deviceId);
 
     List<RealData> findByTime(LocalDateTime time);
 

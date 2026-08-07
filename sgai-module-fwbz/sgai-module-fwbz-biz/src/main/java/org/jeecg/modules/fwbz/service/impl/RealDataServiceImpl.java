@@ -75,7 +75,7 @@ public class RealDataServiceImpl extends ServiceImpl<RealDataMapper, RealData> i
      * @param deviceId 设备id
      * @return 最新的一条数据
      */
-    private RealData findLatest(Long deviceId){
+    public RealData findLatest(Long deviceId){
         RealData realData = (RealData)redisUtil.get(getCacheKeyMax(deviceId));
         if(realData == null){
             realData = findLatestByDeviceId(deviceId);
