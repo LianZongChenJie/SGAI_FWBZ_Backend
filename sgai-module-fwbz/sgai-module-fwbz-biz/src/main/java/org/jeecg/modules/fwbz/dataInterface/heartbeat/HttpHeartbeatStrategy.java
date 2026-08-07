@@ -1,7 +1,6 @@
 package org.jeecg.modules.fwbz.dataInterface.heartbeat;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -11,33 +10,16 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URI;
 
 /**
  * HTTP API 心跳检测策略
  * <p>
  * 发送 HTTP GET 请求，根据响应状态码判断在线/离线/异常
- * <p>
- * 支持通过配置文件设置 HTTP 代理：
- * <pre>{@code
- * data-interface:
- *   heartbeat:
- *     proxy:
- *       host: 127.0.0.1
- *       port: 7897
- * }</pre>
  */
 @Slf4j
 @Component
 public class HttpHeartbeatStrategy implements HeartbeatStrategy {
-
-    @Value("${data-interface.heartbeat.proxy.host:127.0.0.1}")
-    private String proxyHost;
-
-    @Value("${data-interface.heartbeat.proxy.port:7897}")
-    private int proxyPort;
 
     private RestTemplate restTemplate;
 
@@ -49,12 +31,6 @@ public class HttpHeartbeatStrategy implements HeartbeatStrategy {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(CONNECT_TIMEOUT);
         factory.setReadTimeout(READ_TIMEOUT);
-
-        if (proxyHost != null && !proxyHost.trim().isEmpty() && proxyPort > 0) {
-            factory.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost.trim(), proxyPort)));
-            log.info("HTTP心跳检测已启用代理: {}:{}", proxyHost.trim(), proxyPort);
-        }
-
         this.restTemplate = new RestTemplate(factory);
     }
 

@@ -1,5 +1,5 @@
 server:
-  port: 7011
+  port: 7206
 spring:
   application:
     name: sgai-fwbz-dev

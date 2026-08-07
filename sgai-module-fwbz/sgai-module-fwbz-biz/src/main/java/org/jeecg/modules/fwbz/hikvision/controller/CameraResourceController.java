@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.hikvision.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -8,11 +9,14 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -105,6 +109,33 @@ public class CameraResourceController {
         } catch (Exception e) {
             log.error("获取摄像头列表失败", e);
             return Result.error("获取摄像头列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取摄像头坐标分组分布
+     * <p>代理转发到外部IOC数据平台，获取按坐标聚合的摄像头分布数据。</p>
+     *
+     * @return 摄像头坐标分组分布数据
+     */
+    @GetMapping("/coordinateGroup")
+    @ApiOperation(value = "获取摄像头坐标分组分布", notes = "代理转发到外部IOC数据平台，获取按坐标聚合的摄像头分布")
+    public Result<JSONObject> getCoordinateGroup() {
+        try {
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(10000);
+            factory.setReadTimeout(10000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            String url = "http://10.168.47.26:9999/sgai-ioc-data/admin/video/coordinateGroup";
+            String body = restTemplate.exchange(url, HttpMethod.GET, null, String.class).getBody();
+
+            JSONObject json = JSONObject.parseObject(body);
+            log.info("获取摄像头坐标分组分布成功");
+            return Result.ok(json);
+        } catch (Exception e) {
+            log.error("获取摄像头坐标分组分布失败", e);
+            return Result.error("获取摄像头坐标分组分布失败: " + e.getMessage());
         }
     }
 }

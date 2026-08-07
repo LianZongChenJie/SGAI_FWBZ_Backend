@@ -21,8 +21,6 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -38,27 +36,6 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper, ParkingCount> implements IParkingStatisticsService {
-
-    @Value("${parking.statistics.api.host:}")
-    private String apiHost;
-
-    @Value("${parking.statistics.api.todayEntryPath:/api/parking/todayEntry}")
-    private String todayEntryPath;
-
-    @Value("${parking.statistics.api.currentInPath:/api/parking/currentIn}")
-    private String currentInPath;
-
-    @Value("${parking.statistics.api.remainingSpacePath:/api/parking/remainingSpace}")
-    private String remainingSpacePath;
-
-    @Value("${parking.statistics.api.avgDurationPath:/api/parking/avgDuration}")
-    private String avgDurationPath;
-
-    @Value("${parking.statistics.api.spaceDistributionPath:/api/parking/spaceDistribution}")
-    private String spaceDistributionPath;
-
-    @Value("${parking.statistics.api.flow24hPath:/api/parking/flow24h}")
-    private String flow24hPath;
 
     @Value("${parking.statistics.api.carTotalAmountUrl:http://10.168.47.26:9999/sgai-api/openApi/yitingche/car_total_amount}")
     private String carTotalAmountUrl;
@@ -81,25 +58,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     @Value("${parking.statistics.api.appSecret:GDg18aNuWaKsIX33euL0maXbSVqZSp}")
     private String appSecret;
 
-    // ========== 临时地址（后期替换） ==========
-    @Value("${parking.statistics.api.tempBaseUrl:http://10.168.56.101:8088/api}")
-    private String tempBaseUrl;
-
-    @Value("${parking.statistics.api.tempTodayEntryPath:/fwbz/parkingStatistics/todayEntryCount}")
-    private String tempTodayEntryPath;
-
-    @Value("${parking.statistics.api.tempRemainingSpacePath:/fwbz/parkingStatistics/remainingSpaceCount}")
-    private String tempRemainingSpacePath;
-
-    @Value("${parking.statistics.api.tempAvgDurationPath:/fwbz/parkingStatistics/averageParkingDuration}")
-    private String tempAvgDurationPath;
-
-    @Value("${parking.statistics.api.tempSpaceDistributionPath:/fwbz/parkingStatistics/parkingSpaceDistribution}")
-    private String tempSpaceDistributionPath;
-
-    @Value("${parking.statistics.api.tempFlow24hPath:/fwbz/parkingStatistics/parkingFlow24h}")
-    private String tempFlow24hPath;
-
     @Autowired
     private IInterfaceHistoryService interfaceHistoryService;
 
@@ -116,7 +74,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(TIMEOUT_MS);
         factory.setReadTimeout(TIMEOUT_MS);
-        factory.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 7897)));
         this.restTemplate = new RestTemplate(factory);
     }
 
@@ -155,8 +112,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     @Override
     public List<ParkingSpaceStatVO> getParkingSpaceDistribution() {
         try {
-            String url = tempBaseUrl + tempSpaceDistributionPath;
-            String body = doGet(url);
+            String body = doGet(parkingInfoUrl, "appKey", appKey, "appSecret", appSecret);
             log.info("停车场车位分布API请求成功");
             if (body == null || body.trim().isEmpty()) {
                 return Collections.emptyList();
@@ -187,8 +143,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     @Override
     public ParkingFlow24hVO getParkingFlow24h() {
         try {
-            String url = tempBaseUrl + tempFlow24hPath;
-            String body = doGet(url);
+            String body = doGet(flow24hUrl, "appKey", appKey, "appSecret", appSecret);
             log.info("24小时停车流量API请求成功");
             if (body == null || body.trim().isEmpty()) {
                 return null;
@@ -231,22 +186,21 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         ParkingCount entity = getOrCreateToday();
         boolean hasData = false;
 
-        // 使用临时地址同步（后期替换为正式地址）
-        Long todayEntry = fetchTodayEntryFromTempApi();
+        Long todayEntry = fetchTodayEntryFromCarTotalAmountApi();
         if (todayEntry != null) {
             entity.setTodayEntryCount(todayEntry);
             hasData = true;
         }
 
         // 当前在场和剩余车位来自同一个API，只请求一次
-        long[] parkingNumber = fetchParkingNumberFromTempApi();
+        long[] parkingNumber = fetchParkingNumberFromApi();
         if (parkingNumber != null) {
             entity.setCurrentInCount(parkingNumber[0]);
             entity.setRemainingSpaceCount(parkingNumber[1]);
             hasData = true;
         }
 
-        Double avgDuration = fetchAvgDurationFromTempApi();
+        Double avgDuration = fetchAvgStopTimeFromApi();
         if (avgDuration != null) {
             entity.setAverageParkingDuration(avgDuration);
             hasData = true;
@@ -255,7 +209,7 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         if (hasData) {
             insertOrUpdate(entity);
         }
-        log.info("同步停车统计完成(临时地址): todayEntry={}, currentIn={}, remainingSpace={}, avgDuration={}",
+        log.info("同步停车统计完成: todayEntry={}, currentIn={}, remainingSpace={}, avgDuration={}",
                 entity.getTodayEntryCount(), entity.getCurrentInCount(),
                 entity.getRemainingSpaceCount(), entity.getAverageParkingDuration());
     }
@@ -497,108 +451,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
             return result.getDouble("stopTime");
         } catch (Exception e) {
             log.error("请求平均停车时长API失败", e);
-            return null;
-        }
-    }
-
-    // ==================== 临时API请求（后期替换为正式地址） ====================
-
-    /**
-     * 请求临时-今日进场车辆数API
-     * <p>
-     * 响应格式: {"success":true, "code":200, "result":{"carIn":3604, "carOut":2527, "sum":6131}}
-     * carIn 为今日进场车辆数。
-     */
-    private Long fetchTodayEntryFromTempApi() {
-        try {
-            String url = tempBaseUrl + tempTodayEntryPath;
-            String body = doGet(url);
-            log.info("临时-今日进场车辆API请求成功");
-            JSONObject json = JSONObject.parseObject(body);
-            if (json == null) {
-                log.error("临时-今日进场车辆API响应解析失败");
-                return null;
-            }
-            JSONObject result = json.getJSONObject("result");
-            if (result == null) {
-                log.error("临时-今日进场车辆API响应中无result字段");
-                return null;
-            }
-            return result.getLong("carIn");
-        } catch (Exception e) {
-            log.error("请求临时-今日进场车辆API失败", e);
-            return null;
-        }
-    }
-
-    /**
-     * 请求临时-停车场车位数量API获取当前在场和剩余车位
-     * <p>
-     * 响应格式: {"success":true, "code":200, "result":{"shengyu":5021, "spaces":9662}}
-     * spaces为总车位，shengyu为剩余车位，在场车辆 = 总车位 - 剩余车位。
-     *
-     * @return [在场车辆, 剩余车位]，失败返回 null
-     */
-    private long[] fetchParkingNumberFromTempApi() {
-        try {
-            String url = tempBaseUrl + tempRemainingSpacePath;
-            String body = doGet(url);
-            log.info("临时-停车场车位数量API请求成功");
-            JSONObject json = JSONObject.parseObject(body);
-            if (json == null) {
-                log.error("临时-停车场车位数量API响应解析失败");
-                return null;
-            }
-            JSONObject result = json.getJSONObject("result");
-            if (result == null) {
-                log.error("临时-停车场车位数量API响应中无result字段");
-                return null;
-            }
-            long spaces = result.getLongValue("spaces");
-            long shengyu = result.getLongValue("shengyu");
-            long currentIn = spaces - shengyu;
-            return new long[]{currentIn, shengyu};
-        } catch (Exception e) {
-            log.error("请求临时-停车场车位数量API失败", e);
-            return null;
-        }
-    }
-
-    /**
-     * 请求临时-平均停车时长API
-     * <p>
-     * 响应格式: {"success":true, "code":200, "result":{"avgDuration": 1.5}}
-     *
-     * @return 平均停车时长（小时），失败返回 null
-     */
-    private Double fetchAvgDurationFromTempApi() {
-        try {
-            String url = tempBaseUrl + tempAvgDurationPath;
-            String body = doGet(url);
-            log.info("临时-平均停车时长API请求成功");
-            JSONObject json = JSONObject.parseObject(body);
-            if (json == null) {
-                log.error("临时-平均停车时长API响应解析失败");
-                return null;
-            }
-            JSONObject result = json.getJSONObject("result");
-            if (result == null) {
-                log.error("临时-平均停车时长API响应中无result字段");
-                return null;
-            }
-            if (result.containsKey("avgDuration")) {
-                return result.getDouble("avgDuration");
-            }
-            if (result.containsKey("stopTime")) {
-                return result.getDouble("stopTime");
-            }
-            if (result.containsKey("duration")) {
-                return result.getDouble("duration");
-            }
-            log.error("临时-平均停车时长API响应中无有效字段, result={}", result);
-            return null;
-        } catch (Exception e) {
-            log.error("请求临时-平均停车时长API失败", e);
             return null;
         }
     }
