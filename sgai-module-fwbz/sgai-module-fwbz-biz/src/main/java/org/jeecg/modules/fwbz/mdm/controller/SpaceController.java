@@ -70,17 +70,10 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 	 @ApiOperation(value = "空间位置-权限树", notes = "根据当前用户数据权限查询空间树，父级节点会被标记为不在权限范围内")
 	 @GetMapping("/getPermissionTree")
 	 public Result<List<PermissionSpaceTreeModel>> getPermissionTree(){
-		 // 1. 获取当前登录用户的空间权限范围
-		 UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
-		 Set<Long> spaceIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE);
 
-		 // 3. 如果没有权限，返回空树
-		 if (spaceIds == null || spaceIds.isEmpty()) {
-			 return Result.OK(new ArrayList<>());
-		 }
 
 		 // 4. 构建权限树
-		 List<PermissionSpaceTreeModel> tree = spaceService.buildPermissionTree(spaceIds);
+		 List<PermissionSpaceTreeModel> tree = spaceService.buildPermissionTree(null);
 
 		 return Result.OK(tree);
 	 }
@@ -125,18 +118,6 @@ public class SpaceController extends JeecgController<Space, ISpaceService>{
 		 Set<Long> deviceSpaceIds = devices.stream()
 				 .map(Device::getSpaceId)
 				 .collect(Collectors.toSet());
-
-		 // 获取当前用户的数据权限范围
-		 UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
-		 Set<Long> permissionSpaceIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE);
-
-		 // 如果用户没有空间权限，返回空树
-		 if (permissionSpaceIds == null || permissionSpaceIds.isEmpty()) {
-			 return Result.ok(new ArrayList<>());
-		 }
-
-		 // 取交集：只保留用户有权限且有设备的空间
-		 deviceSpaceIds.retainAll(permissionSpaceIds);
 
 		 return Result.ok(spaceService.buildPermissionTree(deviceSpaceIds));
 	 }

@@ -334,9 +334,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
      */
     @Override
     public List<PermissionSpaceTreeModel> buildPermissionTree(Collection<Long> spaceIds) {
-        if (spaceIds == null || spaceIds.isEmpty()) {
-            return Collections.emptyList();
-        }
 
         // 1. 查询所有空间节点
         List<Space> allSpaces = list();
