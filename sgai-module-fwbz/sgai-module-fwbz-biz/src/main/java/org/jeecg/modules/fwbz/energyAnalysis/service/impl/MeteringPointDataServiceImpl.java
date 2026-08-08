@@ -972,7 +972,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
                 .collect(Collectors.groupingBy(MeteringPointDataServiceImpl::getTimePeriodByhour,
                         Collectors.reducing(BigDecimal.ZERO, MeteringPointDataHour::getValue, BigDecimal::add)));
         //计算总耗电量
-        BigDecimal todayTotal = yestodayData.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal todayTotal = todayData.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
         //计算昨日18-24总用电量
         BigDecimal yesTodayTotal = yestodayData.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -983,7 +983,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
                     ElectricityInTimePeriodVo vo6 = new ElectricityInTimePeriodVo();
                     vo6.setTimePeriod(s);
                     vo6.setElectricity(collect.getOrDefault(s, BigDecimal.ZERO));
-                    vo6.setProportion(CalculationUtil.calculatePercentage(collect.getOrDefault(s, BigDecimal.ZERO), todayTotal));
+                    vo6.setProportion(CalculationUtil.calculatePercentageToString(collect.getOrDefault(s, BigDecimal.ZERO), todayTotal));
                     electricityInTimePeriodVos.add(vo6);
                     return vo6;
                 }
@@ -992,10 +992,10 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         for (int i = 0; i < list.size(); i++) {
             ElectricityInTimePeriodVo current = list.get(i);
             if (i == 0) {
-                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(), yesTodayTotal));
+                current.setMoM(CalculationUtil.calculateMomToString(current.getElectricity(), yesTodayTotal));
             } else {
                 ElectricityInTimePeriodVo thePreviousOne = list.get(i - 1);
-                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(), thePreviousOne.getElectricity()));
+                current.setMoM(CalculationUtil.calculateMomToString(current.getElectricity(), thePreviousOne.getElectricity()));
             }
         }
         return list;

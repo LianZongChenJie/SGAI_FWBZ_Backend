@@ -8,6 +8,35 @@ import java.util.List;
  * 用能成本计算
  */
 public class CalculationUtil {
+
+    public static String calculateMomToString(BigDecimal current, BigDecimal previous) {
+        BigDecimal bigDecimal = calculateMom(current, previous);
+        if(bigDecimal==null){
+            return "-";
+        }
+        if(bigDecimal.compareTo(BigDecimal.ZERO)>0){
+            return "↑" + bigDecimal + "%";
+        }else if(bigDecimal.compareTo(BigDecimal.ZERO)<0){
+            return "↓" + bigDecimal + "%";
+        }else{
+            return bigDecimal.toString();
+        }
+    }
+
+
+
+    public static String calculatePercentageToString(Long numerator, Long denominator) {
+        return calculatePercentage(numerator, denominator)+"%";
+
+    }
+
+    public static String calculatePercentageToString(BigDecimal numerator, BigDecimal denominator) {
+        return calculatePercentage(numerator, denominator)+"%";
+    }
+
+
+
+
     /**
      * 计算环比增长率（返回百分比数值，如 20.5 表示 20.5%）
      *
@@ -59,6 +88,9 @@ public class CalculationUtil {
                 .multiply(new BigDecimal("100"))
                 .setScale(2, RoundingMode.HALF_UP);
     }
+
+
+
     /**
      * 计算百分比：分子 / 分母 * 100
      *

@@ -18,11 +18,11 @@ public class ElectricityInTimePeriodVo {
     /**
      * 占比
      */
-    private BigDecimal proportion;
+    private String proportion;
     /**
      * 环比
      */
-    private BigDecimal MoM;
+    private String MoM;
 
 
 }
