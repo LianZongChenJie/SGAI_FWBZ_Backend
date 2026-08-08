@@ -4,6 +4,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInTimePeriodVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInVenueVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 
@@ -88,6 +89,10 @@ public interface IMeteringPointDataService {
      * 各时段用电分布
      */
     List<ElectricityInTimePeriodVo> electricityInTimePeriod();
+    /**
+     * 各时段用电分布
+     */
+    List<ElectricityInVenueVo> electricityInVenue();
 
 
 }

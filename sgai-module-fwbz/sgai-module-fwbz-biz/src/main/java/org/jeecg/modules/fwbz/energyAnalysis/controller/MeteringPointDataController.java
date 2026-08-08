@@ -12,6 +12,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInTimePeriodVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInVenueVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
@@ -171,6 +172,14 @@ public class MeteringPointDataController {
     @GetMapping("/electricityInTimePeriod")
     public Result<List<ElectricityInTimePeriodVo>> electricityInTimePeriod(){
         return Result.ok(service.electricityInTimePeriod());
+    }
+
+    /**
+     * 各场馆用电量
+     */
+    @GetMapping("/electricityInVenue")
+    public Result<List<ElectricityInVenueVo>> electricityInVenue(){
+        return Result.ok(service.electricityInVenue());
     }
 
 

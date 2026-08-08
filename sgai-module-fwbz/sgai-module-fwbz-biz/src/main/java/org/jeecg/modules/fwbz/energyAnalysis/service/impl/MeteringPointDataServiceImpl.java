@@ -35,6 +35,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -979,8 +980,8 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         List<ElectricityInTimePeriodVo> list = Arrays.stream(strings).map(s -> {
                     ElectricityInTimePeriodVo vo6 = new ElectricityInTimePeriodVo();
                     vo6.setTimePeriod(s);
-                    vo6.setElectricity(collect.getOrDefault(s,BigDecimal.ZERO));
-                    vo6.setProportion(CalculationUtil.calculatePercentage(collect.getOrDefault(s,BigDecimal.ZERO), todayTotal));
+                    vo6.setElectricity(collect.getOrDefault(s, BigDecimal.ZERO));
+                    vo6.setProportion(CalculationUtil.calculatePercentage(collect.getOrDefault(s, BigDecimal.ZERO), todayTotal));
                     electricityInTimePeriodVos.add(vo6);
                     return vo6;
                 }
@@ -988,17 +989,58 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         //计算环比值
         for (int i = 0; i < list.size(); i++) {
             ElectricityInTimePeriodVo current = list.get(i);
-            if(i==0){
-                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(),yesTodayTotal));
-            }else{
-                ElectricityInTimePeriodVo thePreviousOne = list.get(i-1);
-                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(),thePreviousOne.getElectricity()));
+            if (i == 0) {
+                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(), yesTodayTotal));
+            } else {
+                ElectricityInTimePeriodVo thePreviousOne = list.get(i - 1);
+                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(), thePreviousOne.getElectricity()));
             }
         }
         return list;
 
 
     }
+
+
+    /**
+     * 各场馆用电分布
+     */
+    @Override
+    public List<ElectricityInVenueVo> electricityInVenue() {
+
+//        查询配置场馆
+//        查询配置场馆用电
+//        查询配置场馆用水
+//        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.METERPOINTDATA_VENUE_NAMES);
+//        List<Long> longs = strToLongList(longByKey);
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.METERPOINTDATA_VENUEELECTRICITY_POINTIDS);
+//        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.METERPOINTDATA_WATER_POINTIDS);
+
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        Map<Long, MeteringPoint> collect1 = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, Function.identity()));
+        List<MeteringPointDataDay> todayData = dayDataService.findByDateAndPointIds(LocalDate.now(), configIds);
+        List<MeteringPointDataDay> yestodayData = dayDataService.findByDateAndPointIds(LocalDate.now().plusDays(-1), configIds);
+        Map<Long, BigDecimal> collect2 = todayData.stream().collect(Collectors.toMap(MeteringPointDataDay::getMeteringPointId, MeteringPointDataDay::getValue));
+        Map<Long, BigDecimal> collect3 = yestodayData.stream().collect(Collectors.toMap(MeteringPointDataDay::getMeteringPointId, MeteringPointDataDay::getValue));
+        BigDecimal reduce = todayData.stream().map(MeteringPointDataDay::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        ArrayList<ElectricityInVenueVo> electricityInTimePeriodVos = new ArrayList<>();
+        for (Long configId : configIds) {
+            MeteringPoint meteringPoint = collect1.get(configId);
+            ElectricityInVenueVo vo6 = new ElectricityInVenueVo();
+            vo6.setVenue(meteringPoint.getNodeName());
+            BigDecimal orDefault = collect2.getOrDefault(configId, BigDecimal.ZERO);
+            BigDecimal orDefault2 = collect3.getOrDefault(configId, BigDecimal.ZERO);
+            vo6.setElectricity(orDefault);
+            vo6.setElectricityMoM(CalculationUtil.calculateMom(orDefault, orDefault2));
+            vo6.setElectricityProportion(CalculationUtil.calculatePercentage(orDefault, reduce));
+            electricityInTimePeriodVos.add(vo6);
+        }
+        return electricityInTimePeriodVos;
+
+    }
+
 
     @NotNull
     private static String getTimePeriodByhour(MeteringPointDataHour data) {

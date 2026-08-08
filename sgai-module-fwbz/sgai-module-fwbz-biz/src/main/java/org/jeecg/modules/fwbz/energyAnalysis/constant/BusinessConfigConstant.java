@@ -41,10 +41,14 @@ public class BusinessConfigConstant {
      * 碳排放分析-总量，多个点位以英文逗号分隔
      */
     public static final String CARBON_EMISSION_POINT = "carbon:carbon_emission_pointIds";
+
+    public static final String METERPOINTDATA_VENUE_NAMES = "meterPointData:venue:names";
     /**
      * 能源计量场馆用电量计量规则ids，多个点位以英文逗号分隔
      */
     public static final String METERPOINTDATA_VENUEELECTRICITY_POINTIDS = "meterPointData:venueElectricity:pointIds";
+
+    public static final String METERPOINTDATA_WATER_POINTIDS = "meterPointData:venueWater:pointIds";
 
     /**
      * 能源计量用能结构分析计量规则ids，多个点位以英文逗号分隔
