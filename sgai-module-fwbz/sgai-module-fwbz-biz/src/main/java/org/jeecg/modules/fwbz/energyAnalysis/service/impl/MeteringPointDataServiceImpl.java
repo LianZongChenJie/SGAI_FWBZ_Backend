@@ -921,7 +921,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
      */
     @Override
     public Chat energyConsumptionPSDElectricity() {
-        Long pointId = businessConfigService.getLongByKey(BusinessConfigConstant.ENERGY_CONSUMPTION_PSD_ELECTRICITY);
+        Long pointId = businessConfigService.getLongByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
         return energyConsumptionPSD(pointId);
     }
 
