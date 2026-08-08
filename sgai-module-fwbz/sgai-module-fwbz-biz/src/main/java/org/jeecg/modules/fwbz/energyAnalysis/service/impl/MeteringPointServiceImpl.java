@@ -717,7 +717,7 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
         MeteringPointStatisticsDto dto = new MeteringPointStatisticsDto();
         dto.setCount((long) list.size());
         if (addCount == 0) {
-            dto.setAddCount("-0");
+            dto.setAddCount("0");
         } else {
             dto.setAddCount("↑" + addCount);
 

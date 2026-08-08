@@ -851,70 +851,24 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         BigDecimal lastWaterValue = Optional.ofNullable(lastWater).map(MeteringPointDataMonth::getValue).orElse(BigDecimal.ZERO);
 
 
-        BigDecimal bigDecimal = calculateMom(electricValue, lastElectricValue);
-        BigDecimal bigDecimal2 = calculateMom(waterValue, lastWaterValue);
-
         MeteringPointDataStatisticsDto dto = new MeteringPointDataStatisticsDto();
         dto.setElectricCount(electricValue);
-        dto.setElectricCountMoM(formatData(bigDecimal));
+        dto.setElectricCountMoM(CalculationUtil.calculateMomToString(electricValue, lastElectricValue));
         dto.setWaterCount(waterValue);
-        dto.setWaterCountMoM(formatData(bigDecimal2));
+        dto.setWaterCountMoM(CalculationUtil.calculateMomToString(waterValue, lastWaterValue));
 
 
         BigDecimal divide = electricValue.divide(BigDecimal.valueOf(now.getDayOfMonth()), 2, RoundingMode.HALF_UP);
         BigDecimal divide2 = lastElectricValue.divide(BigDecimal.valueOf(last.lengthOfMonth()), 2, RoundingMode.HALF_UP);
 
-        BigDecimal bigDecimal3 = calculateMom(divide, divide2);
-
         dto.setElectricAvg(divide);
-        dto.setElectricAvgMom(formatData(bigDecimal3));
+        dto.setElectricAvgMom(CalculationUtil.calculateMomToString(divide, divide2));
 
         dto.setEnergySaving("8.5");
         dto.setEnergySavingMom("1.2%");
         return dto;
     }
 
-    @NotNull
-    private static String formatData(BigDecimal bigDecimal2) {
-        String waterCountDoD;
-        if (bigDecimal2.compareTo(BigDecimal.ZERO) > 0) {
-            waterCountDoD = "↑" + bigDecimal2 + "%";
-        } else if (bigDecimal2.compareTo(BigDecimal.ZERO) < 0) {
-            waterCountDoD = "↓" + bigDecimal2 + "%";
-        } else {
-            waterCountDoD = bigDecimal2 + "%";
-        }
-        return waterCountDoD;
-    }
-
-
-    /**
-     * 计算环比增长率（返回百分比数值，如 20.5 表示 20.5%）
-     *
-     * @param current  本期值
-     * @param previous 上期值
-     * @return 环比增长率，保留2位小数
-     */
-    public static BigDecimal calculateMom(BigDecimal current, BigDecimal previous) {
-        // 1. 判空
-        if (current == null || previous == null) {
-            return null;
-        }
-
-        // 2. 处理上期为0的情况
-        if (previous.compareTo(BigDecimal.ZERO) == 0) {
-            if (current.compareTo(BigDecimal.ZERO) == 0) {
-                return BigDecimal.ZERO;  // 两者都为0，增长率为0
-            }
-            return null;  // 上期为0，本期>0，增长率无穷大，返回null或特殊值
-        }
-
-        // 3. 计算：(current - previous) / previous * 100
-        return current.subtract(previous)
-                .divide(previous, 4, RoundingMode.HALF_UP)  // 先除，保留4位小数提高精度
-                .multiply(new BigDecimal("100"))
-                .setScale(2, RoundingMode.HALF_UP);  // 最终保留2位小数
-    }
 
     /**
      * 近七日电能耗趋势
@@ -1035,8 +989,8 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
             BigDecimal orDefault = collect2.getOrDefault(configId, BigDecimal.ZERO);
             BigDecimal orDefault2 = collect3.getOrDefault(configId, BigDecimal.ZERO);
             vo6.setElectricity(orDefault);
-            vo6.setElectricityMoM(CalculationUtil.calculateMom(orDefault, orDefault2));
-            vo6.setElectricityProportion(CalculationUtil.calculatePercentage(orDefault, reduce));
+            vo6.setElectricityMoM(CalculationUtil.calculateMomToString(orDefault, orDefault2));
+            vo6.setElectricityProportion(CalculationUtil.calculatePercentageToString(orDefault, reduce));
             electricityInTimePeriodVos.add(vo6);
         }
         return electricityInTimePeriodVos;
@@ -1068,8 +1022,8 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
             BigDecimal orDefault = collect2.getOrDefault(configId, BigDecimal.ZERO);
             BigDecimal orDefault2 = collect3.getOrDefault(configId, BigDecimal.ZERO);
             vo6.setElectricity(orDefault);
-            vo6.setElectricityMoM(CalculationUtil.calculateMom(orDefault, orDefault2));
-            vo6.setElectricityProportion(CalculationUtil.calculatePercentage(orDefault, reduce));
+            vo6.setElectricityMoM(CalculationUtil.calculateMomToString(orDefault, orDefault2));
+            vo6.setElectricityProportion(CalculationUtil.calculatePercentageToString(orDefault, reduce));
             electricityInTimePeriodVos.add(vo6);
         }
         return electricityInTimePeriodVos;

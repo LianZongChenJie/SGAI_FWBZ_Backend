@@ -7,6 +7,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.EnergyMeteringStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IEnergyMeteringService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
+import org.jeecg.modules.fwbz.energyAnalysis.util.pricing.CalculationUtil;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
@@ -77,83 +78,20 @@ public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
         EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
         dto.setCount((long) list.size());
         if(addCount==0){
-            dto.setAddCount("-0");
+            dto.setAddCount("0");
         }else{
             dto.setAddCount("↑"+addCount);
         }
-        BigDecimal bigDecimal = calculatePercentage(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L), (long) list.size());
-        dto.setOnlineRate(bigDecimal+"%");
+        dto.setOnlineRate(CalculationUtil.calculatePercentageToString(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L), (long) list.size()));
 
 
         dto.setElectricCount(todayElectricValue);
         dto.setWaterCount(todayWaterValue);
-        dto.setElectricCountDoD(formatData(calculateMom(todayElectricValue, yestodayElectricValue)));
-        dto.setWaterCountDoD(formatData(calculateMom(todayWaterValue, yestodayWaterValue)));
+        dto.setElectricCountDoD(CalculationUtil.calculateMomToString(todayElectricValue, yestodayElectricValue));
+        dto.setWaterCountDoD(CalculationUtil.calculateMomToString(todayWaterValue, yestodayWaterValue));
 
 
         return dto;
     }
 
-    @NotNull
-    private static String formatData(BigDecimal bigDecimal2) {
-        String waterCountDoD;
-        if(bigDecimal2.compareTo(BigDecimal.ZERO)>0){
-             waterCountDoD = "↑" + bigDecimal2 + "%";
-        }else if (bigDecimal2.compareTo(BigDecimal.ZERO)<0){
-             waterCountDoD = "↓" + bigDecimal2 + "%";
-        }else{
-             waterCountDoD = bigDecimal2 + "%";
-        }
-        return waterCountDoD;
-    }
-
-    /**
-     * 计算环比增长率（返回百分比数值，如 20.5 表示 20.5%）
-     * @param current 本期值
-     * @param previous 上期值
-     * @return 环比增长率，保留2位小数
-     */
-    public static BigDecimal calculateMom(BigDecimal current, BigDecimal previous) {
-        // 1. 判空
-        if (current == null || previous == null) {
-            return null;
-        }
-
-        // 2. 处理上期为0的情况
-        if (previous.compareTo(BigDecimal.ZERO) == 0) {
-            if (current.compareTo(BigDecimal.ZERO) == 0) {
-                return BigDecimal.ZERO;  // 两者都为0，增长率为0
-            }
-            return null;  // 上期为0，本期>0，增长率无穷大，返回null或特殊值
-        }
-
-        // 3. 计算：(current - previous) / previous * 100
-        return current.subtract(previous)
-                .divide(previous, 4, RoundingMode.HALF_UP)  // 先除，保留4位小数提高精度
-                .multiply(new BigDecimal("100"))
-                .setScale(2, RoundingMode.HALF_UP);  // 最终保留2位小数
-    }
-
-
-    /**
-     * 计算百分比：分子 / 分母 * 100
-     * @param numerator 分子
-     * @param denominator 分母
-     * @return 百分比，保留2位小数
-     */
-    public static BigDecimal calculatePercentage(Long numerator, Long denominator) {
-        // 1. 判空
-        if (numerator == null || denominator == null) {
-            return null;
-        }
-        // 2. 分母为0处理
-        if (denominator == 0) {
-            return numerator == 0 ? BigDecimal.ZERO : null;  // 0/0 返回0，非零/0 返回null
-        }
-        // 3. 计算：(numerator / denominator) * 100
-        return BigDecimal.valueOf(numerator)
-                .divide(BigDecimal.valueOf(denominator), 4, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"))
-                .setScale(2, RoundingMode.HALF_UP);
-    }
 }

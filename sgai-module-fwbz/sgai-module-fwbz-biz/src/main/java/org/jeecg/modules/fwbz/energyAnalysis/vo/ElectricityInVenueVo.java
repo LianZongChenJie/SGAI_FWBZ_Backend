@@ -19,12 +19,12 @@ public class ElectricityInVenueVo {
      * 用电量环比
      *
      */
-    private BigDecimal electricityMoM;
+    private String electricityMoM;
 
     /**
      * 用电占比
      */
-    private BigDecimal electricityProportion;
+    private String electricityProportion;
 
     /**
      * 用水量
@@ -34,7 +34,7 @@ public class ElectricityInVenueVo {
     /**
      * 用水量环比
      */
-    private BigDecimal waterMoM;
+    private String waterMoM;
 
 
 }
