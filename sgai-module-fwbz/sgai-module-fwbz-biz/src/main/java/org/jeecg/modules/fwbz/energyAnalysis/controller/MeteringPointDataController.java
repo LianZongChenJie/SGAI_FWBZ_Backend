@@ -206,7 +206,7 @@ public class MeteringPointDataController {
      */
     @GetMapping("/findHourElectricityByDateRange")
     public Result<BigDecimal> findHourElectricityByDateRange(MeterPointDataQueryDto dto){
-        return Result.ok(service.findDayElectricityByDateRange(dto));
+        return Result.ok(service.findHourElectricityByDateRange(dto));
     }
 
 
