@@ -1,13 +1,17 @@
 package org.jeecg.modules.fwbz.activeMeetReport.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
+import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
 import org.jeecg.modules.fwbz.activeMeetReport.entity.ActiveMeetReport;
 import org.jeecg.modules.fwbz.activeMeetReport.mapper.ActiveMeetReportMapper;
 import org.jeecg.modules.fwbz.activeMeetReport.service.IActiveMeetReportService;
+import org.jeecg.modules.fwbz.api.SgaiTpApi;
 import org.jeecg.modules.fwbz.complaint.entity.AlarmRecord;
 import org.jeecg.modules.fwbz.complaint.entity.ComplaintInfo;
 import org.jeecg.modules.fwbz.complaint.entity.ComplaintType;
@@ -21,16 +25,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
 /**
  * @Description: 展会总结报告
  * @Author: jeecg-boot
- * @Date:   2026-08-08
+ * @Date: 2026-08-08
  * @Version: V1.0
  */
+@Slf4j
 @Service
 public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMapper, ActiveMeetReport> implements IActiveMeetReportService {
 
@@ -48,6 +55,8 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
 
     @Resource
     private AlarmRecordMapper alarmRecordMapper;
+    @Resource
+    private SgaiTpApi sgaiTpApi;
 
     @Override
     public boolean save(ActiveMeetReport entity) {
@@ -276,7 +285,37 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
      * 计算总用电量（空方法，待后续实现，当前返回0）
      */
     private double calcConsumptionElectricity(List<ActiveMeetInfo> activities) {
-        return 0.0;
+        double totalElectricity = 0.0;
+        for (ActiveMeetInfo activity : activities) {
+            LocalDateTime startTime = activity.getStartDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                    .atTime(activity.getStartTime().toLocalTime());
+            LocalDateTime endTime = activity.getStartDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                    .atTime(activity.getEndTime().toLocalTime());
+            try {
+                String response = sgaiTpApi.findHourElectricityByDateRange(startTime, endTime);
+                log.info("sgai-tp响应: {}", response);
+
+                if (response == null) {
+                    log.error("sgai-tp服务不可用，已触发降级");
+                    continue;
+                }
+
+                Result<?> result = JSONObject.parseObject(response).toJavaObject(Result.class);
+                Object value = result.getResult();
+                if (value instanceof Number) {
+                    totalElectricity += ((Number) value).doubleValue();
+                } else if (value instanceof String) {
+                    totalElectricity += Double.parseDouble((String) value);
+                }
+            } catch (Exception e) {
+                log.error("调用sgai-tp用电量接口异常, startTime={}, endTime={}",startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), e);
+            }
+        }
+        return totalElectricity;
     }
 
     /**

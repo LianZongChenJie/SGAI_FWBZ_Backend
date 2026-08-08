@@ -65,6 +65,15 @@ public class DoorStatisticsController {
     }
 
     /**
+     * 门禁点当天事件总数
+     */
+    @GetMapping("/countTodayDoorEvents")
+    @ApiOperation(value = "门禁点当天事件总数", notes = "统计门禁点当天事件总数")
+    public Result<StatCardVO> countTodayDoorEvents() {
+        return Result.ok(doorStatisticsService.countTodayDoorEvents());
+    }
+
+    /**
      * 汇总统计（返回全部卡片）
      */
     @GetMapping("/summary")

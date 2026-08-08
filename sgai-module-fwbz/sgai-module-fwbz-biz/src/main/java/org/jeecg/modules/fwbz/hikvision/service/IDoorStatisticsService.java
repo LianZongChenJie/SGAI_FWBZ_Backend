@@ -32,6 +32,11 @@ public interface IDoorStatisticsService {
     StatCardVO countOnlineDevices();
 
     /**
+     * 门禁点当天事件总数
+     */
+    StatCardVO countTodayDoorEvents();
+
+    /**
      * 汇总统计（返回全部卡片）
      */
     List<StatCardVO> getSummary();
