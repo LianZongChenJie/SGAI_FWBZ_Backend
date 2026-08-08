@@ -13,6 +13,7 @@ import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetPreparationInfoMapper;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetsDeviceTypeMapper;
 import org.jeecg.modules.fwbz.activeMeet.service.IActiveMeetInfoService;
 import org.jeecg.modules.fwbz.activeMeet.vo.WeekActivityVO;
+import org.jeecg.modules.fwbz.activeMeetReport.service.IActiveMeetReportService;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
@@ -27,13 +28,16 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     private final IVenueInfoService venueInfoService;
     private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
     private final ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper;
+    private final IActiveMeetReportService activeMeetReportService;
 
     public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService,
                                      ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
-                                     ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper) {
+                                     ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper,
+                                     IActiveMeetReportService activeMeetReportService) {
         this.venueInfoService = venueInfoService;
         this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
         this.activeMeetPreparationInfoMapper = activeMeetPreparationInfoMapper;
+        this.activeMeetReportService = activeMeetReportService;
     }
 
     @Override
@@ -80,6 +84,8 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
         boolean result = super.save(entity);
         // 创建会议后，自动将所有设备类型插入会前筹备信息表
         initPreparationInfo(entity.getId());
+        // 同步活动总结报告：无同名报告则新建，有则按规则更新日期范围
+        activeMeetReportService.syncFromActivity(entity.getActiveName(), entity.getStartDate());
         return result;
     }
 
