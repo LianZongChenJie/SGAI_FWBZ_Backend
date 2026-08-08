@@ -1080,10 +1080,21 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
      * 根据日期时间段查询总用电量
      */
     @Override
-    public BigDecimal findElectricityByDateRange(MeterPointDataQueryDto dto) {
+    public BigDecimal findDayElectricityByDateRange(MeterPointDataQueryDto dto) {
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
         List<MeteringPointDataDay> byTimeRangeAndPointId = dayDataService.findByTimeRangeAndPointId(dto.getStartDate(), dto.getEndDate(), Long.valueOf(longByKey));
         BigDecimal reduce = byTimeRangeAndPointId.stream().map(MeteringPointDataDay::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return reduce;
+    }
+
+    /**
+     * 根据日期时间段查询总用电量
+     */
+    @Override
+    public BigDecimal findHourElectricityByDateRange(MeterPointDataQueryDto dto) {
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
+        List<MeteringPointDataHour> byTimeRangeAndPointId = hourDataService.findByPointIdAndTimeRange(Long.valueOf(longByKey),dto.getStartTime(), dto.getStartTime() );
+        BigDecimal reduce = byTimeRangeAndPointId.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
         return reduce;
     }
 

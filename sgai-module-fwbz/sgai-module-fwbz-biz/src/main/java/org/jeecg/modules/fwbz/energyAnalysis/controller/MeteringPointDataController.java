@@ -194,11 +194,19 @@ public class MeteringPointDataController {
     }
 
     /**
-     * 根据时间范围查询总用电量
+     * 根据时间范围查询总用电量日表数据
      */
-    @GetMapping("/findElectricityByDateRange")
-    public Result<BigDecimal> findElectricityByDateRange(MeterPointDataQueryDto dto){
-        return Result.ok(service.findElectricityByDateRange(dto));
+    @GetMapping("/findDayElectricityByDateRange")
+    public Result<BigDecimal> findDayElectricityByDateRange(MeterPointDataQueryDto dto){
+        return Result.ok(service.findDayElectricityByDateRange(dto));
+    }
+
+    /**
+     * 根据时间范围查询总用电量小时数据
+     */
+    @GetMapping("/findHourElectricityByDateRange")
+    public Result<BigDecimal> findHourElectricityByDateRange(MeterPointDataQueryDto dto){
+        return Result.ok(service.findDayElectricityByDateRange(dto));
     }
 
 

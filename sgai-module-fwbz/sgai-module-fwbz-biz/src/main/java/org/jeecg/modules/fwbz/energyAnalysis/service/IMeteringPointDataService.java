@@ -100,10 +100,9 @@ public interface IMeteringPointDataService {
      */
     List<ElectricityInVenueVo> energyStructure();
 
-    /**
-     * 用能结构分布
-     */
-    BigDecimal findElectricityByDateRange(MeterPointDataQueryDto dto);
+
+    BigDecimal findDayElectricityByDateRange(MeterPointDataQueryDto dto);
+    BigDecimal findHourElectricityByDateRange(MeterPointDataQueryDto dto);
 
 
 }
