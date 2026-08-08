@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.energyAnalysis.service;
 
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
@@ -8,6 +9,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInVenueVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -97,6 +99,11 @@ public interface IMeteringPointDataService {
      * 用能结构分布
      */
     List<ElectricityInVenueVo> energyStructure();
+
+    /**
+     * 用能结构分布
+     */
+    BigDecimal findElectricityByDateRange(MeterPointDataQueryDto dto);
 
 
 }

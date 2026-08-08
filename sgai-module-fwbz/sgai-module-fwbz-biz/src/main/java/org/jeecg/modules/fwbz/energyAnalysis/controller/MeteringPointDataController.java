@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
@@ -18,6 +19,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -191,7 +193,13 @@ public class MeteringPointDataController {
         return Result.ok(service.energyStructure());
     }
 
-
+    /**
+     * 根据时间范围查询总用电量
+     */
+    @GetMapping("/findElectricityByDateRange")
+    public Result<BigDecimal> findElectricityByDateRange(MeterPointDataQueryDto dto){
+        return Result.ok(service.findElectricityByDateRange(dto));
+    }
 
 
 }

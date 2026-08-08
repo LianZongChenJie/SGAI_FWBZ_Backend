@@ -5,7 +5,9 @@ import dm.jdbc.util.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.codecs.jsr310.LocalDateCodec;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
@@ -1074,6 +1076,16 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
 
     }
 
+    /**
+     * 根据日期时间段查询总用电量
+     */
+    @Override
+    public BigDecimal findElectricityByDateRange(MeterPointDataQueryDto dto) {
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
+        List<MeteringPointDataDay> byTimeRangeAndPointId = dayDataService.findByTimeRangeAndPointId(dto.getStartDate(), dto.getEndDate(), Long.valueOf(longByKey));
+        BigDecimal reduce = byTimeRangeAndPointId.stream().map(MeteringPointDataDay::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return reduce;
+    }
 
 
     @NotNull
