@@ -433,15 +433,11 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
     @Override
     public IPage<MeteringPointVo> listPoint(MeteringPointDto params) {
         params.setDeviceType(Device.DEVICE_TYPE_MEASURING);
-
-        // 手动获取数据权限范围，传递给 Mapper 以实现权限过滤
-        UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
-
         return baseMapper.selectMeteringPoint(
                 new Page<>(params.getPageNo(), params.getPageSize()),
                 params,
-                dataScope != null ? dataScope.getPermissionIds(RoleDataPermission.TYPE_CATEGORY) : null,
-                dataScope != null ? dataScope.getPermissionIds(RoleDataPermission.TYPE_SPACE) : null
+                null,
+               null
         );
     }
 
