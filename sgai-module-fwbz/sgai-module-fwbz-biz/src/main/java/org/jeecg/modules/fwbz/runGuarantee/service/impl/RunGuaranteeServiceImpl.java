@@ -9,6 +9,10 @@ import org.jeecg.modules.fwbz.activeMeetPreparation.entity.SmokeDetector;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.DeviceMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.LightingCircuitMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.SmokeDetectorMapper;
+import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
+import org.jeecg.modules.fwbz.complaint.mapper.BuildingControlPointHistoryMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.BuildingControlPointSendHistoryMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.LightingOperationLogMapper;
 import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
@@ -20,6 +24,9 @@ import org.jeecg.modules.fwbz.runGuarantee.vo.SystemDeviceStatVO;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -35,6 +42,9 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
     private final AcsDeviceMapper acsDeviceMapper;
     private final SmokeDetectorMapper smokeDetectorMapper;
     private final LightingCircuitMapper lightingCircuitMapper;
+    private final BuildingControlPointHistoryMapper buildingControlPointHistoryMapper;
+    private final BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper;
+    private final LightingOperationLogMapper lightingOperationLogMapper;
 
     public RunGuaranteeServiceImpl(ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
                                    DeviceMapper deviceMapper,
@@ -42,7 +52,10 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
                                    DoorResourceMapper doorResourceMapper,
                                    AcsDeviceMapper acsDeviceMapper,
                                    SmokeDetectorMapper smokeDetectorMapper,
-                                   LightingCircuitMapper lightingCircuitMapper) {
+                                   LightingCircuitMapper lightingCircuitMapper,
+                                   BuildingControlPointHistoryMapper buildingControlPointHistoryMapper,
+                                   BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper,
+                                   LightingOperationLogMapper lightingOperationLogMapper) {
         this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
         this.deviceMapper = deviceMapper;
         this.cameraResourceMapper = cameraResourceMapper;
@@ -50,16 +63,17 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
         this.acsDeviceMapper = acsDeviceMapper;
         this.smokeDetectorMapper = smokeDetectorMapper;
         this.lightingCircuitMapper = lightingCircuitMapper;
+        this.buildingControlPointHistoryMapper = buildingControlPointHistoryMapper;
+        this.buildingControlPointSendHistoryMapper = buildingControlPointSendHistoryMapper;
+        this.lightingOperationLogMapper = lightingOperationLogMapper;
     }
 
     @Override
     public List<SystemDeviceStatVO> getDeviceStat() {
-        // 获取所有设备类型
         List<ActiveMeetsDeviceType> allDeviceTypes = activeMeetsDeviceTypeMapper.selectList(null);
 
         List<SystemDeviceStatVO> result = new ArrayList<>();
         for (ActiveMeetsDeviceType dt : allDeviceTypes) {
-            // 统计该设备类型的总数和在线数
             CountResult countResult = computeCount(dt);
 
             SystemDeviceStatVO vo = new SystemDeviceStatVO();
@@ -67,7 +81,6 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
             vo.setDeviceCount(countResult.total);
             vo.setOnline(countResult.online);
 
-            // 计算在线率（百分比整数）
             if (countResult.total > 0) {
                 vo.setOnlineRate((int) (countResult.online * 100 / countResult.total));
             } else {
@@ -79,12 +92,62 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
         return result;
     }
 
-    /**
-     * 根据设备类型计算设备总数和在线数
-     */
+    @Override
+    public StatCardVO getLinkTotal() {
+        long count = activeMeetsDeviceTypeMapper.selectCount(null);
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("链路总数");
+        vo.setValue(count);
+        vo.setContext(count + "系统");
+        return vo;
+    }
+
+    @Override
+    public StatCardVO getNormalLink() {
+        long count = buildingControlPointHistoryMapper.countToday(getToday());
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("数据接收数");
+        vo.setValue(count);
+        vo.setContext(count + "消息");
+        return vo;
+    }
+
+    @Override
+    public StatCardVO getCollectionStatus() {
+        long count = buildingControlPointSendHistoryMapper.countToday(getToday());
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("设备控制数");
+        vo.setValue(count);
+        vo.setContext(count + "控制");
+        return vo;
+    }
+
+    @Override
+    public StatCardVO getProcessingStatus() {
+        long count = lightingOperationLogMapper.countToday(getToday());
+        StatCardVO vo = new StatCardVO();
+        vo.setTitle("照明控制数");
+        vo.setValue(count);
+        vo.setContext(count + "照明");
+        return vo;
+    }
+
+    @Override
+    public List<StatCardVO> getSummary() {
+        return Arrays.asList(getLinkTotal(), getNormalLink(), getCollectionStatus(), getProcessingStatus());
+    }
+
+    private Date getToday() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
+
     private CountResult computeCount(ActiveMeetsDeviceType dt) {
         if (dt.getDeviceTypeId() != null) {
-            // 从device表统计（category_id = device_type_id）
             long total = deviceMapper.selectCount(
                     new LambdaQueryWrapper<Device>()
                             .eq(Device::getCategoryId, dt.getDeviceTypeId()));
@@ -94,7 +157,6 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
                             .eq(Device::getRunState, "在线"));
             return new CountResult(total, online);
         } else {
-            // device_type_id为空，根据device_type_name判断数据来源
             String name = dt.getDeviceTypeName();
             if (name == null) {
                 return CountResult.ZERO;
@@ -162,9 +224,6 @@ public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
         return new CountResult(total, online);
     }
 
-    /**
-     * 设备计数结果
-     */
     private static class CountResult {
         static final CountResult ZERO = new CountResult(0L, 0L);
 
