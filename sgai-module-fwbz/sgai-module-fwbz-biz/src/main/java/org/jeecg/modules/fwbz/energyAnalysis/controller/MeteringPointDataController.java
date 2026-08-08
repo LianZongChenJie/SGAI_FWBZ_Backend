@@ -11,10 +11,13 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInTimePeriodVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Api(tags = "计量点位数据信息")
@@ -159,6 +162,15 @@ public class MeteringPointDataController {
     @GetMapping("/energyConsumptionPSDElectricity")
     public Result<Chat> energyConsumptionPSDElectricity(){
         return Result.ok(service.energyConsumptionPSDElectricity());
+    }
+
+
+    /**
+     * 各时段用电分布
+     */
+    @GetMapping("/electricityInTimePeriod")
+    public Result<List<ElectricityInTimePeriodVo>> electricityInTimePeriod(){
+        return Result.ok(service.electricityInTimePeriod());
     }
 
 

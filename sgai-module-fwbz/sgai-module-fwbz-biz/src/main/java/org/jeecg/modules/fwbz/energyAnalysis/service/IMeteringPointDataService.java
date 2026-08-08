@@ -3,6 +3,7 @@ package org.jeecg.modules.fwbz.energyAnalysis.service;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInTimePeriodVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 
@@ -83,6 +84,10 @@ public interface IMeteringPointDataService {
      * 近七日电能耗趋势
      */
     Chat energyConsumptionPSDElectricity();
+    /**
+     * 各时段用电分布
+     */
+    List<ElectricityInTimePeriodVo> electricityInTimePeriod();
 
 
 }

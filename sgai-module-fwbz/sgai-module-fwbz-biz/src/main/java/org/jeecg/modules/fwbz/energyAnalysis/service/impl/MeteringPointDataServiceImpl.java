@@ -8,13 +8,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataStatisticsDto;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.*;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
 import org.jeecg.modules.fwbz.energyAnalysis.util.Jexl3Util;
 import org.jeecg.modules.fwbz.energyAnalysis.util.TableUtil;
+import org.jeecg.modules.fwbz.energyAnalysis.util.pricing.CalculationUtil;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.*;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
@@ -925,17 +923,17 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
     }
 
 
-
     /**
      * 近七日能耗趋势
+     *
      * @param pointId 点位id
      */
-    private Chat energyConsumptionPSD(Long pointId){
+    private Chat energyConsumptionPSD(Long pointId) {
         LocalDate date = LocalDate.now();
         // 横坐标
-        List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7-i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
+        List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7 - i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
         // 获取能耗数据
-        Map<String,BigDecimal> dataMap =  dayDataService.findByTimeRangeAndPointId(date.minusDays(7), date, pointId)
+        Map<String, BigDecimal> dataMap = dayDataService.findByTimeRangeAndPointId(date.minusDays(7), date, pointId)
                 .stream()
                 .filter(item -> item.getTime() != null && item.getValue() != null)
                 .collect(Collectors.groupingBy(item -> item.getTime().format(DateTimeFormatter.ofPattern("MM-dd")),
@@ -945,13 +943,72 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         chat.setXAxis(xAxis);
         List<ChatSeries> chatSeriesList = new ArrayList<>();
         List<Object> data = new ArrayList<>();
-        for(String day : xAxis){
+        for (String day : xAxis) {
             data.add(dataMap.getOrDefault(day, BigDecimal.ZERO));
         }
         ChatSeries chatSeries = new ChatSeries("能耗", data);
         chatSeriesList.add(chatSeries);
         chat.setChatSeriesList(chatSeriesList);
         return chat;
+    }
+
+
+    /**
+     * 各时段用电分布
+     */
+    @Override
+    public List<ElectricityInTimePeriodVo> electricityInTimePeriod() {
+        //查询当天的小时数据 和昨天的后六个小时数据（查昨日是计算环比）
+        LocalDate now = LocalDate.now();
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
+        List<MeteringPointDataHour> todayData = hourDataService.findByPointIdAndTimeRange(Long.valueOf(longByKey), now.atStartOfDay(), now.atTime(LocalTime.MAX));
+        List<MeteringPointDataHour> yestodayData = hourDataService.findByPointIdAndTimeRange(Long.valueOf(longByKey), now.plusDays(-1).atTime(18, 0), now.plusDays(-1).atTime(LocalTime.MAX));
+
+        // 按小时段分组：0-5点、6-11点、12-17点、18-23点
+        Map<String, BigDecimal> collect = todayData.stream()
+                .collect(Collectors.groupingBy(MeteringPointDataServiceImpl::getTimePeriodByhour,
+                        Collectors.reducing(BigDecimal.ZERO, MeteringPointDataHour::getValue, BigDecimal::add)));
+        //计算总耗电量
+        BigDecimal todayTotal = yestodayData.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        //计算昨日18-24总用电量
+        BigDecimal yesTodayTotal = yestodayData.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        ArrayList<ElectricityInTimePeriodVo> electricityInTimePeriodVos = new ArrayList<>();
+
+        String[] strings = {"00:00-06:00", "06:00-09:00", "09:00-12:00", "12:00-14:00", "14:00-18:00", "18:00-24:00"};
+        List<ElectricityInTimePeriodVo> list = Arrays.stream(strings).map(s -> {
+                    ElectricityInTimePeriodVo vo6 = new ElectricityInTimePeriodVo();
+                    vo6.setTimePeriod(s);
+                    vo6.setElectricity(collect.getOrDefault(s,BigDecimal.ZERO));
+                    vo6.setProportion(CalculationUtil.calculatePercentage(collect.getOrDefault(s,BigDecimal.ZERO), todayTotal));
+                    electricityInTimePeriodVos.add(vo6);
+                    return vo6;
+                }
+        ).toList();
+        //计算环比值
+        for (int i = 0; i < list.size(); i++) {
+            ElectricityInTimePeriodVo current = list.get(i);
+            if(i==0){
+                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(),yesTodayTotal));
+            }else{
+                ElectricityInTimePeriodVo thePreviousOne = list.get(i-1);
+                current.setMoM(CalculationUtil.calculateMom(current.getElectricity(),thePreviousOne.getElectricity()));
+            }
+        }
+        return list;
+
+
+    }
+
+    @NotNull
+    private static String getTimePeriodByhour(MeteringPointDataHour data) {
+        int hour = data.getTime().getHour();
+        if (hour < 6) return "00:00-06:00";
+        else if (hour < 9) return "06:00-09:00";
+        else if (hour < 12) return "09:00-12:00";
+        else if (hour < 14) return "12:00-14:00";
+        else if (hour < 18) return "14:00-18:00";
+        else return "18:00-24:00";
     }
 
 
