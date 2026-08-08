@@ -14,6 +14,7 @@ import org.jeecg.modules.fwbz.fireDevice.mapper.FireSmokeDetectorTypeMapper;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.service.ISmokeDetectorService;
 import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
+import org.jeecg.modules.fwbz.fireDevice.vo.VenueDeviceCountVO;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
@@ -168,6 +169,12 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
     public List<StatusCountVO> countByStatus() {
         log.info("按设备状态统计数量");
         return baseMapper.countByStatus();
+    }
+
+    @Override
+    public List<VenueDeviceCountVO> countByVenue() {
+        log.info("按场馆统计消防设备数量");
+        return baseMapper.countByVenue();
     }
 
     private void populateTypeName(List<SmokeDetector> records) {

@@ -6,6 +6,7 @@ import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.entity.FireAlarmRecord;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetector;
 import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
+import org.jeecg.modules.fwbz.fireDevice.vo.VenueDeviceCountVO;
 
 import java.util.Date;
 import java.util.List;
@@ -91,4 +92,11 @@ public interface ISmokeDetectorService extends IService<SmokeDetector> {
      * @return 各状态设备数量列表
      */
     List<StatusCountVO> countByStatus();
+
+    /**
+     * 按场馆统计消防设备数量，联动返回场馆经纬度。
+     *
+     * @return 场馆设备数量统计列表
+     */
+    List<VenueDeviceCountVO> countByVenue();
 }
