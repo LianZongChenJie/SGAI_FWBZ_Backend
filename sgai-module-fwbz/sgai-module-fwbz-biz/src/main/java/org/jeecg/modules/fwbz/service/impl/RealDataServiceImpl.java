@@ -42,12 +42,12 @@ public class RealDataServiceImpl extends ServiceImpl<RealDataMapper, RealData> i
     /**
      * 缓存key前缀
      */
-    private static final String CACHE_KEY_PREFIX = "device_energy_data_real:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:device_energy_data_real:";
 
     /**
      * 设备最新值缓存key
      */
-    private static final String CACHE_KEY_PREFIX_MAX = "device_energy_data_real_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:device_energy_data_real_max:";
 
     @Override
     public void save(Long deviceId, LocalDateTime time, BigDecimal value) {

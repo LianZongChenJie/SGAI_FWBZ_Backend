@@ -62,12 +62,6 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
     private final IDataAmendLogService dataAmendLogService;
 
 
-    /**
-     * 设备最新值缓存key
-     */
-    private static final String CACHE_KEY_PREFIX_MAX = "device_energy_data_real_max:";
-
-
     @Override
     public IPage<DeviceDataVo> findList(DeviceDataFindDto params) {
         IPage<DeviceDataVo> listPage = deviceService.find(params.convertToDevice()).convert(DeviceDataVo::convert);
