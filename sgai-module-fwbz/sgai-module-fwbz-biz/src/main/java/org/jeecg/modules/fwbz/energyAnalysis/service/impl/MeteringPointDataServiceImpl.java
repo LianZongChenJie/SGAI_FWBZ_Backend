@@ -1029,7 +1029,7 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         for (Long configId : configIds) {
             MeteringPoint meteringPoint = collect1.get(configId);
             ElectricityInVenueVo vo6 = new ElectricityInVenueVo();
-            vo6.setVenue(meteringPoint.getNodeName());
+            vo6.setName(meteringPoint.getNodeName());
             BigDecimal orDefault = collect2.getOrDefault(configId, BigDecimal.ZERO);
             BigDecimal orDefault2 = collect3.getOrDefault(configId, BigDecimal.ZERO);
             vo6.setElectricity(orDefault);
@@ -1040,6 +1040,40 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
         return electricityInTimePeriodVos;
 
     }
+
+    /**
+     * 各场馆用电分布
+     */
+    @Override
+    public List<ElectricityInVenueVo> energyStructure() {
+
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.METERPOINTDATA_ENERGYSTRUCTURE_POINTIDS);
+
+        List<MeteringPoint> configs = meteringPointService.getByIds(strToLongList(longByKey));
+        List<Long> configIds = configs.stream().map(MeteringPoint::getId).collect(Collectors.toList());
+        Map<Long, MeteringPoint> collect1 = configs.stream().collect(Collectors.toMap(MeteringPoint::getId, Function.identity()));
+        List<MeteringPointDataDay> todayData = dayDataService.findByDateAndPointIds(LocalDate.now(), configIds);
+        List<MeteringPointDataDay> yestodayData = dayDataService.findByDateAndPointIds(LocalDate.now().plusDays(-1), configIds);
+        Map<Long, BigDecimal> collect2 = todayData.stream().collect(Collectors.toMap(MeteringPointDataDay::getMeteringPointId, MeteringPointDataDay::getValue));
+        Map<Long, BigDecimal> collect3 = yestodayData.stream().collect(Collectors.toMap(MeteringPointDataDay::getMeteringPointId, MeteringPointDataDay::getValue));
+        BigDecimal reduce = todayData.stream().map(MeteringPointDataDay::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        ArrayList<ElectricityInVenueVo> electricityInTimePeriodVos = new ArrayList<>();
+        for (Long configId : configIds) {
+            MeteringPoint meteringPoint = collect1.get(configId);
+            ElectricityInVenueVo vo6 = new ElectricityInVenueVo();
+            vo6.setName(meteringPoint.getNodeName());
+            BigDecimal orDefault = collect2.getOrDefault(configId, BigDecimal.ZERO);
+            BigDecimal orDefault2 = collect3.getOrDefault(configId, BigDecimal.ZERO);
+            vo6.setElectricity(orDefault);
+            vo6.setElectricityMoM(CalculationUtil.calculateMom(orDefault, orDefault2));
+            vo6.setElectricityProportion(CalculationUtil.calculatePercentage(orDefault, reduce));
+            electricityInTimePeriodVos.add(vo6);
+        }
+        return electricityInTimePeriodVos;
+
+    }
+
 
 
     @NotNull

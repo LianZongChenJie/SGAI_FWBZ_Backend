@@ -183,6 +183,15 @@ public class MeteringPointDataController {
     }
 
 
+    /**
+     * 用能结构分布
+     */
+    @GetMapping("/energyStructure")
+    public Result<List<ElectricityInVenueVo>> energyStructure(){
+        return Result.ok(service.energyStructure());
+    }
+
+
 
 
 }

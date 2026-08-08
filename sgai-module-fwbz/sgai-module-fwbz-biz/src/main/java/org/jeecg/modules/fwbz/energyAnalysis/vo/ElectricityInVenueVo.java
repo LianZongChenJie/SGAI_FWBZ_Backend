@@ -7,9 +7,9 @@ import java.math.BigDecimal;
 @Data
 public class ElectricityInVenueVo {
     /**
-     * 时间段
+     * 名称
      */
-    private String venue;
+    private String name;
     /**
      * 用电量
      */

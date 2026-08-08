@@ -90,9 +90,13 @@ public interface IMeteringPointDataService {
      */
     List<ElectricityInTimePeriodVo> electricityInTimePeriod();
     /**
-     * 各时段用电分布
+     * 场馆用电量
      */
     List<ElectricityInVenueVo> electricityInVenue();
+    /**
+     * 用能结构分布
+     */
+    List<ElectricityInVenueVo> energyStructure();
 
 
 }
