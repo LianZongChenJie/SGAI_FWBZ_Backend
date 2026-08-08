@@ -8,6 +8,7 @@ import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.VenueDeviceCountVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 消防设备 Mapper
@@ -38,4 +39,16 @@ public interface FireSmokeDetectorMapper extends BaseMapper<SmokeDetector> {
             "GROUP BY s.venue_id, v.venue_name, v.longitude, v.latitude " +
             "ORDER BY deviceCount DESC")
     List<VenueDeviceCountVO> countByVenue();
+
+    /**
+     * 按设备类型及状态分组统计数量。
+     *
+     * @return 扁平结果（typeName / status / count），由 Service 层聚合为 DeviceTypeStatusVO
+     */
+    @Select("SELECT t.type_name AS typeName, COALESCE(s.status, '--') AS status, COUNT(s.id) AS count " +
+            "FROM table_smoke_detector_type t " +
+            "LEFT JOIN table_smoke_detector s ON s.device_type = t.id " +
+            "GROUP BY t.id, t.type_name, s.status " +
+            "ORDER BY t.id, s.status")
+    List<Map<String, Object>> countByTypeAndStatus();
 }

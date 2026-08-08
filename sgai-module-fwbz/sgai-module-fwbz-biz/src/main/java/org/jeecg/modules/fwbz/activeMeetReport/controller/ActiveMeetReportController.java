@@ -113,14 +113,15 @@ public class ActiveMeetReportController extends JeecgController<ActiveMeetReport
 
     /**
      * 通过id查询
+     * 已总结(status=1)直接返回库数据，未总结则动态从各表计算
      *
      * @param id
      * @return
      */
-    @ApiOperation(value="展会总结报告-通过id查询", notes="展会总结报告-通过id查询")
+    @ApiOperation(value="展会总结报告-通过id查询", notes="展会总结报告-通过id查询，已总结返回库数据，未总结动态计算")
     @GetMapping(value = "/queryById")
     public Result<ActiveMeetReport> queryById(@RequestParam(name="id",required=true) String id) {
-        ActiveMeetReport report = activeMeetReportService.getById(id);
+        ActiveMeetReport report = activeMeetReportService.computeReport(Long.valueOf(id));
         if(report==null) {
             return Result.error("未找到对应数据");
         }
@@ -144,17 +145,17 @@ public class ActiveMeetReportController extends JeecgController<ActiveMeetReport
     }
 
     /**
-     * 生成总结报告
+     * 保存总结报告
      *
      * @param activeMeetReport
      * @return
      */
-    @AutoLog(value = "展会总结报告-生成总结")
-    @ApiOperation(value="展会总结报告-生成总结", notes="生成活动总结报告，汇总各项数据并将状态更新为已总结")
-    @RequestMapping(value = "/generate", method = {RequestMethod.PUT,RequestMethod.POST})
-    public Result<String> generateReport(@RequestBody ActiveMeetReport activeMeetReport) {
-        activeMeetReportService.generateReport(activeMeetReport);
-        return Result.OK("总结报告生成成功!");
+    @AutoLog(value = "展会总结报告-保存总结")
+    @ApiOperation(value="展会总结报告-保存总结", notes="根据报告ID，仅更新数据字段并将状态置为已总结")
+    @PostMapping(value = "/save")
+    public Result<String> saveReport(@RequestBody ActiveMeetReport activeMeetReport) {
+        activeMeetReportService.saveReport(activeMeetReport);
+        return Result.OK("保存成功！");
     }
 
     /**

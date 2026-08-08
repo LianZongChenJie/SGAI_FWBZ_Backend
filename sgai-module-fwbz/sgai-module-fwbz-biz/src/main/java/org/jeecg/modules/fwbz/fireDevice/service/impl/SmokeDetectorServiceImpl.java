@@ -13,6 +13,7 @@ import org.jeecg.modules.fwbz.fireDevice.mapper.FireSmokeDetectorMapper;
 import org.jeecg.modules.fwbz.fireDevice.mapper.FireSmokeDetectorTypeMapper;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.service.ISmokeDetectorService;
+import org.jeecg.modules.fwbz.fireDevice.vo.DeviceTypeStatusVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.VenueDeviceCountVO;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
@@ -175,6 +176,33 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
     public List<VenueDeviceCountVO> countByVenue() {
         log.info("按场馆统计消防设备数量");
         return baseMapper.countByVenue();
+    }
+
+    @Override
+    public List<DeviceTypeStatusVO> countByTypeAndStatus() {
+        log.info("按设备类型分组统计各状态设备数量");
+        List<Map<String, Object>> flatResults = baseMapper.countByTypeAndStatus();
+
+        Map<String, List<StatusCountVO>> grouped = flatResults.stream()
+                .collect(Collectors.groupingBy(
+                        m -> (String) m.get("typeName"),
+                        LinkedHashMap::new,
+                        Collectors.mapping(m -> {
+                            StatusCountVO vo = new StatusCountVO();
+                            vo.setStatus((String) m.get("status"));
+                            vo.setCount(((Number) m.get("count")).longValue());
+                            return vo;
+                        }, Collectors.toList())
+                ));
+
+        return grouped.entrySet().stream()
+                .map(e -> {
+                    DeviceTypeStatusVO vo = new DeviceTypeStatusVO();
+                    vo.setTypeName(e.getKey());
+                    vo.setData(e.getValue());
+                    return vo;
+                })
+                .collect(Collectors.toList());
     }
 
     private void populateTypeName(List<SmokeDetector> records) {

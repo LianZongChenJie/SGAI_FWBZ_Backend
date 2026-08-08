@@ -3,11 +3,27 @@ package org.jeecg.modules.fwbz.activeMeetReport.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.jeecg.common.exception.JeecgBootException;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
 import org.jeecg.modules.fwbz.activeMeetReport.entity.ActiveMeetReport;
 import org.jeecg.modules.fwbz.activeMeetReport.mapper.ActiveMeetReportMapper;
 import org.jeecg.modules.fwbz.activeMeetReport.service.IActiveMeetReportService;
+import org.jeecg.modules.fwbz.complaint.entity.AlarmRecord;
+import org.jeecg.modules.fwbz.complaint.entity.ComplaintInfo;
+import org.jeecg.modules.fwbz.complaint.entity.ComplaintType;
+import org.jeecg.modules.fwbz.complaint.mapper.AlarmRecordMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
+import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
+import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @Description: 展会总结报告
@@ -17,6 +33,21 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMapper, ActiveMeetReport> implements IActiveMeetReportService {
+
+    @Resource
+    private ActiveMeetInfoMapper activeMeetInfoMapper;
+
+    @Resource
+    private VenueFlowHourMapper venueFlowHourMapper;
+
+    @Resource
+    private ComplaintInfoMapper complaintInfoMapper;
+
+    @Resource
+    private ComplaintTypeMapper complaintTypeMapper;
+
+    @Resource
+    private AlarmRecordMapper alarmRecordMapper;
 
     @Override
     public boolean save(ActiveMeetReport entity) {
@@ -41,13 +72,25 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void generateReport(ActiveMeetReport report) {
-        report.setStatus("1");
-        if (report.getId() != null) {
-            updateById(report);
-        } else {
-            save(report);
+    public void saveReport(ActiveMeetReport report) {
+        if (report.getId() == null) {
+            throw new JeecgBootException("报告ID不能为空");
         }
+        baseMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<ActiveMeetReport>()
+                        .eq(ActiveMeetReport::getId, report.getId())
+                        .set(ActiveMeetReport::getStatus, "1")
+                        .set(ActiveMeetReport::getServicePersonnel, report.getServicePersonnel())
+                        .set(ActiveMeetReport::getComplaintsTotal, report.getComplaintsTotal())
+                        .set(ActiveMeetReport::getRecommendedTotal, report.getRecommendedTotal())
+                        .set(ActiveMeetReport::getDeviceFailuresTotal, report.getDeviceFailuresTotal())
+                        .set(ActiveMeetReport::getConsumptionElectricity, report.getConsumptionElectricity())
+                        .set(ActiveMeetReport::getPersonEnergyConsumption, report.getPersonEnergyConsumption())
+                        .set(ActiveMeetReport::getDayNumber, report.getDayNumber())
+                        .set(ActiveMeetReport::getPassengerFlow, report.getPassengerFlow())
+                        .set(ActiveMeetReport::getPeakFlow, report.getPeakFlow())
+                        .set(ActiveMeetReport::getExhibitors, report.getExhibitors())
+        );
     }
 
     @Override
@@ -58,7 +101,7 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void syncFromActivity(String activeName, java.util.Date startDate) {
+    public void syncFromActivity(String activeName, Date startDate) {
         if (activeName == null || activeName.isEmpty()) {
             return;
         }
@@ -88,5 +131,160 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
                 baseMapper.updateById(existing);
             }
         }
+    }
+
+    @Override
+    public ActiveMeetReport computeReport(Long reportId) {
+        ActiveMeetReport report = getById(reportId);
+        if (report == null) {
+            return null;
+        }
+        // 已总结，直接返回库中数据
+        if ("1".equals(report.getStatus())) {
+            return report;
+        }
+
+        // 未总结：根据活动名称查询所有活动信息
+        List<ActiveMeetInfo> activities = activeMeetInfoMapper.selectList(
+                new LambdaQueryWrapper<ActiveMeetInfo>()
+                        .eq(ActiveMeetInfo::getActiveName, report.getActiveName())
+        );
+
+        if (activities == null || activities.isEmpty()) {
+            return report;
+        }
+
+        // 展会天数 = 活动信息条数
+        report.setDayNumber((long) activities.size());
+
+        // 总服务人次 & 总客流 & 峰值客流：逐条活动从场馆分时客流表取数
+        long servicePersonnel = 0L;
+        long passengerFlow = 0L;
+        long peakFlow = 0L;
+        for (ActiveMeetInfo activity : activities) {
+            ServiceFlowResult flowResult = calcVenueFlow(activity);
+            servicePersonnel += flowResult.servicePersonnel;
+            passengerFlow += flowResult.passengerFlow;
+            peakFlow += flowResult.peakFlow;
+        }
+        report.setServicePersonnel(servicePersonnel);
+        report.setPassengerFlow(passengerFlow);
+        report.setPeakFlow(peakFlow);
+
+        // 投诉数量 & 建议数量：逐条活动日期取
+        long complaintsTotal = 0L;
+        long recommendedTotal = 0L;
+        for (ActiveMeetInfo activity : activities) {
+            complaintsTotal += countComplaintsByType("投诉", activity.getStartDate());
+            recommendedTotal += countComplaintsByType("建议", activity.getStartDate());
+        }
+        report.setComplaintsTotal(complaintsTotal);
+        report.setRecommendedTotal(recommendedTotal);
+
+        // 设备故障数：报告整体时间段内的报警数
+        long deviceFailuresTotal = alarmRecordMapper.selectCount(
+                new LambdaQueryWrapper<AlarmRecord>()
+                        .ge(report.getStartDate() != null, AlarmRecord::getAlarmTime, report.getStartDate())
+                        .le(report.getEndDate() != null, AlarmRecord::getAlarmTime, report.getEndDate())
+        );
+        report.setDeviceFailuresTotal(deviceFailuresTotal);
+
+        // 总用电量：空方法返回0
+        double consumptionElectricity = calcConsumptionElectricity(activities);
+        report.setConsumptionElectricity(consumptionElectricity);
+
+        // 单人次能耗 = 总用电量 / 总服务人次，人次为0时即为总用电量
+        double personEnergyConsumption = servicePersonnel > 0
+                ? consumptionElectricity / servicePersonnel
+                : consumptionElectricity;
+        report.setPersonEnergyConsumption(personEnergyConsumption);
+
+        // 参展商数：直接取库，空为0
+        if (report.getExhibitors() == null) {
+            report.setExhibitors(0L);
+        }
+
+        return report;
+    }
+
+    /**
+     * 根据单条活动信息计算场馆分时客流数据
+     */
+    private ServiceFlowResult calcVenueFlow(ActiveMeetInfo activity) {
+        ServiceFlowResult result = new ServiceFlowResult();
+        if (activity.getVenueId() == null || activity.getStartDate() == null) {
+            return result;
+        }
+
+        LocalDate localDate = activity.getStartDate().toInstant()
+                .atZone(ZoneId.systemDefault()).toLocalDate();
+
+        LambdaQueryWrapper<VenueFlowHour> wrapper = new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getVenueId, activity.getVenueId())
+                .eq(VenueFlowHour::getDataDate, localDate);
+
+        if (activity.getStartTime() != null) {
+            wrapper.ge(VenueFlowHour::getDataHour, activity.getStartTime());
+        }
+        if (activity.getEndTime() != null) {
+            wrapper.le(VenueFlowHour::getDataHour, activity.getEndTime());
+        }
+
+        List<VenueFlowHour> flowList = venueFlowHourMapper.selectList(wrapper);
+        if (flowList == null || flowList.isEmpty()) {
+            return result;
+        }
+
+        // 总服务人次：取该时间段内todayInCount的最大值（todayInCount为累计值）
+        result.servicePersonnel = flowList.stream()
+                .mapToLong(f -> f.getTodayInCount() != null ? f.getTodayInCount() : 0L)
+                .max().orElse(0L);
+
+        // 总客流：同总服务人次（todayInCount累计最大值）
+        result.passengerFlow = result.servicePersonnel;
+
+        // 峰值客流：maxCount总和（所有时段峰值累加）
+        result.peakFlow = flowList.stream()
+                .mapToLong(f -> f.getMaxCount() != null ? f.getMaxCount() : 0L)
+                .sum();
+
+        return result;
+    }
+
+    /**
+     * 按投诉类型和日期统计数量
+     */
+    private long countComplaintsByType(String typeName, Date complaintDate) {
+        if (complaintDate == null) {
+            return 0L;
+        }
+        // 查询类型ID
+        ComplaintType complaintType = complaintTypeMapper.selectOne(
+                new LambdaQueryWrapper<ComplaintType>()
+                        .eq(ComplaintType::getTypeName, typeName));
+        if (complaintType == null) {
+            return 0L;
+        }
+        return complaintInfoMapper.selectCount(
+                new LambdaQueryWrapper<ComplaintInfo>()
+                        .eq(ComplaintInfo::getTypeId, complaintType.getId())
+                        .eq(ComplaintInfo::getComplaintDate, complaintDate)
+        );
+    }
+
+    /**
+     * 计算总用电量（空方法，待后续实现，当前返回0）
+     */
+    private double calcConsumptionElectricity(List<ActiveMeetInfo> activities) {
+        return 0.0;
+    }
+
+    /**
+     * 场馆客流计算结果
+     */
+    private static class ServiceFlowResult {
+        long servicePersonnel;
+        long passengerFlow;
+        long peakFlow;
     }
 }

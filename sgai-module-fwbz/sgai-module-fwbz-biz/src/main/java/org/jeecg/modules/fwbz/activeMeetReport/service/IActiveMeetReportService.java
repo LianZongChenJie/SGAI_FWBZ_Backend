@@ -12,11 +12,11 @@ import org.jeecg.modules.fwbz.activeMeetReport.entity.ActiveMeetReport;
 public interface IActiveMeetReportService extends IService<ActiveMeetReport> {
 
     /**
-     * 生成总结报告（将状态从待总结更新为已总结，并汇总数据）
+     * 保存总结报告（仅根据id更新数据字段，状态置为已总结）
      *
      * @param report 报告数据
      */
-    void generateReport(ActiveMeetReport report);
+    void saveReport(ActiveMeetReport report);
 
     /**
      * 根据活动名称查询报告
@@ -34,4 +34,13 @@ public interface IActiveMeetReportService extends IService<ActiveMeetReport> {
      * @param startDate  活动开始日期
      */
     void syncFromActivity(String activeName, java.util.Date startDate);
+
+    /**
+     * 根据报告ID查询并动态计算报告数据
+     * 已总结(status=1)直接返回，未总结则从各表实时计算
+     *
+     * @param reportId 报告ID
+     * @return 计算后的报告实体
+     */
+    ActiveMeetReport computeReport(Long reportId);
 }

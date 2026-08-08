@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.entity.FireAlarmRecord;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetector;
+import org.jeecg.modules.fwbz.fireDevice.vo.DeviceTypeStatusVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.VenueDeviceCountVO;
 
@@ -99,4 +100,11 @@ public interface ISmokeDetectorService extends IService<SmokeDetector> {
      * @return 场馆设备数量统计列表
      */
     List<VenueDeviceCountVO> countByVenue();
+
+    /**
+     * 按设备类型分组统计各状态设备数量。
+     *
+     * @return 按类型分组的设备状态统计列表
+     */
+    List<DeviceTypeStatusVO> countByTypeAndStatus();
 }
