@@ -5,7 +5,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.mdm.dto.AttributeBindingDto;
@@ -15,7 +14,7 @@ import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.vo.DeviceAttributeDataVo;
-import org.jeecg.modules.fwbz.patterned.service.DeviceAttributeOperationService;
+import org.jeecg.modules.fwbz.main.service.DeviceAttributeOperationService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;

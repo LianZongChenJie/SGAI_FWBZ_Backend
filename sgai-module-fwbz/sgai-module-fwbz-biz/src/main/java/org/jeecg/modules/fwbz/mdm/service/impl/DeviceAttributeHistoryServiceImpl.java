@@ -1,25 +1,19 @@
 package org.jeecg.modules.fwbz.mdm.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceAttributeHistoryQueryDto;
-import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttributeHistory;
 import org.jeecg.modules.fwbz.mdm.mapper.DeviceAttributeHistoryMapper;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
-import org.jeecg.modules.fwbz.service.IBusinessConfigService;
+import org.jeecg.modules.fwbz.main.service.IBusinessConfigService;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor

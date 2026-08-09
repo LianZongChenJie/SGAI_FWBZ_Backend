@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.common.aspect.annotation.Dict;
 import org.jeecg.common.system.vo.SelectTreeModel;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 import org.jeecgframework.poi.excel.annotation.Excel;
 
 import java.io.Serializable;

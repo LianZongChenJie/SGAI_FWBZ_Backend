@@ -16,19 +16,14 @@ import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.mdm.vo.PermissionEquipmentCategoryTreeModel;
-import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
-import org.jeecg.modules.fwbz.permission.service.RoleDataPermissionService;
-import org.jeecg.modules.fwbz.permission.vo.UserDataScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @Description: 设备类别
@@ -44,8 +39,6 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
     @Autowired
     private IEquipmentCategoryService equipmentCategoryService;
 
-    @Autowired
-    private RoleDataPermissionService roleDataPermissionService;
 
     /**
      * 树查询
@@ -107,7 +100,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @ApiOperation(value = "类别-权限树", notes = "根据当前用户数据权限查询类别树，父级节点会被标记为不在权限范围内")
     @GetMapping("/getPermissionTree")
-    public Result<List<PermissionEquipmentCategoryTreeModel>> getPermissionTree(@RequestParam(required = false) String type){
+    public Result<List<PermissionEquipmentCategoryTreeModel>> getPermissionTree(@RequestParam(required = false) String type) {
 
 
         // 4. 构建类别权限树

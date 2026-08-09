@@ -6,9 +6,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
-import org.jeecg.modules.fwbz.permission.annotation.DataPermissionField;
-import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -44,11 +42,9 @@ public class Device extends BaseEntity implements Serializable {
     private String deviceName;
 
     @ApiModelProperty(value = "设备类别id")
-//    @DataPermissionField(type = RoleDataPermission.TYPE_CATEGORY, value = "category_id")
     private Long categoryId;
 
     @ApiModelProperty(value = "空间位置id")
-//    @DataPermissionField(type = RoleDataPermission.TYPE_SPACE, value = "space_id")
     private Long spaceId;
 
     /**

@@ -1,0 +1,133 @@
+package org.jeecg.modules.fwbz.main.vo;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
+import org.jeecgframework.poi.excel.annotation.Excel;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+public class DeviceDataVo {
+
+    /**
+     * 设备id
+     */
+    private Long deviceId;
+
+    /**
+     * 设备编号
+     */
+    @Excel(name = "设备编号",orderNum = "0")
+    private String deviceCode;
+    /**
+     * 设备名称
+     */
+    @Excel(name = "设备名称",orderNum = "1")
+    private String deviceName;
+
+    private Long categoryId;
+
+    private Long spaceId;
+
+    private Long venueId;
+
+
+    @Excel(name = "设备类型",orderNum = "2")
+    private String categoryName;
+    @Excel(name = "空间位置",orderNum = "3")
+    private String spaceName;
+
+    /**
+     * 单位
+     */
+    private String unit;
+    /**
+     * 起始值
+     */
+    @Excel(name = "起始值",orderNum = "5")
+    private BigDecimal startValue;
+
+    /**
+     * 结束值
+     */
+    @Excel(name = "结束值",orderNum = "7")
+    private BigDecimal endValue;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "起始时间",exportFormat = "yyyy-MM-dd HH:mm:ss",orderNum = "4")
+    private LocalDateTime startTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "结束时间",exportFormat = "yyyy-MM-dd HH:mm:ss",orderNum = "6")
+    private LocalDateTime endTime;
+
+    /**
+     * 计算值
+     */
+    @Excel(name = "计算值",orderNum = "8")
+    private BigDecimal value;
+
+    /**
+     * 运行状态
+     */
+    @Excel(name = "运行状态",orderNum = "9")
+    private String runState;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime lastGatherTime;
+
+    /**
+     * 电池电压
+     */
+    private String colVoltage;
+
+    /**
+     * 今日用量
+     */
+    private BigDecimal dayTotal;
+    /**
+     * 本月累计
+     */
+    private BigDecimal mouthTotal;
+
+    private List<DeviceAttribute> DeviceAttributeList;
+
+    /**
+     * 运行状态
+     * [{"key":"0","value":"停止"},{"key":"1","value":"运行"}]
+     */
+    private String runStop;
+    /**
+     * 设定温度
+     */
+    private String setTemperature;
+
+    /**创建日期*/
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @ApiModelProperty(value = "创建日期")
+    private java.util.Date createTime;
+
+    public static DeviceDataVo convert(Device device){
+        if(device == null){
+            return null;
+        }
+        DeviceDataVo res = new DeviceDataVo();
+        res.setDeviceId(device.getId());
+        res.setDeviceCode(device.getDeviceCode());
+        res.setDeviceName(device.getDeviceName());
+        res.setSpaceId(device.getSpaceId());
+        res.setCategoryId(device.getCategoryId());
+        res.setVenueId(device.getVenueId());
+        res.setRunState(device.getRunState());
+        res.setLastGatherTime(device.getLastGatherTime());
+        return res;
+    }
+
+}

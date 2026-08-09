@@ -29,9 +29,6 @@ import org.jeecg.modules.fwbz.mdm.constant.CategoryConstant;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
-import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
-import org.jeecg.modules.fwbz.permission.service.RoleDataPermissionService;
-import org.jeecg.modules.fwbz.permission.vo.UserDataScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -53,8 +50,6 @@ public class MeteringPointServiceImpl extends ServiceImpl<MeteringPointMapper, M
     private final IMeteringPointRelService meteringPointRelService;
 
     private final ISysBaseAPI sysBaseAPI;
-
-    private final RoleDataPermissionService roleDataPermissionService;
 
     @Override
     public boolean save(MeteringPoint entity) {

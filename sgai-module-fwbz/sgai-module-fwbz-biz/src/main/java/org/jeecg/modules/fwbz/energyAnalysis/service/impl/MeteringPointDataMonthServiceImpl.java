@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataMonthMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataMonthService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.MonthData;
-import org.jeecg.modules.fwbz.service.IMonthDataService;
+import org.jeecg.modules.fwbz.main.entity.MonthData;
+import org.jeecg.modules.fwbz.main.service.IMonthDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

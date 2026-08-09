@@ -10,8 +10,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.service.*;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.*;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChatSeriesData;
-import org.jeecg.modules.fwbz.entity.UnitManagement;
-import org.jeecg.modules.fwbz.service.IBusinessConfigService;
+import org.jeecg.modules.fwbz.main.service.IBusinessConfigService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,7 +22,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

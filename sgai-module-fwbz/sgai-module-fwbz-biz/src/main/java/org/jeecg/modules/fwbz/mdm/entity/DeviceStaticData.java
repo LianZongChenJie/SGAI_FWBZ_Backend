@@ -5,7 +5,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 
 @EqualsAndHashCode(callSuper = true)
 @TableName("device_static_data")

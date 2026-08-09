@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataYear;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataYearMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataYearService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.YearData;
-import org.jeecg.modules.fwbz.service.IYearDataService;
+import org.jeecg.modules.fwbz.main.entity.YearData;
+import org.jeecg.modules.fwbz.main.service.IYearDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

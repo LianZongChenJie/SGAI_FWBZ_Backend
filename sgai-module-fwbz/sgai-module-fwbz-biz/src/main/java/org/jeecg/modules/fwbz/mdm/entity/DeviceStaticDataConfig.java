@@ -1,15 +1,11 @@
 package org.jeecg.modules.fwbz.mdm.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 
 @EqualsAndHashCode(callSuper = true)
 @TableName("device_static_data_config")

@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataDay;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataDayMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataDayService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.DayData;
-import org.jeecg.modules.fwbz.service.IDayDataService;
+import org.jeecg.modules.fwbz.main.entity.DayData;
+import org.jeecg.modules.fwbz.main.service.IDayDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

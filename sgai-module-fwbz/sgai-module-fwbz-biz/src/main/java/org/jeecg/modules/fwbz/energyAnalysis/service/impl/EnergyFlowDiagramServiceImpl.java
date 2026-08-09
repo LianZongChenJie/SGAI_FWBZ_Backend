@@ -5,8 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
-import org.jeecg.modules.fwbz.entity.UnitManagement;
-import org.jeecg.modules.fwbz.service.*;
+import org.jeecg.modules.fwbz.main.entity.UnitManagement;
+import org.jeecg.modules.fwbz.main.service.IUnitManagementService;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.EnergyFlowDiagramVo;
 import org.springframework.stereotype.Service;
 
