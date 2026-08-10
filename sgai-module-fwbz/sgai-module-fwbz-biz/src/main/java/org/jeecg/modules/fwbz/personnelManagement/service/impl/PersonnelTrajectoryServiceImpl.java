@@ -9,6 +9,7 @@ import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.hikvision.service.ICaptureSearchService;
 import org.jeecg.modules.fwbz.hikvision.service.IFaceGroupSearchService;
 import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryRequest;
+import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryResultVO;
 import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryVO;
 import org.jeecg.modules.fwbz.personnelManagement.service.IPersonnelTrajectoryService;
 import org.springframework.stereotype.Service;
@@ -37,12 +38,14 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
     private static final String[] FACE_GROUP_INDEX_CODES = {"your-face-group-code"};
 
     @Override
-    public List<PersonnelTrajectoryVO> queryTrajectory(PersonnelTrajectoryRequest request) {
+    public PersonnelTrajectoryResultVO queryTrajectory(PersonnelTrajectoryRequest request) {
         String startTime = request.getStartTime();
         String endTime = request.getEndTime();
         String facePhoto = request.getFacePhoto();
 
         log.info("开始查询人员轨迹, startTime={}, endTime={}", startTime, endTime);
+
+        PersonnelTrajectoryResultVO resultVO = new PersonnelTrajectoryResultVO();
 
         // 第一步：调取海康人脸识别分组信息（1:N检索）
         FaceGroupSearchResponse.FaceGroupSearchItem bestGroupMatch = null;
@@ -62,6 +65,21 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
             log.error("人脸分组检索异常, 继续执行以图搜图", e);
         }
 
+        // 设置1:N识别信息到顶层
+        if (bestGroupMatch != null) {
+            resultVO.setSimilarity(bestGroupMatch.getSimilarity());
+            FaceGroupSearchResponse.FaceInfo faceInfo = bestGroupMatch.getFaceInfo();
+            if (faceInfo != null) {
+                resultVO.setName(faceInfo.getName());
+                resultVO.setCertificateType(faceInfo.getCertificateType());
+                resultVO.setCertificateNum(faceInfo.getCertificateNum());
+            }
+            FaceGroupSearchResponse.FacePic facePic = bestGroupMatch.getFacePic();
+            if (facePic != null) {
+                resultVO.setFaceUrl(facePic.getFaceUrl());
+            }
+        }
+
         // 第二步：调取海康以图搜图功能
         CaptureSearchResponse searchResponse;
         try {
@@ -74,7 +92,8 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
         List<CaptureSearchResponse.CaptureSearchItem> searchItems = searchResponse.getList();
         if (searchItems == null || searchItems.isEmpty()) {
             log.info("以图搜图未查到匹配记录, 返回空列表");
-            return Collections.emptyList();
+            resultVO.setCameraList(Collections.emptyList());
+            return resultVO;
         }
 
         log.info("以图搜图完成, 共{}条记录", searchItems.size());
@@ -88,8 +107,8 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
         Map<String, CameraResource> cameraMap = queryCameraMap(cameraIndexCodes);
         log.info("摄像头信息查询完成, 匹配到{}/{}个摄像头", cameraMap.size(), cameraIndexCodes.size());
 
-        // 第四步：组装结果，关联摄像头信息和人脸分组信息
-        List<PersonnelTrajectoryVO> result = new ArrayList<>(searchItems.size());
+        // 第四步：组装cameraList轨迹列表
+        List<PersonnelTrajectoryVO> cameraList = new ArrayList<>(searchItems.size());
         for (CaptureSearchResponse.CaptureSearchItem item : searchItems) {
             PersonnelTrajectoryVO vo = new PersonnelTrajectoryVO();
             // 抓拍信息
@@ -109,26 +128,12 @@ public class PersonnelTrajectoryServiceImpl implements IPersonnelTrajectoryServi
                 vo.setLatitude(camera.getLatitude());
             }
 
-            // 人脸分组信息（1:N身份匹配结果）
-            if (bestGroupMatch != null) {
-                vo.setGroupSimilarity(bestGroupMatch.getSimilarity());
-                FaceGroupSearchResponse.FaceInfo faceInfo = bestGroupMatch.getFaceInfo();
-                if (faceInfo != null) {
-                    vo.setGroupName(faceInfo.getName());
-                    vo.setGroupCertificateType(faceInfo.getCertificateType());
-                    vo.setGroupCertificateNum(faceInfo.getCertificateNum());
-                }
-                FaceGroupSearchResponse.FacePic facePic = bestGroupMatch.getFacePic();
-                if (facePic != null) {
-                    vo.setGroupFaceUrl(facePic.getFaceUrl());
-                }
-            }
-
-            result.add(vo);
+            cameraList.add(vo);
         }
 
-        log.info("人员轨迹查询完成, 返回{}条轨迹记录", result.size());
-        return result;
+        resultVO.setCameraList(cameraList);
+        log.info("人员轨迹查询完成, 返回{}条轨迹记录", cameraList.size());
+        return resultVO;
     }
 
     /**

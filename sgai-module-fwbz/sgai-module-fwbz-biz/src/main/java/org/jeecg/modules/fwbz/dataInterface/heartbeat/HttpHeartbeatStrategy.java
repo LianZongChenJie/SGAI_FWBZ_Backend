@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * HTTP API 心跳检测策略
@@ -36,12 +37,29 @@ public class HttpHeartbeatStrategy implements HeartbeatStrategy {
 
     @Override
     public HeartbeatResult check(String url) {
+        return doCheck(url, null);
+    }
+
+    /**
+     * 带请求头的HTTP心跳检测
+     *
+     * @param url     请求地址
+     * @param headers 请求头键值对
+     */
+    public HeartbeatResult check(String url, Map<String, String> headers) {
+        return doCheck(url, headers);
+    }
+
+    /**
+     * 执行HTTP心跳检测
+     */
+    private HeartbeatResult doCheck(String url, Map<String, String> headers) {
         long startTime = System.currentTimeMillis();
         try {
-            RequestEntity<Void> request = RequestEntity.get(URI.create(url)).build();
+            RequestEntity<Void> request = buildRequest(url, headers);
             ResponseEntity<String> response = restTemplate.exchange(request, String.class);
             long elapsed = System.currentTimeMillis() - startTime;
-            log.info("HTTP心跳开始 - URL: {}, 耗时: {}ms", url, elapsed);
+            log.debug("HTTP心跳完成 - URL: {}, 耗时: {}ms", url, elapsed);
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("HTTP心跳在线 - URL: {}, 耗时: {}ms", url, elapsed);
                 return HeartbeatResult.online(elapsed);
@@ -63,5 +81,16 @@ public class HttpHeartbeatStrategy implements HeartbeatStrategy {
             log.warn("HTTP心跳异常 - URL: {}, 耗时: {}ms, 原因: {}", url, elapsed, e.getMessage());
             return HeartbeatResult.abnormal(elapsed);
         }
+    }
+
+    /**
+     * 构建GET请求，附加请求头
+     */
+    private RequestEntity<Void> buildRequest(String url, Map<String, String> headers) {
+        RequestEntity.HeadersBuilder<?> builder = RequestEntity.get(URI.create(url));
+        if (headers != null && !headers.isEmpty()) {
+            headers.forEach(builder::header);
+        }
+        return builder.build();
     }
 }

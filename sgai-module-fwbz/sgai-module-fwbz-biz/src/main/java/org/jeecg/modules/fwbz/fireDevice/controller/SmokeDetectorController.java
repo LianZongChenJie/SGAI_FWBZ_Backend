@@ -11,6 +11,7 @@ import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
 import org.jeecg.modules.fwbz.fireDevice.entity.FireAlarmRecord;
 import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetector;
+import org.jeecg.modules.fwbz.fireDevice.entity.SmokeDetectorType;
 import org.jeecg.modules.fwbz.fireDevice.service.ISmokeDetectorService;
 import org.jeecg.modules.fwbz.fireDevice.vo.StatusCountVO;
 import org.jeecg.modules.fwbz.fireDevice.vo.DeviceTypeStatusVO;
@@ -158,5 +159,13 @@ public class SmokeDetectorController {
     public Result<List<DeviceTypeStatusVO>> countByTypeAndStatus() {
         log.info("查询按设备类型统计状态数量");
         return Result.ok(smokeDetectorService.countByTypeAndStatus());
+    }
+
+    @AutoLog(value = "获取消防设备类型下拉列表")
+    @ApiOperation("获取消防设备类型下拉列表")
+    @GetMapping("/typeList")
+    public Result<List<SmokeDetectorType>> getTypeList() {
+        log.info("查询消防设备类型下拉列表");
+        return Result.ok(smokeDetectorService.getTypeList());
     }
 }

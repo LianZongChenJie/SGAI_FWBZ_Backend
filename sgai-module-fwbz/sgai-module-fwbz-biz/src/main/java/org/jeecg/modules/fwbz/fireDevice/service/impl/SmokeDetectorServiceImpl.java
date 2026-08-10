@@ -205,6 +205,14 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<SmokeDetectorType> getTypeList() {
+        log.info("查询消防设备类型下拉列表");
+        return fireSmokeDetectorTypeMapper.selectList(
+                new LambdaQueryWrapper<SmokeDetectorType>()
+                        .orderByAsc(SmokeDetectorType::getId));
+    }
+
     private void populateTypeName(List<SmokeDetector> records) {
         Set<Long> typeIds = records.stream()
                 .map(SmokeDetector::getDeviceType)

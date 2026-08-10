@@ -125,7 +125,7 @@ public class VenueFlowHourController {
             headers.set("appSecret", APP_SECRET);
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            String url = AREA_HEAT_API_URL + "?areaId=" + areaId;
+            String url = AREA_HEAT_API_URL + "?areaId=" + "4166450493835339248";
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             String body = response.getBody();
             log.debug("区域热力图API响应: {}", body);

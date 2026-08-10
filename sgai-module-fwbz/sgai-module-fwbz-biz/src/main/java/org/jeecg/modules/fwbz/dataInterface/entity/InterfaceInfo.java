@@ -93,4 +93,9 @@ public class InterfaceInfo extends BaseEntity {
      * 采集点位
      */
     private Long collectionPointLocation;
+
+    /**
+     * 请求头（JSON格式，如 {"appKey":"xxx","appSecret":"xxx"}）
+     */
+    private String header;
 }

@@ -6,14 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryRequest;
-import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryVO;
+import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryResultVO;
 import org.jeecg.modules.fwbz.personnelManagement.service.IPersonnelTrajectoryService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * 人员轨迹控制器
@@ -39,9 +37,9 @@ public class PersonnelTrajectoryController {
      */
     @PostMapping("/query")
     @ApiOperation(value = "人员轨迹查询", notes = "传入开始时间、结束时间、人脸照片Base64，返回人员轨迹列表")
-    public Result<List<PersonnelTrajectoryVO>> queryTrajectory(@RequestBody PersonnelTrajectoryRequest request) {
+    public Result<PersonnelTrajectoryResultVO> queryTrajectory(@RequestBody PersonnelTrajectoryRequest request) {
         try {
-            List<PersonnelTrajectoryVO> result = personnelTrajectoryService.queryTrajectory(request);
+            PersonnelTrajectoryResultVO result = personnelTrajectoryService.queryTrajectory(request);
             return Result.ok(result);
         } catch (Exception e) {
             log.error("人员轨迹查询失败", e);

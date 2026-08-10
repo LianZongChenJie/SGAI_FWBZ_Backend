@@ -1,9 +1,7 @@
 package org.jeecg.modules.fwbz.personnelManagement.service;
 
 import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryRequest;
-import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryVO;
-
-import java.util.List;
+import org.jeecg.modules.fwbz.personnelManagement.dto.PersonnelTrajectoryResultVO;
 
 /**
  * 人员轨迹服务接口
@@ -18,7 +16,7 @@ public interface IPersonnelTrajectoryService {
      * 并将以图搜图结果中的摄像头编码关联数据库获取摄像头详细信息。</p>
      *
      * @param request 查询请求（包含开始时间、结束时间、人脸照片Base64）
-     * @return 人员轨迹结果列表（含摄像头名称、位置、经纬度）
+     * @return 人员轨迹结果（含1:N识别信息和轨迹摄像头列表）
      */
-    List<PersonnelTrajectoryVO> queryTrajectory(PersonnelTrajectoryRequest request);
+    PersonnelTrajectoryResultVO queryTrajectory(PersonnelTrajectoryRequest request);
 }

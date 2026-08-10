@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.dataInterface.job;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,13 +8,16 @@ import org.jeecg.modules.fwbz.dataInterface.entity.InterfaceInfo;
 import org.jeecg.modules.fwbz.dataInterface.heartbeat.HeartbeatResult;
 import org.jeecg.modules.fwbz.dataInterface.heartbeat.HeartbeatStrategy;
 import org.jeecg.modules.fwbz.dataInterface.heartbeat.HeartbeatStrategyFactory;
+import org.jeecg.modules.fwbz.dataInterface.heartbeat.HttpHeartbeatStrategy;
 import org.jeecg.modules.fwbz.dataInterface.heartbeat.TcpHeartbeatStrategy;
 import org.jeecg.modules.fwbz.dataInterface.service.IInterfaceInfoService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 接口心跳检测定时任务
@@ -75,12 +79,6 @@ public class InterfaceHeartbeatJob {
      * 对单个接口执行心跳检测
      */
     private void doHeartbeat(InterfaceInfo info) {
-        String address = info.getInterfacePath();
-        if (address == null || address.trim().isEmpty()) {
-            log.warn("接口地址为空，跳过 - ID: {}", info.getId());
-            return;
-        }
-
         // 根据协议类型选择策略
         HeartbeatStrategy strategy = strategyFactory.getStrategy(info.getProtocolTypeId());
         if (strategy == null) {
@@ -90,9 +88,27 @@ public class InterfaceHeartbeatJob {
 
         // 执行心跳检测
         HeartbeatResult result;
-        if (strategy instanceof TcpHeartbeatStrategy) {
+        if (strategy instanceof HttpHeartbeatStrategy) {
+            String url = buildHttpUrl(info);
+            if (url == null) {
+                log.warn("HTTP接口地址无效，跳过 - ID: {}", info.getId());
+                return;
+            }
+            Map<String, String> headers = parseHeaders(info.getHeader());
+            result = ((HttpHeartbeatStrategy) strategy).check(url, headers);
+        } else if (strategy instanceof TcpHeartbeatStrategy) {
+            String address = info.getInterfacePath();
+            if (address == null || address.trim().isEmpty()) {
+                log.warn("接口地址为空，跳过 - ID: {}", info.getId());
+                return;
+            }
             result = ((TcpHeartbeatStrategy) strategy).check(address, info.getProtocolTypeId());
         } else {
+            String address = info.getInterfacePath();
+            if (address == null || address.trim().isEmpty()) {
+                log.warn("接口地址为空，跳过 - ID: {}", info.getId());
+                return;
+            }
             result = strategy.check(address);
         }
 
@@ -105,9 +121,47 @@ public class InterfaceHeartbeatJob {
         // 状态变更时记录警告日志
         if (!newState.equals(info.getState())) {
             log.warn("接口状态变更 - ID: {}, 系统: {}, 地址: {}, 协议: {}, {} → {}",
-                    info.getId(), info.getSysName(), address,
+                    info.getId(), info.getSysName(), info.getInterfacePath(),
                     info.getProtocolTypeId(),
                     stateName(info.getState()), stateName(newState));
+        }
+    }
+
+    /**
+     * 构建HTTP请求地址：interfacePath + testPath
+     */
+    private String buildHttpUrl(InterfaceInfo info) {
+        String base = info.getInterfacePath();
+        String test = info.getTestPath();
+
+        if (base == null || base.trim().isEmpty()) {
+            return null;
+        }
+        // 去掉base末尾的/
+        String baseUrl = base.replaceAll("/+$", "");
+        if (test == null || test.trim().isEmpty()) {
+            return baseUrl;
+        }
+        // 确保test开头有/
+        String testUrl = test.replaceAll("^/+", "/");
+        return baseUrl + testUrl;
+    }
+
+    /**
+     * 解析header JSON为Map
+     */
+    private Map<String, String> parseHeaders(String headerJson) {
+        if (headerJson == null || headerJson.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            JSONObject json = JSONObject.parseObject(headerJson);
+            Map<String, String> headers = new HashMap<>();
+            json.forEach((k, v) -> headers.put(k, v != null ? v.toString() : ""));
+            return headers;
+        } catch (Exception e) {
+            log.warn("解析header JSON失败, header={}", headerJson, e);
+            return null;
         }
     }
 
