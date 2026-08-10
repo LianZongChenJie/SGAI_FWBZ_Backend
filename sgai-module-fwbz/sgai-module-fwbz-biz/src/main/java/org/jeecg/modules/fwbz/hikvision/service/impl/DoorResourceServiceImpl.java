@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
+import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchRequest;
@@ -17,16 +18,20 @@ import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorStatusResponse;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
+import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
 import org.jeecg.modules.fwbz.hikvision.mapper.DoorResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 门禁点资源同步服务实现
@@ -53,6 +58,8 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
     private static final int DOOR_STATUS_BATCH_SIZE = 200;
 
     private final HikvisionUtil hikvisionUtil;
+
+    private final IRegionResourceService regionResourceService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -314,12 +321,44 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         LambdaQueryWrapper<DoorResource> wrapper = new LambdaQueryWrapper<DoorResource>()
                 .like(StringUtils.isNotBlank(dto.getName()), DoorResource::getName, dto.getName())
                 .eq(StringUtils.isNotBlank(dto.getDoorNo()), DoorResource::getDoorNo, dto.getDoorNo())
-                .like(StringUtils.isNotBlank(dto.getRegionName()), DoorResource::getRegionName, dto.getRegionName())
                 .eq(StringUtils.isNotBlank(dto.getDoorState()), DoorResource::getDoorState, dto.getDoorState())
                 .eq(StringUtils.isNotBlank(dto.getTreatyType()), DoorResource::getTreatyType, dto.getTreatyType())
                 .like(StringUtils.isNotBlank(dto.getInstallLocation()), DoorResource::getInstallLocation, dto.getInstallLocation());
 
+        // 区域名称过滤 —— 联动table_region_resource表
+        if (StringUtils.isNotBlank(dto.getRegionName())) {
+            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
+                    .like(RegionResource::getName, dto.getRegionName())
+                    .select(RegionResource::getIndexCode)
+                    .list()
+                    .stream()
+                    .map(RegionResource::getIndexCode)
+                    .collect(Collectors.toList());
+            if (matchedRegionCodes.isEmpty()) {
+                IPage<DoorListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                log.info("分页查询门禁点列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
+                return emptyPage;
+            }
+            wrapper.in(DoorResource::getRegionIndexCode, matchedRegionCodes);
+        }
+
         IPage<DoorResource> doorPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
+        Set<String> regionIndexCodes = doorPage.getRecords().stream()
+                .map(DoorResource::getRegionIndexCode)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, String> regionNameMap = Collections.emptyMap();
+        if (!regionIndexCodes.isEmpty()) {
+            regionNameMap = regionResourceService.lambdaQuery()
+                    .in(RegionResource::getIndexCode, regionIndexCodes)
+                    .list()
+                    .stream()
+                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+        }
 
         List<DoorListVO> voList = new ArrayList<>((int) doorPage.getSize());
         for (DoorResource door : doorPage.getRecords()) {
@@ -329,7 +368,9 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             vo.setDoorNo(door.getDoorNo());
             vo.setChannelNo(door.getChannelNo());
             vo.setRegionIndexCode(door.getRegionIndexCode());
-            vo.setRegionName(door.getRegionName());
+            // 优先从地域资源表获取区域名称，兜底使用门禁表中冗余存储的名称
+            String resolvedRegionName = regionNameMap.getOrDefault(door.getRegionIndexCode(), door.getRegionName());
+            vo.setRegionName(resolvedRegionName);
             vo.setInstallLocation(door.getInstallLocation());
             vo.setDoorState(door.getDoorState());
             vo.setTreatyType(door.getTreatyType());

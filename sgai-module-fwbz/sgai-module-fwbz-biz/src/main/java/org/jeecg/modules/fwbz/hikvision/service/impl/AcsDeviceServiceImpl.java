@@ -16,17 +16,22 @@ import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceSearchResponse;
+import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.service.IAcsDeviceService;
+import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
 import org.jeecg.modules.fwbz.hikvision.mapper.AcsDeviceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 门禁设备同步服务实现
@@ -50,6 +55,8 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
     private static final int ONLINE_BATCH_SIZE = 500;
 
     private final HikvisionUtil hikvisionUtil;
+
+    private final IRegionResourceService regionResourceService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -256,11 +263,43 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         LambdaQueryWrapper<AcsDevice> wrapper = new LambdaQueryWrapper<AcsDevice>()
                 .like(StringUtils.isNotBlank(dto.getName()), AcsDevice::getName, dto.getName())
                 .eq(StringUtils.isNotBlank(dto.getDevTypeCode()), AcsDevice::getDevTypeCode, dto.getDevTypeCode())
-                .like(StringUtils.isNotBlank(dto.getRegionName()), AcsDevice::getRegionName, dto.getRegionName())
                 .eq(StringUtils.isNotBlank(dto.getOnline()), AcsDevice::getOnline, dto.getOnline())
                 .like(StringUtils.isNotBlank(dto.getIp()), AcsDevice::getIp, dto.getIp());
 
+        // 区域名称过滤 —— 联动table_region_resource表
+        if (StringUtils.isNotBlank(dto.getRegionName())) {
+            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
+                    .like(RegionResource::getName, dto.getRegionName())
+                    .select(RegionResource::getIndexCode)
+                    .list()
+                    .stream()
+                    .map(RegionResource::getIndexCode)
+                    .collect(Collectors.toList());
+            if (matchedRegionCodes.isEmpty()) {
+                IPage<AcsDeviceListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                log.info("分页查询门禁设备列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
+                return emptyPage;
+            }
+            wrapper.in(AcsDevice::getRegionIndexCode, matchedRegionCodes);
+        }
+
         IPage<AcsDevice> devicePage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
+        Set<String> regionIndexCodes = devicePage.getRecords().stream()
+                .map(AcsDevice::getRegionIndexCode)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, String> regionNameMap = Collections.emptyMap();
+        if (!regionIndexCodes.isEmpty()) {
+            regionNameMap = regionResourceService.lambdaQuery()
+                    .in(RegionResource::getIndexCode, regionIndexCodes)
+                    .list()
+                    .stream()
+                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+        }
 
         List<AcsDeviceListVO> voList = new ArrayList<>((int) devicePage.getSize());
         for (AcsDevice device : devicePage.getRecords()) {
@@ -272,7 +311,9 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             vo.setDeviceCode(device.getDeviceCode());
             vo.setManufacturer(device.getManufacturer());
             vo.setRegionIndexCode(device.getRegionIndexCode());
-            vo.setRegionName(device.getRegionName());
+            // 优先从地域资源表获取区域名称，兜底使用设备表中冗余存储的名称
+            String resolvedRegionName = regionNameMap.getOrDefault(device.getRegionIndexCode(), device.getRegionName());
+            vo.setRegionName(resolvedRegionName);
             vo.setTreatyType(device.getTreatyType());
             vo.setIp(device.getIp());
             vo.setPort(device.getPort());
