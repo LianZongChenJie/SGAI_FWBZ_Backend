@@ -126,7 +126,7 @@ public class DeviceAttributeOperationService {
     }
 
     private String getRedisKey(String gatewayAdr,String bacnetAdr){
-        return "bc:"+gatewayAdr+"-"+bacnetAdr;
+        return "fwbz:bc:"+gatewayAdr+"-"+bacnetAdr;
     }
 
 
