@@ -11,4 +11,7 @@ public interface IBuildingControlPointService extends IService<BuildingControlPo
     Page<BuildingControlPoint> listPage(BuildingControlPoint params);
 
     void save(String gatewayAdr, String bacnetAdr, String value,String remark, LocalDateTime collectionTime);
+
+
+    BuildingControlPoint getByGatewayAdrAndBacnetAdr(String gatewayAdr,String bacnetAdr);
 }

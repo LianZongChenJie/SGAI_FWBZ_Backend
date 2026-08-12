@@ -53,7 +53,7 @@ public class BuildingControlPointServiceImpl extends ServiceImpl<BuildingControl
     }
 
 
-    private BuildingControlPoint getByGatewayAdrAndBacnetAdr(String gatewayAdr,String bacnetAdr){
+    public BuildingControlPoint getByGatewayAdrAndBacnetAdr(String gatewayAdr,String bacnetAdr){
         // 缓存
         Object o = redisUtil.get(getRedisKey(gatewayAdr, bacnetAdr));
         if(o != null){
@@ -63,7 +63,7 @@ public class BuildingControlPointServiceImpl extends ServiceImpl<BuildingControl
     }
 
     private String getRedisKey(String gatewayAdr,String bacnetAdr){
-        return "bc:"+gatewayAdr+"-"+bacnetAdr;
+        return "fwbz:bc:"+gatewayAdr+"-"+bacnetAdr;
     }
 
 }

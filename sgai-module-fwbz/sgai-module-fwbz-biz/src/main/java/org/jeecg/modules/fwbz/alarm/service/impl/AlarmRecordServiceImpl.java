@@ -386,7 +386,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 .eq(AlarmRecord::getId, data.getRecordId())
                 .set(AlarmRecord::getEventId, eventId)
                 .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_EVENT)
-                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
+                .set(AlarmRecord::getTransferEventTime, LocalDateTime.now())
         );
     }
 
@@ -400,6 +400,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         super.update(new LambdaUpdateWrapper<AlarmRecord>()
                 .eq(AlarmRecord::getEventId, eventId)
                 .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED)
+                .set(AlarmRecord::getEventCompletionTime, LocalDateTime.now())
         );
     }
 
@@ -675,11 +676,18 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
 
         // 计算平均处理时长（分钟）
         double avgMillis = 0;
+        double response = 0;
         List<AlarmRecord> alarmRecords = collect.get(AlarmRecord.ALARM_STATUS_COMPLETED);
         if(org.apache.commons.collections.CollectionUtils.isNotEmpty(alarmRecords)){
             avgMillis = alarmRecords.stream()
-                    .filter(a -> a.getAlarmTime() != null && a.getProcessTime() != null)
-                    .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getProcessTime()).toMinutes())
+                    .filter(a -> a.getTransferEventTime() != null && a.getEventCompletionTime() != null)
+                    .mapToLong(map -> Duration.between(map.getTransferEventTime(), map.getEventCompletionTime()).toMinutes())
+                    .average()
+                    .orElse(0);
+
+            avgMillis = alarmRecords.stream()
+                    .filter(a -> a.getAlarmTime() != null && a.getTransferEventTime() != null)
+                    .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getTransferEventTime()).toMinutes())
                     .average()
                     .orElse(0);
         }
@@ -691,6 +699,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         dto.setEventCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_EVENT,0L));
         dto.setCompletedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_COMPLETED,0L));
         dto.setAverageProcessingTime(avgMillis);
+        dto.setAverageResponseTime(response);
         dto.setCategoryIdMap(returnMap);
         dto.setSeriousCount(orDefault);
         return dto;

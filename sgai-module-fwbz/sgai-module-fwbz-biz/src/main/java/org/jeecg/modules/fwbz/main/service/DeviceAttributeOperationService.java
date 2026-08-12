@@ -40,7 +40,6 @@ public class DeviceAttributeOperationService {
     private final IBuildingControlPointSendHistoryService buildingControlPointSendHistoryService;
     private final IBuildingControlPointService buildingControlPointService;
     private final RedisUtil redisUtil;
-
     /**
      * 设备属性操作
      * @param list deviceId,pointId,value
@@ -83,7 +82,7 @@ public class DeviceAttributeOperationService {
         String gatewayAdr = split[0];
         String bacnetAdr = split[1];
         //查询楼控信息
-        BuildingControlPoint one = getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
+        BuildingControlPoint one = buildingControlPointService.getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
         //保存楼控发送历史
         buildingControlPointSendHistoryService.save(one.getId(),one.getValue(),one.getCollectionTime());
 
@@ -108,25 +107,11 @@ public class DeviceAttributeOperationService {
         String gatewayAdr = split[0];
         String bacnetAdr = split[1];
         //查询楼控信息
-        BuildingControlPoint one = getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
+        BuildingControlPoint one = buildingControlPointService.getByGatewayAdrAndBacnetAdr(gatewayAdr,bacnetAdr);
         //保存楼控发送历史
         buildingControlPointSendHistoryService.save(one.getId(),one.getValue(),one.getCollectionTime());
 
         mqSendService.sendBuildingControlOperation(gatewayAdr, bacnetAdr,value);
-    }
-
-
-    private BuildingControlPoint getByGatewayAdrAndBacnetAdr(String gatewayAdr,String bacnetAdr){
-        // 缓存
-        Object o = redisUtil.get(getRedisKey(gatewayAdr, bacnetAdr));
-        if(o != null){
-            return (BuildingControlPoint) o;
-        }
-        return buildingControlPointService.getOne(new LambdaQueryWrapper<BuildingControlPoint>().eq(BuildingControlPoint::getGatewayAdr, gatewayAdr).eq(BuildingControlPoint::getBacnetAdr, bacnetAdr));
-    }
-
-    private String getRedisKey(String gatewayAdr,String bacnetAdr){
-        return "fwbz:bc:"+gatewayAdr+"-"+bacnetAdr;
     }
 
 

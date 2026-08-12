@@ -83,11 +83,18 @@ public class AlarmRecord extends BaseEntity {
     private LocalDateTime alarmTime;
 
     /**
-     * 处理时间
+     * 转工单时间
      */
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime processTime;
+    private LocalDateTime transferEventTime;
+
+    /**
+     * 工单完成时间
+     */
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime eventCompletionTime;
 
     /**
      * 告警类别id

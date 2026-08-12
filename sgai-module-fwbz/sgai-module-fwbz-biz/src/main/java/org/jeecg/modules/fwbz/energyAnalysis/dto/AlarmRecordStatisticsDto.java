@@ -35,6 +35,10 @@ public class AlarmRecordStatisticsDto {
      * 平均处理时长(分钟)
      */
     private double averageProcessingTime;
+    /**
+     * 平均响应时长(分钟)
+     */
+    private double averageResponseTime;
 
     /**
      * 报警类别分类统计
