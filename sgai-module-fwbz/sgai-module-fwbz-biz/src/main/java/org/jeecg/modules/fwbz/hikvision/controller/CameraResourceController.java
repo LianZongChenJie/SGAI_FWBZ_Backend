@@ -1,10 +1,12 @@
 package org.jeecg.modules.fwbz.hikvision.controller;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +37,9 @@ import java.util.Map;
 @RequestMapping("/fwbz/hikvision/camera")
 @Api(tags = "海康摄像头资源管理")
 public class CameraResourceController {
+
+    /** 摄像头分组过滤关键字：一级分组名称包含其中任意一个即保留 */
+    private static final List<String> PACKAGE_KEYWORDS = Arrays.asList("服贸会", "园区高点");
 
     private final ICameraResourceService cameraResourceService;
 
@@ -136,6 +142,43 @@ public class CameraResourceController {
         } catch (Exception e) {
             log.error("获取摄像头坐标分组分布失败", e);
             return Result.error("获取摄像头坐标分组分布失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取摄像头分组数据
+     * <p>代理转发到外部IOC数据平台，获取摄像头分组树形数据。</p>
+     *
+     * @return 摄像头分组数据
+     */
+    @GetMapping("/packageGroup")
+    @ApiOperation(value = "获取摄像头分组数据", notes = "代理转发到外部IOC数据平台，获取摄像头分组数据")
+    public Result<JSONArray> getPackageGroup() {
+        try {
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(10000);
+            factory.setReadTimeout(10000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            String url = "http://10.168.47.22:9999/sgai-ioc-data/admin/video/packageGroup";
+            String body = restTemplate.exchange(url, HttpMethod.GET, null, String.class).getBody();
+
+            JSONObject json = JSONObject.parseObject(body);
+            JSONArray result = json.getJSONArray("result");
+            // 只保留一级分组中 name 包含关键字的分组，其下子树（children/videoList）原样保留
+            JSONArray filtered = result == null ? new JSONArray()
+                    : result.stream()
+                            .map(JSONObject.class::cast)
+                            .filter(item -> {
+                                String name = item.getString("name");
+                                return PACKAGE_KEYWORDS.stream().anyMatch(kw -> StringUtils.contains(name, kw));
+                            })
+                            .collect(JSONArray::new, JSONArray::add, JSONArray::addAll);
+            log.info("获取摄像头分组数据成功");
+            return Result.ok(filtered);
+        } catch (Exception e) {
+            log.error("获取摄像头分组数据失败", e);
+            return Result.error("获取摄像头分组数据失败: " + e.getMessage());
         }
     }
 }
