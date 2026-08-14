@@ -1,5 +1,4 @@
-package org.jeecg.modules.fwbz.lighting;
-
+package org.jeecg.modules.fwbz.lighting.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,11 +9,13 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.jeecg.modules.fwbz.lighting.properties.SubsystemProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
-
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -23,13 +24,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
+@RequestMapping("/fwbz/lighting")
 public class SubsystemProxyController {
 
-    // 子系统配置
-    private static final String SUB_SYSTEM_BASE_URL = "http://10.61.13.140:888";
-    private static final String SUB_SYSTEM_LOGIN_URL = SUB_SYSTEM_BASE_URL + "/prod-api/login";
-    private static final String USERNAME = "user001";
-    private static final String PASSWORD = "123456";
+    // 子系统免密登录对接配置（application.yml: fwbz.subsystem.*）
+    @Autowired
+    private SubsystemProperties subsystemProperties;
+
+    // cookie 键名（登录后种给前端）
+    private static final String TOKEN_COOKIE_NAME = "Admin-Token";
 
     // 服务端 token 缓存：避免并发请求时每个请求都重复登录子系统
     private static volatile String cachedToken;
@@ -37,6 +40,29 @@ public class SubsystemProxyController {
     private static final long TOKEN_TTL_MS = 50 * 60 * 1000; // 缓存 50 分钟
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    /**
+     * 首次免密登录跳转入口。
+     * 访问 /autoLogin 时：固定账号登录子系统 → 种 token cookie → 重定向到目标页面。
+     */
+    @GetMapping("/autoLogin")
+    public void autoLogin(HttpServletResponse response, HttpServletRequest request) throws Exception {
+        String token = getOrCreateToken();
+        if (token == null || token.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"success\":false,\"msg\":\"免密登录失败\"}");
+            return;
+        }
+
+        // 种下 token cookie，后续访问子系统页面时自动携带
+        Cookie cookie = new Cookie(TOKEN_COOKIE_NAME, token);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        // 重定向到子系统页面
+        response.sendRedirect(subsystemProperties.getRedirectUrl());
+    }
 
     // 代理子系统页面(/appWebtopoPreview/**)、业务接口(/prod-api/**)及静态资源
     @RequestMapping({"/appWebtopoPreview/**", "/prod-api/**", "/assets/**", "/imgs/**", "/bjng.png"})
@@ -71,7 +97,7 @@ public class SubsystemProxyController {
             // /prod-api、/assets 等路径原样透传
             targetUri = uri;
         }
-        String url = SUB_SYSTEM_BASE_URL + targetUri;
+        String url = subsystemProperties.getBaseUrl() + targetUri;
         System.out.println("targetUri = " + targetUri);
 
 
@@ -208,11 +234,11 @@ public class SubsystemProxyController {
                     .setDefaultCookieStore(cookieStore)
                     .build();
 
-            HttpPost httpPost = new HttpPost(SUB_SYSTEM_LOGIN_URL);
+            HttpPost httpPost = new HttpPost(subsystemProperties.getLoginUrl());
 
             String jsonBody = String.format(
                     "{\"username\":\"%s\",\"password\":\"%s\"}",
-                    USERNAME, PASSWORD
+                    subsystemProperties.getUsername(), subsystemProperties.getPassword()
             );
             // 必须给 entity 显式指定 JSON 的 Content-Type，
             // 否则 Apache HttpClient 会默认用 application/x-www-form-urlencoded
