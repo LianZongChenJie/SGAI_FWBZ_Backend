@@ -26,12 +26,12 @@ public class MinuteDataServiceImpl extends ServiceImpl<MinuteDataMapper, MinuteD
     /**
      * 缓存key前缀
      */
-    private static final String CACHE_KEY_PREFIX = "device_energy_data_minute:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:device_energy_data_minute:";
 
     /**
      * 设备最新值缓存key
      */
-    private static final String CACHE_KEY_PREFIX_MAX = "device_energy_data_minute_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:device_energy_data_minute_max:";
     /**
      * 缓存时间,单位：秒
      */

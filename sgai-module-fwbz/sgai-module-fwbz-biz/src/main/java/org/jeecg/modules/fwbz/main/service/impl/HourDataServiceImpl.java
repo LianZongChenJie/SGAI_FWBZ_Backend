@@ -40,12 +40,12 @@ public class HourDataServiceImpl extends ServiceImpl<HourDataMapper,HourData> im
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "device_energy_data_hour:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:device_energy_data_hour:";
 
     /**
      * 最新数据缓存key
      */
-    private static final String CACHE_KEY_PREFIX_MAX = "device_energy_data_hour_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:device_energy_data_hour_max:";
 
     private static final long CACHE_TIME = 60L * 90L;
     @Override

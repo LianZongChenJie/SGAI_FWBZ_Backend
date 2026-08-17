@@ -29,7 +29,7 @@ public class MeteringPointDataDayServiceImpl extends ServiceImpl<MeteringPointDa
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "metering_point_data_day:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:metering_point_data_day:";
 
     private static final Long CACHE_TIME = 60L * 60L * 30L;
 

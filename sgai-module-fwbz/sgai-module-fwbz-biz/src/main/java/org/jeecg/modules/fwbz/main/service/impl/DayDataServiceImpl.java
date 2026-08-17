@@ -23,7 +23,7 @@ public class DayDataServiceImpl extends ServiceImpl<DayDataMapper,DayData> imple
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "device_energy_data_day:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:device_energy_data_day:";
 
     private static final long CACHE_TIME = 60L * 60L * 30L;
 

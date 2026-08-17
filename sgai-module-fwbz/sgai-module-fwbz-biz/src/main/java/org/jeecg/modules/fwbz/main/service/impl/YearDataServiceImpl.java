@@ -21,7 +21,7 @@ public class YearDataServiceImpl extends ServiceImpl<YearDataMapper,YearData> im
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "device_energy_data_year:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:device_energy_data_year:";
 
     private static final long CACHE_TIME = 60L * 90L;
 

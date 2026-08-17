@@ -24,7 +24,7 @@ public class MeteringPointDataHourServiceImpl extends ServiceImpl<MeteringPointD
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX_MAX = "metering_point_data_hour_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:metering_point_data_hour_max:";
 
     private final IMeteringPointRelService meteringPointRelService;
 

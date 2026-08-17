@@ -26,7 +26,7 @@ public class MeteringPointDataYearServiceImpl extends ServiceImpl<MeteringPointD
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "metering_point_data_year:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:metering_point_data_year:";
     private static final Long CACHE_TIME = 60L * 60L * 30L;
 
     private final IMeteringPointRelService meteringPointRelService;
