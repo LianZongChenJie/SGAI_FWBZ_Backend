@@ -52,7 +52,7 @@ public class MeteringPointUtil {
      * @return bigmap key
      */
     private String getQueueMeteringPointValueUpdateBigMapKey(LocalDateTime hour){
-        return "msg_point_value_update:" + hour.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return "fwbz:msg_point_value_update:" + hour.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
     /**
