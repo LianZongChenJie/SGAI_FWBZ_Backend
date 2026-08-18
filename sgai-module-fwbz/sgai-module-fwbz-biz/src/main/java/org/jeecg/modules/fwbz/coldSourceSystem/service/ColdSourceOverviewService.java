@@ -46,22 +46,13 @@ public class ColdSourceOverviewService {
         Map<String, List<Long>> m = new LinkedHashMap<>();
 
         // ================= station 系统总览 =================
-        // 系统总功率 = 冷冻总管热量表功率(579) + 12台风冷机组热量表功率(557) + 东会议楼集中(543) + 东会议楼独立风冷(550) + 4号馆(564)
-        put(m, "station.totalPower", 579L, 557L, 543L, 550L, 564L);
-        put(m, "station.coolingCapacity", null);         // 制冷量（点表无，可自行配置）
-        put(m, "station.cop", null);                     // COP（点表无）
+        // 页面精简：仅保留环境/公共测点，功率/COP/能耗等汇总字段已从页面移除
         put(m, "station.supplyTemp", 512L);              // 冷冻水供水温度
         put(m, "station.returnTemp", 513L);              // 冷冻水回水温度
         put(m, "station.outdoorTemp", 526L);             // 室外温度
         put(m, "station.outdoorHumidity", 527L);         // 室外湿度
         put(m, "station.wetBulbTemp", 298L);             // 湿球温度
-        put(m, "station.dailyEnergy", null);             // 日累计冷量（点表无）
-        put(m, "station.powerSavingRate", null);         // 节能率（点表无）
-        put(m, "station.loadRate", null);                // 负荷率（点表无）
-        put(m, "station.copImprovement", null);          // COP提升率（点表无）
-        put(m, "station.forecastEnergy", null);          // 预测能耗（点表无）
         put(m, "station.alarmCount", null);              // 告警数（点表无）
-        put(m, "station.autoMode", null);                // 自动模式（点表无）
 
         // ================= loop 循环水系统 =================
         put(m, "loop.chwSupplyPressure", 514L);          // 冷冻水供水压力
@@ -127,17 +118,6 @@ public class ColdSourceOverviewService {
         put(m, "tower.4.forceCommand", 229L);            // 4#冷却塔强制命令
         put(m, "tower.4.forceFrequency", 485L);          // 4#冷却塔强制频率
 
-        // ================= air.station 风冷系统总览 =================
-        put(m, "air.station.totalPower", 557L);          // 12台风冷机组热量表功率
-        put(m, "air.station.coolingCapacity", 557L);     // 12台风冷机组热量表功率
-        put(m, "air.station.cop", null);                 // 风冷COP（点表无）
-        put(m, "air.station.dailyEnergy", 556L);         // 12台风冷机组热量表累计冷量
-        put(m, "air.station.powerSavingRate", null);     // 节能率（点表无）
-        put(m, "air.station.loadRate", null);            // 负荷率（点表无）
-        put(m, "air.station.copImprovement", null);      // COP提升率（点表无）
-        put(m, "air.station.forecastEnergy", null);      // 预测能耗（点表无）
-        put(m, "air.station.alarmCount", null);          // 告警数（点表无）
-
         // ================= air.loop 风冷循环 =================
         put(m, "air.loop.supplyTemp", 560L);             // 12台风冷机组热量表供水温度
         put(m, "air.loop.returnTemp", 561L);             // 12台风冷机组热量表回水温度
@@ -159,23 +139,16 @@ public class ColdSourceOverviewService {
         put(m, "air.control.pumpOrder", null);
 
         // ================= distributed 分馆（3 个馆，对应点表热量表） =================
-        // no -> {热量表前缀, 功率id, 累计冷量id, 供水温度id, 回水温度id, 瞬时流量id}
+        // 页面命名：east=东会议室、hall2=2号馆、hall3=3号馆
+        // -> {热量表前缀, 功率id, 累计冷量id, 供水温度id, 回水温度id, 瞬时流量id}
         long[][] hallIds = {
-                {543, 542, 546, 547, 545},   // 1 东会议楼集中热量表
-                {550, 549, 553, 554, 552},   // 2 东会议楼独立风冷热量表
-                {564, 563, 567, 568, 566}    // 3 4号馆热量表
+                {543, 542, 546, 547, 545},   // east  东会议室（东会议楼集中热量表）
+                {550, 549, 553, 554, 552},   // hall2 2号馆（东会议楼独立风冷热量表）
+                {564, 563, 567, 568, 566}    // hall3 3号馆（4号馆热量表）
         };
+        String[] hallNames = {"east", "hall2", "hall3"};
         for (int i = 0; i < hallIds.length; i++) {
-            String prefix = "distributed." + (i + 1);
-            put(m, prefix + ".station.totalPower", hallIds[i][0]);
-            put(m, prefix + ".station.coolingCapacity", hallIds[i][0]);
-            put(m, prefix + ".station.cop", null);
-            put(m, prefix + ".station.dailyEnergy", hallIds[i][1]);
-            put(m, prefix + ".station.powerSavingRate", null);
-            put(m, prefix + ".station.loadRate", null);
-            put(m, prefix + ".station.copImprovement", null);
-            put(m, prefix + ".station.forecastEnergy", null);
-            put(m, prefix + ".station.alarmCount", null);
+            String prefix = "distributed." + hallNames[i];
             put(m, prefix + ".loop.supplyTemp", hallIds[i][2]);
             put(m, prefix + ".loop.returnTemp", hallIds[i][3]);
             put(m, prefix + ".loop.supplyPressure", null);
@@ -270,6 +243,7 @@ public class ColdSourceOverviewService {
         long[] chSoftFault = {41L, 22L, 95L};
         long[] chControlMode = {39L, 67L, 93L};
         long[] chForceCommand = {40L, 68L, 94L};
+        long[] chPower = {0L, 364L, 416L};       // 冷机输出功率：1#点表无(0=未映射)，2#=1号输出功率364，3#=1号输出功率416
         long[] chLoad = {322L, 366L, 418L};
         long[] chHours = {317L, 345L, 393L};
         long[] chSupplyTemp = {319L, 280L, 395L};
@@ -277,7 +251,7 @@ public class ColdSourceOverviewService {
         for (int i = 0; i < 3; i++) {
             int no = i + 1;
             put(m, "chiller." + no + ".running", chRunning[i]);
-            put(m, "chiller." + no + ".power", null);          // 冷机功率（点表无，可用压机负荷近似）
+            put(m, "chiller." + no + ".power", chPower[i] == 0L ? null : chPower[i]);
             put(m, "chiller." + no + ".load", chLoad[i]);
             put(m, "chiller." + no + ".hours", chHours[i]);
             put(m, "chiller." + no + ".supplyTemp", chSupplyTemp[i]);
@@ -287,7 +261,6 @@ public class ColdSourceOverviewService {
             put(m, "chiller." + no + ".softFault", chSoftFault[i]);
             put(m, "chiller." + no + ".controlMode", chControlMode[i]);
             put(m, "chiller." + no + ".forceCommand", chForceCommand[i]);
-            put(m, "chiller." + no + ".forceFrequency", null);
         }
 
         // ================= chwPump 冷冻泵 1-3 =================
