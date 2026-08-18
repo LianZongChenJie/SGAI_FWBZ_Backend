@@ -38,18 +38,24 @@ public class ColdSourceServerService {
     @Autowired
     private ColdSourceProperties properties;
 
-    private PSpaceClient client;
+    private volatile PSpaceClient client;
 
     /**
-     * 启动时自动连接冷源系统；连接失败仅告警，不影响主系统启动
+     * 启动时后台异步连接冷源系统；连接失败仅告警，不影响 Spring 容器启动
      */
     @PostConstruct
     public void init() {
-        try {
-            connect();
-        } catch (Exception e) {
-            log.warn("冷源系统连接失败，请检查配置 fwbz.cold-source 后重启或手动调用 connect() 重试", e);
-        }
+        Thread connectThread = new Thread(() -> {
+            try {
+                log.info("连接冷源系统中。。。");
+                connect();
+            } catch (Exception e) {
+                log.warn("冷源系统连接失败，请检查配置 fwbz.cold-source 后重启或手动调用 connect() 重试", e);
+            }
+        }, "cold-source-connect");
+        // 守护线程：连接慢/失败都不影响应用启动与退出
+        connectThread.setDaemon(true);
+        connectThread.start();
     }
 
     /**
