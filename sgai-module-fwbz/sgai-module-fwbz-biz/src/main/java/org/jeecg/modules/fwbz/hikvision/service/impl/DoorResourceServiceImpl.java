@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -11,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
 import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlRequest;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlResponse;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlResultVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorSearchRequest;
@@ -51,6 +55,12 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
     /** 海康门禁状态查询API路径 */
     private static final String DOOR_STATUS_API = "/api/acs/v1/door/states";
 
+    /** 海康反向控制门禁点API路径 */
+    private static final String DOOR_CONTROL_API = "/api/acs/v1/door/doControl";
+
+    /** 反向控制单次最大门禁点数 */
+    private static final int DOOR_CONTROL_MAX_COUNT = 10;
+
     /** 门禁点列表查询分页大小（最大1000） */
     private static final int PAGE_SIZE = 1000;
 
@@ -89,7 +99,10 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             entityList.add(entity);
         }
 
-        saveBatch(entityList);
+        // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，大数据量时会抛index out of range，改为循环单条插入绕开该问题
+        for (DoorResource entity : entityList) {
+            baseMapper.insert(entity);
+        }
         log.info("海康门禁点数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
     }
@@ -304,7 +317,7 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         entity.setRegionIndexCode(item.getRegionIndexCode());
         entity.setRegionPath(item.getRegionPath());
         entity.setCreateTime(item.getCreateTime());
-        entity.setUpdateTime(item.getUpdateTime());
+        entity.setDevUpdateTime(item.getUpdateTime());
         entity.setDescription(item.getDescription());
         entity.setChannelType(item.getChannelType());
         entity.setRegionName(item.getRegionName());
@@ -375,7 +388,7 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             vo.setDoorState(door.getDoorState());
             vo.setTreatyType(door.getTreatyType());
             vo.setCreateTime(door.getCreateTime());
-            vo.setUpdateTime(door.getUpdateTime());
+            vo.setUpdateTime(door.getDevUpdateTime());
             voList.add(vo);
         }
 
@@ -384,5 +397,73 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
 
         log.info("分页查询门禁点列表完成, 共{}条, 当前页{}条", doorPage.getTotal(), voList.size());
         return resultPage;
+    }
+
+    @Override
+    public List<DoorControlResultVO> controlDoor(DoorControlRequest request) {
+        List<String> doorIndexCodes = request.getDoorIndexCodes();
+        Integer controlType = request.getControlType();
+
+        // 1. 参数校验
+        if (doorIndexCodes == null || doorIndexCodes.isEmpty()) {
+            throw new IllegalArgumentException("门禁点唯一标识doorIndexCodes不能为空");
+        }
+        if (doorIndexCodes.size() > DOOR_CONTROL_MAX_COUNT) {
+            throw new IllegalArgumentException("门禁点唯一标识最多支持" + DOOR_CONTROL_MAX_COUNT + "个");
+        }
+        if (controlType == null || controlType < 0 || controlType > 3) {
+            throw new IllegalArgumentException("controlType不合法, 0-常开、1-门闭、2-门开、3-常闭");
+        }
+
+        try {
+            // 2. 请求海康反向控制接口
+            String requestBody = JSON.toJSONString(request);
+            log.info("请求海康反向控制门禁点, 门禁点数={}, controlType={}", doorIndexCodes.size(), controlType);
+
+            String responseBody = hikvisionUtil.doPostJson(DOOR_CONTROL_API, requestBody);
+
+            // 3. 整体请求失败（code!=0）直接抛出，带海康返回描述
+            if (!hikvisionUtil.isSuccess(responseBody)) {
+                JSONObject json = hikvisionUtil.parseResponse(responseBody);
+                String msg = json.getString("msg");
+                log.error("海康反向控制门禁点请求失败: {}", responseBody);
+                throw new RuntimeException("海康反向控制门禁点失败: " + msg);
+            }
+
+            // 4. 解析反控结果（data为object数组，逐项判断）
+            JSONObject json = hikvisionUtil.parseResponse(responseBody);
+            JSONArray dataArray = json.getJSONArray("data");
+            List<DoorControlResponse.DoorControlItem> items = dataArray == null
+                    ? Collections.emptyList()
+                    : dataArray.toJavaList(DoorControlResponse.DoorControlItem.class);
+
+            // 5. 逐项转换结果返回前端：controlResultCode=0标识反控成功，其他为失败并携带描述
+            List<DoorControlResultVO> resultList = new ArrayList<>(items.size());
+            int successCount = 0;
+            for (DoorControlResponse.DoorControlItem item : items) {
+                DoorControlResultVO vo = new DoorControlResultVO();
+                vo.setDoorIndexCode(item.getDoorIndexCode());
+                Integer resultCode = item.getControlResultCode();
+                vo.setControlResultCode(resultCode);
+                vo.setControlResultDesc(item.getControlResultDesc());
+                boolean success = resultCode != null && resultCode == 0;
+                vo.setSuccess(success);
+                if (success) {
+                    successCount++;
+                } else {
+                    log.warn("门禁点[{}]反控失败, resultCode={}, desc={}",
+                            item.getDoorIndexCode(), resultCode, item.getControlResultDesc());
+                }
+                resultList.add(vo);
+            }
+            log.info("海康反向控制门禁点完成, 共{}个门禁点, 成功{}个", items.size(), successCount);
+            return resultList;
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("海康反向控制门禁点异常", e);
+            throw new RuntimeException("海康反向控制门禁点失败: " + e.getMessage(), e);
+        }
     }
 }
