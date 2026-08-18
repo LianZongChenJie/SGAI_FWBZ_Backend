@@ -82,7 +82,10 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             entityList.add(entity);
         }
 
-        saveBatch(entityList);
+        // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，大数据量时会抛index out of range，改为循环单条插入绕开该问题
+        for (AcsDevice entity : entityList) {
+            baseMapper.insert(entity);
+        }
         log.info("海康门禁设备数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
     }
@@ -319,7 +322,7 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             vo.setPort(device.getPort());
             vo.setOnline(device.getOnline());
             vo.setCreateTime(device.getCreateTime());
-            vo.setUpdateTime(device.getUpdateTime());
+            vo.setUpdateTime(device.getDevUpdateTime());
             voList.add(vo);
         }
 
@@ -351,7 +354,7 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         entity.setDeployId(item.getDeployId());
         entity.setNetZoneId(item.getNetZoneId());
         entity.setCreateTime(item.getCreateTime());
-        entity.setUpdateTime(item.getUpdateTime());
+        entity.setDevUpdateTime(item.getUpdateTime());
         entity.setDescription(item.getDescription());
         entity.setAcsReaderVerifyModeAbility(item.getAcsReaderVerifyModeAbility());
         entity.setRegionName(item.getRegionName());

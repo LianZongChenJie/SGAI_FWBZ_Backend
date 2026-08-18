@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -88,8 +89,9 @@ public class AcsDevice implements Serializable {
     @ApiModelProperty(value = "创建时间（设备侧上报）")
     private String createTime;
 
-    @ApiModelProperty(value = "更新时间（设备侧上报）")
-    private String updateTime;
+    @ApiModelProperty(value = "更新时间（设备侧上报），字段名避开MybatisInterceptor按updateTime自动填充")
+    @TableField("update_time")
+    private String devUpdateTime;
 
     @ApiModelProperty(value = "描述")
     private String description;
