@@ -45,6 +45,10 @@ public class ColdSourceServerService {
      */
     @PostConstruct
     public void init() {
+        if (properties.isMock()) {
+            log.warn("【模拟模式】fwbz.cold-source.mock=true：跳过冷源系统连接，数据由内置模拟数据源提供");
+            return;
+        }
         Thread connectThread = new Thread(() -> {
             try {
                 log.info("连接冷源系统中。。。");

@@ -6,6 +6,7 @@ import com.sunwayland.pspace.callback.IRealCallback;
 import com.sunwayland.pspace.entity.PsResult;
 import com.sunwayland.pspace.entity.PsSubRealData;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.coldSourceSystem.config.ColdSourceProperties;
 import org.jeecg.modules.fwbz.coldSourceSystem.websocket.ColdSourceWsEndpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * 冷源系统实时数据订阅推送服务（冷源 SDK 订阅 -> 前端 WebSocket）
@@ -51,6 +54,9 @@ public class ColdSourceRealPushService {
     @Autowired
     private ColdSourceOverviewService coldSourceOverviewService;
 
+    @Autowired
+    private ColdSourceProperties properties;
+
     /** tagId -> 该测点关联的 key 列表（一个测点可能映射多个 key）；buildIndex 后只读 */
     private volatile Map<Long, List<String>> id2Keys = Collections.emptyMap();
 
@@ -63,10 +69,50 @@ public class ColdSourceRealPushService {
     @PostConstruct
     public void init() {
         buildIndex();
+        if (properties.isMock()) {
+            log.warn("【模拟模式】fwbz.cold-source.mock=true：不连接真实冷源系统，改用内置模拟数据源测试全链路");
+            startMockGenerator();
+            return;
+        }
         Thread subscribeThread = new Thread(this::subscribeLoop, "cold-source-subscribe");
         // 守护线程：订阅慢/失败都不影响应用启动与退出
         subscribeThread.setDaemon(true);
         subscribeThread.start();
+    }
+
+    /**
+     * 【模拟模式】启动内置模拟数据源：模拟冷源测点实时推送，数据走与真实 SDK 回调完全相同的
+     * onRealData 处理链路（测点缓存 -> 聚合求和 -> 前端 WebSocket 广播），
+     * 用于无冷源网络环境下的全链路联调测试。
+     */
+    private void startMockGenerator() {
+        Set<Long> aggregateIds = aggregateKeys.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
+        MockColdSourceDataGenerator generator = new MockColdSourceDataGenerator(
+                buildIdSemantic(), aggregateIds, list -> onRealData(0, list));
+        generator.start();
+    }
+
+    /**
+     * 构建 tagId -> 字段语义（取该测点关联的首个 key 的末段字段名，如 supplyTemp/running/totalPower），
+     * 供模拟数据源按字段量纲生成合理数值。
+     */
+    private Map<Long, String> buildIdSemantic() {
+        Map<Long, String> semantic = new LinkedHashMap<>();
+        Map<String, List<Long>> fieldMap = coldSourceOverviewService.getFieldMap();
+        for (Map.Entry<String, List<Long>> entry : fieldMap.entrySet()) {
+            List<Long> ids = entry.getValue();
+            if (ids == null || ids.isEmpty()) {
+                continue;
+            }
+            String key = entry.getKey();
+            String field = key.substring(key.lastIndexOf('.') + 1);
+            for (Long id : ids) {
+                semantic.putIfAbsent(id, field);
+            }
+        }
+        return semantic;
     }
 
     /**
@@ -137,9 +183,10 @@ public class ColdSourceRealPushService {
     }
 
     /**
-     * SDK 实时订阅回调：冷源推送的增量数据 -> tagId 反查 key -> 组装 -> 广播给前端。
+     * 实时数据回调：冷源 SDK 推送（或模拟数据源产生）的增量数据 -> tagId 反查 key -> 组装 -> 广播给前端。
+     * 包内可见：模拟数据源 {@link MockColdSourceDataGenerator} 直接调用，与真实 SDK 回调走同一处理链路。
      */
-    private void onRealData(int subId, List<PsSubRealData> subRealDataList) {
+    void onRealData(int subId, List<PsSubRealData> subRealDataList) {
         if (subRealDataList == null || subRealDataList.isEmpty()) {
             return;
         }

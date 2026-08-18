@@ -22,6 +22,12 @@ public class ColdSourceProperties {
     /** 登录密码 */
     private String password = "admin888";
 
+    /**
+     * 模拟模式：true 时不连接真实冷源系统，改用内置模拟数据源推送数据，
+     * 用于无冷源网络环境下的全链路联调测试（临时功能，联调后可删除）。
+     */
+    private boolean mock = false;
+
     public String getHost() {
         return host;
     }
@@ -52,5 +58,13 @@ public class ColdSourceProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isMock() {
+        return mock;
+    }
+
+    public void setMock(boolean mock) {
+        this.mock = mock;
     }
 }
