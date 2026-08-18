@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
+import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -119,6 +120,43 @@ public class CameraResourceController {
     }
 
     /**
+     * 根据摄像头所属区域编码查询摄像头列表
+     *
+     * @param regionIndexCode 区域编码
+     * @return 该区域下直属摄像头列表
+     */
+    @GetMapping("/listByRegion")
+    @ApiOperation(value = "按区域编码查询摄像头列表", notes = "传入区域编码 regionIndexCode，返回该区域下直属摄像头列表")
+    public Result<List<CameraListVO>> getCameraListByRegion(String regionIndexCode) {
+        try {
+            List<CameraListVO> list = cameraResourceService.listByRegion(regionIndexCode);
+            return Result.ok(list);
+        } catch (Exception e) {
+            log.error("按区域编码查询摄像头列表失败, regionIndexCode={}", regionIndexCode, e);
+            return Result.error("按区域编码查询摄像头列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取区域摄像头分组信息
+     * <p>先获取区域树，再在每个区域节点下挂载该区域直属的摄像头列表（videoList），
+     * 返回结构与海康区域树一致，节点中额外包含 videoList 项。</p>
+     *packageGroup
+     * @return 区域摄像头分组树根节点列表
+     */
+    @GetMapping("/packageGroup")
+    @ApiOperation(value = "获取区域摄像头分组信息", notes = "先获取区域树，每个区域节点下挂载该区域直属的摄像头列表（videoList）")
+    public Result<List<RegionCameraTreeVO>> getRegionCameraGroup() {
+        try {
+            List<RegionCameraTreeVO> list = cameraResourceService.getRegionCameraGroup();
+            return Result.ok(list);
+        } catch (Exception e) {
+            log.error("获取区域摄像头分组信息失败", e);
+            return Result.error("获取区域摄像头分组信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 获取摄像头坐标分组分布
      * <p>代理转发到外部IOC数据平台，获取按坐标聚合的摄像头分布数据。</p>
      *
@@ -151,7 +189,7 @@ public class CameraResourceController {
      *
      * @return 摄像头分组数据
      */
-    @GetMapping("/packageGroup")
+    @GetMapping("/regionCameraGroup")
     @ApiOperation(value = "获取摄像头分组数据", notes = "代理转发到外部IOC数据平台，获取摄像头分组数据")
     public Result<JSONArray> getPackageGroup() {
         try {

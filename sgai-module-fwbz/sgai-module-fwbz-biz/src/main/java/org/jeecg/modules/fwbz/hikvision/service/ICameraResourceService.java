@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
+import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
 
 import java.util.List;
 
@@ -44,4 +45,21 @@ public interface ICameraResourceService extends IService<CameraResource> {
      * @return 摄像头列表
      */
     List<CameraListVO> getCameraList();
+
+    /**
+     * 获取区域摄像头分组信息
+     * <p>先构建区域树，再在每个区域节点下挂载该区域直属的摄像头列表（videoList），
+     * 返回结构与海康区域树一致，多出videoList项。</p>
+     *
+     * @return 区域摄像头分组树根节点列表
+     */
+    List<RegionCameraTreeVO> getRegionCameraGroup();
+
+    /**
+     * 根据摄像头所属区域编码查询摄像头列表
+     *
+     * @param regionIndexCode 区域编码
+     * @return 该区域下直属摄像头列表
+     */
+    List<CameraListVO> listByRegion(String regionIndexCode);
 }

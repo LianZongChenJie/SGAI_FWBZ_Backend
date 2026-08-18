@@ -12,6 +12,7 @@ import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
+import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlResponse;
+import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
+import org.jeecg.modules.fwbz.hikvision.dto.RegionTreeVO;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -31,6 +34,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 摄像头资源同步服务实现
@@ -75,6 +79,8 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     };
 
     private final HikvisionUtil hikvisionUtil;
+
+    private final IRegionResourceService regionResourceService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -442,23 +448,110 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         List<CameraResource> cameraList = list();
         List<CameraListVO> result = new ArrayList<>(cameraList.size());
         for (CameraResource camera : cameraList) {
-            CameraListVO vo = new CameraListVO();
-            vo.setIndexCode(camera.getIndexCode());
-            vo.setName(camera.getName());
-            vo.setCameraType(camera.getCameraType());
-            vo.setInstallLocation(camera.getInstallLocation());
-            vo.setRegionIndexCode(camera.getRegionIndexCode());
-            vo.setRegionName(camera.getRegionName());
-            vo.setLongitude(camera.getLongitude());
-            vo.setLatitude(camera.getLatitude());
-            vo.setChannelType(camera.getChannelType());
-            vo.setOnline(camera.getOnline());
-            vo.setExternalIndexCode(camera.getExternalIndexCode());
-            vo.setCreateTime(camera.getCreateTime());
-            vo.setUpdateTime(camera.getUpdateTime());
-            result.add(vo);
+            result.add(cameraToVO(camera));
         }
         log.info("查询摄像头列表完成, 共{}条", result.size());
         return result;
+    }
+
+    /**
+     * 将摄像头实体转换为列表VO
+     *
+     * @param camera 摄像头实体
+     * @return 摄像头列表VO
+     */
+    private CameraListVO cameraToVO(CameraResource camera) {
+        CameraListVO vo = new CameraListVO();
+        vo.setIndexCode(camera.getIndexCode());
+        vo.setName(camera.getName());
+        vo.setCameraType(camera.getCameraType());
+        vo.setInstallLocation(camera.getInstallLocation());
+        vo.setRegionIndexCode(camera.getRegionIndexCode());
+        vo.setRegionName(camera.getRegionName());
+        vo.setLongitude(camera.getLongitude());
+        vo.setLatitude(camera.getLatitude());
+        vo.setChannelType(camera.getChannelType());
+        vo.setOnline(camera.getOnline());
+        vo.setExternalIndexCode(camera.getExternalIndexCode());
+        vo.setCreateTime(camera.getCreateTime());
+        vo.setUpdateTime(camera.getUpdateTime());
+        return vo;
+    }
+
+    @Override
+    public List<CameraListVO> listByRegion(String regionIndexCode) {
+        if (regionIndexCode == null || regionIndexCode.trim().isEmpty()) {
+            log.warn("查询区域摄像头失败: regionIndexCode为空");
+            return Collections.emptyList();
+        }
+        log.info("查询区域[{}]下直属摄像头列表", regionIndexCode);
+        List<CameraResource> cameraList = list(new LambdaQueryWrapper<CameraResource>()
+                .eq(CameraResource::getRegionIndexCode, regionIndexCode)
+                .orderByAsc(CameraResource::getName));
+        List<CameraListVO> result = new ArrayList<>(cameraList.size());
+        for (CameraResource camera : cameraList) {
+            result.add(cameraToVO(camera));
+        }
+        log.info("查询区域[{}]摄像头列表完成, 共{}条", regionIndexCode, result.size());
+        return result;
+    }
+
+    @Override
+    public List<RegionCameraTreeVO> getRegionCameraGroup() {
+        log.info("开始构建区域摄像头分组信息");
+        // 1. 先获取区域树
+        List<RegionTreeVO> regionTree = regionResourceService.buildRegionTree();
+        if (regionTree == null || regionTree.isEmpty()) {
+            log.warn("区域树为空, 返回空分组");
+            return Collections.emptyList();
+        }
+
+        // 2. 查询全部摄像头并按区域分组（regionIndexCode -> 摄像头列表）
+        Map<String, List<CameraListVO>> regionCameraMap = getCameraList().stream()
+                .filter(vo -> vo.getRegionIndexCode() != null && !vo.getRegionIndexCode().isEmpty())
+                .collect(Collectors.groupingBy(CameraListVO::getRegionIndexCode));
+
+        // 3. 递归转换区域树并填充每个节点的videoList
+        List<RegionCameraTreeVO> result = new ArrayList<>(regionTree.size());
+        for (RegionTreeVO node : regionTree) {
+            result.add(convertRegionTree(node, regionCameraMap));
+        }
+        log.info("区域摄像头分组构建完成, 根节点{}个, 摄像头分组{}个", result.size(), regionCameraMap.size());
+        return result;
+    }
+
+    /**
+     * 将区域树节点转换为区域摄像头分组节点，并递归填充子节点及videoList
+     *
+     * @param node            区域树节点
+     * @param regionCameraMap 区域 -> 摄像头列表映射
+     * @return 区域摄像头分组节点
+     */
+    private RegionCameraTreeVO convertRegionTree(RegionTreeVO node, Map<String, List<CameraListVO>> regionCameraMap) {
+        RegionCameraTreeVO vo = new RegionCameraTreeVO();
+        vo.setIndexCode(node.getIndexCode());
+        vo.setName(node.getName());
+        vo.setRegionPath(node.getRegionPath());
+        vo.setParentIndexCode(node.getParentIndexCode());
+        vo.setAvailable(node.getAvailable());
+        vo.setLeaf(node.getLeaf());
+        vo.setCascadeCode(node.getCascadeCode());
+        vo.setCascadeType(node.getCascadeType());
+        vo.setCatalogType(node.getCatalogType());
+        vo.setExternalIndexCode(node.getExternalIndexCode());
+        vo.setSort(node.getSort());
+        vo.setLocalQuantity(node.getLocalQuantity());
+        vo.setTotalQuantity(node.getTotalQuantity());
+        // 填充该区域直属摄像头列表
+        vo.setVideoList(regionCameraMap.getOrDefault(node.getIndexCode(), Collections.emptyList()));
+        // 递归子节点
+        if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+            List<RegionCameraTreeVO> children = new ArrayList<>(node.getChildren().size());
+            for (RegionTreeVO child : node.getChildren()) {
+                children.add(convertRegionTree(child, regionCameraMap));
+            }
+            vo.setChildren(children);
+        }
+        return vo;
     }
 }
