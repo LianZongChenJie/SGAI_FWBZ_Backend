@@ -75,7 +75,10 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
         }
 
         if (!entityList.isEmpty()) {
-            saveBatch(entityList);
+            // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，会报index out of range/TypeException，改为循环单条插入绕开该问题
+            for (EventNotify entity : entityList) {
+                baseMapper.insert(entity);
+            }
             log.info("海康事件保存完成, 成功{}条, 跳过{}条", entityList.size(), skipCount);
         }
 
