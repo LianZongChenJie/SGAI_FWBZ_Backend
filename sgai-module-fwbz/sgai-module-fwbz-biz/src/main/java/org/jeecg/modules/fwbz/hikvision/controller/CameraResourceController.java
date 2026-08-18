@@ -38,8 +38,8 @@ import java.util.Map;
 @Api(tags = "海康摄像头资源管理")
 public class CameraResourceController {
 
-    /** 摄像头分组过滤关键字：一级分组名称包含其中任意一个即保留 */
-    private static final List<String> PACKAGE_KEYWORDS = Arrays.asList("服贸会", "园区高点");
+    /** 摄像头分组过滤关键字：仅保留一级分组名称包含该关键字的数据 */
+    private static final List<String> PACKAGE_KEYWORD = Arrays.asList("服贸会", "园区高点");
 
     private final ICameraResourceService cameraResourceService;
 
@@ -66,7 +66,7 @@ public class CameraResourceController {
      * 获取摄像头播放地址
      * <p>前端传入1个或多个摄像头唯一编码，逐个请求海康获取播放地址后统一返回。</p>
      *
-     * @param cameraIndexCodes 摄像头唯一编码列表
+     * @param body 请求体，其中 cameraIndexCode 为摄像头唯一编码列表
      * @return 播放地址列表（每项包含 cameraIndexCode 和 url）
      */
     @PostMapping("/playUrls")
@@ -160,18 +160,19 @@ public class CameraResourceController {
             factory.setReadTimeout(10000);
             RestTemplate restTemplate = new RestTemplate(factory);
 
-            String url = "http://10.168.47.22:9999/sgai-ioc-data/admin/video/packageGroup";
+            String url = "http://10.168.47.26:9999/sgai-ioc-data/admin/video/packageGroup";
             String body = restTemplate.exchange(url, HttpMethod.GET, null, String.class).getBody();
 
             JSONObject json = JSONObject.parseObject(body);
             JSONArray result = json.getJSONArray("result");
-            // 只保留一级分组中 name 包含关键字的分组，其下子树（children/videoList）原样保留
+            // 只保留一级分组中 name 包含任一关键字的分组，其下子树（children/videoList）原样保留
             JSONArray filtered = result == null ? new JSONArray()
                     : result.stream()
                             .map(JSONObject.class::cast)
                             .filter(item -> {
                                 String name = item.getString("name");
-                                return PACKAGE_KEYWORDS.stream().anyMatch(kw -> StringUtils.contains(name, kw));
+                                return StringUtils.isNotBlank(name)
+                                        && PACKAGE_KEYWORD.stream().anyMatch(kw -> StringUtils.contains(name, kw));
                             })
                             .collect(JSONArray::new, JSONArray::add, JSONArray::addAll);
             log.info("获取摄像头分组数据成功");
