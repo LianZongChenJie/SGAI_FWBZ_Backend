@@ -44,22 +44,29 @@ import java.util.Map;
 public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper, CameraResource>
         implements ICameraResourceService {
 
-    /** 海康摄像头查询API路径 */
+    /**
+     * 海康摄像头查询API路径
+     */
     private static final String CAMERA_SEARCH_API = "/api/resource/v1/cameras";
 
-    /** 海康获取摄像头播放地址API路径 */
-    private static final String CAMERA_PREVIEW_URL_API = "/api/video/v1/cameras/previewURLs";
+    /**
+     * 海康获取摄像头播放地址API路径
+     */
+    private static final String CAMERA_PREVIEW_URL_API = "/api/video/v2/cameras/previewURLs";
 
-    /** 海康监控点在线状态查询API路径 */
+    /**
+     * 海康监控点在线状态查询API路径
+     */
     private static final String CAMERA_ONLINE_API = "/api/nms/v1/online/camera/get";
 
-    /** 获取播放地址失败时的测试地址 */
-    private static final String TEST_STREAM_URL = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-
-    /** 固定分页大小（最大1000） */
+    /**
+     * 固定分页大小（最大1000）
+     */
     private static final int PAGE_SIZE = 1000;
 
-    /** 日期解析格式（兼容多种） */
+    /**
+     * 日期解析格式（兼容多种）
+     */
     private static final String[] DATE_PATTERNS = {
             "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
@@ -97,7 +104,10 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
             entityList.add(entity);
         }
 
-        saveBatch(entityList);
+        // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，大数据量时会抛index out of range，改为循环单条插入绕开该问题
+        for (CameraResource entity : entityList) {
+            baseMapper.insert(entity);
+        }
         log.info("海康摄像头数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
     }
@@ -177,17 +187,18 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
      */
     private CameraResource convertToEntity(CameraSearchResponse.CameraItem item) {
         CameraResource entity = new CameraResource();
-        entity.setIndexCode(item.getCameraIndexCode());
-        entity.setName(item.getCameraName());
+        // 各字段按表列长度截断，避免超出导致达梦"字符串截断"报错
+        entity.setIndexCode(truncate(item.getCameraIndexCode(), 64));
+        entity.setName(truncate(item.getCameraName(), 128));
         entity.setCameraType(item.getCameraType());
-        entity.setCapability(item.getCapabilitySet());
-        entity.setChannelType(item.getChannelType());
-        entity.setInstallLocation(item.getInstallLocation());
-        entity.setRecordLocation(item.getRecordLocation());
-        entity.setRegionIndexCode(item.getRegionIndexCode());
+        entity.setCapability(truncate(item.getCapabilitySet(), 512));
+        entity.setChannelType(truncate(item.getChannelType(), 16));
+        entity.setInstallLocation(truncate(item.getInstallLocation(), 256));
+        entity.setRecordLocation(truncate(item.getRecordLocation(), 32));
+        entity.setRegionIndexCode(truncate(item.getRegionIndexCode(), 64));
         entity.setTransType(item.getTransType());
-        entity.setTreatyType(item.getTreatyType());
-        entity.setExternalIndexCode(item.getGbIndexCode());
+        entity.setTreatyType(truncate(item.getTreatyType(), 32));
+        entity.setExternalIndexCode(truncate(item.getGbIndexCode(), 64));
 
         // 通道号转换（String -> Integer）
         String channelNoStr = item.getChannelNo();
@@ -212,6 +223,17 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         entity.setUpdateTime(parseDate(item.getUpdateTime()));
 
         return entity;
+    }
+
+    /**
+     * 按数据库列长度截断字符串，超长时截断并记录警告（达梦VARCHAR超出列定义会报"字符串截断"）
+     */
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        log.warn("字段值超出列定义长度({}字符)，已截断处理, 原始长度={}", maxLength, value.length());
+        return value.substring(0, maxLength);
     }
 
     /**
@@ -272,33 +294,20 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
                 }
 
                 JSONObject dataJson = hikvisionUtil.getResponseData(responseBody);
+                log.info("获取摄像头[{}]播放地址成功, 海康响应: {}", cameraIndexCode, dataJson);
                 if (dataJson == null) {
                     log.warn("海康返回的data为空");
                 } else {
                     // 解析返回的播放地址列表
-                    List<PlayUrlResponse> urlList = JSON.parseArray(
-                            dataJson.getString("list"), PlayUrlResponse.class);
-                    if (urlList != null && !urlList.isEmpty()) {
-                        for (PlayUrlResponse item : urlList) {
-                            result.add(new CameraPlayUrlVO(cameraIndexCode, item.getUrl()));
-                        }
-                        log.info("海康批量播放地址获取成功, 返回{}条", urlList.size());
-                    }
+                    result.add(new CameraPlayUrlVO(cameraIndexCode, dataJson.get("url").toString()));
+                    log.info("海康批量播放地址获取成功, cameraIndexCode={}, url={}", cameraIndexCode, dataJson.get("url").toString());
                 }
-            }catch (Exception e) {
+            } catch (Exception e) {
                 log.error("批量获取海康播放地址异常", e);
             }
         }
 
-        // 海康请求失败或未返回的摄像头，使用测试地址兜底
-        for (String cameraIndexCode : cameraIndexCodes) {
-            boolean found = result.stream().anyMatch(vo -> cameraIndexCode.equals(vo.getCameraIndexCode()));
-            if (!found) {
-                log.warn("摄像头[{}]海康获取失败, 使用测试地址: {}", cameraIndexCode, TEST_STREAM_URL);
-                result.add(new CameraPlayUrlVO(cameraIndexCode, TEST_STREAM_URL));
-            }
-        }
-
+        // 海康请求失败或未返回的摄像头不再兜底返回测试地址，保持真实结果
         log.info("海康播放地址获取完成, 成功{}个/共{}个", result.size(), cameraIndexCodes.size());
         return result;
     }
