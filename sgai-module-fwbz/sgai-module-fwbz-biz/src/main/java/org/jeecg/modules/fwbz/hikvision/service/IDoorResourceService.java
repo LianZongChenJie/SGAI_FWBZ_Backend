@@ -2,9 +2,13 @@ package org.jeecg.modules.fwbz.hikvision.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlRequest;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlResultVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.DoorResource;
+
+import java.util.List;
 
 /**
  * 门禁点资源同步服务接口
@@ -36,4 +40,14 @@ public interface IDoorResourceService extends IService<DoorResource> {
      * @return 门禁点分页列表
      */
     IPage<DoorListVO> getDoorList(DoorResourcePageDto dto);
+
+    /**
+     * 海康反向控制门禁点
+     * <p>调用海康 /api/acs/v1/door/doControl 接口，对指定门禁点下发控制指令
+     * （0-常开、1-门闭、2-门开、3-常闭），最大支持10个门禁点。</p>
+     *
+     * @param request 控制请求参数
+     * @return 逐项控制结果列表
+     */
+    List<DoorControlResultVO> controlDoor(DoorControlRequest request);
 }
