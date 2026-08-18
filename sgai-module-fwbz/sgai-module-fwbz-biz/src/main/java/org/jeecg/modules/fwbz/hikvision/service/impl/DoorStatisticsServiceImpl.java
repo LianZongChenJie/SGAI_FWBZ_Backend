@@ -42,7 +42,7 @@ public class DoorStatisticsServiceImpl implements IDoorStatisticsService {
         String onlineRate = total > 0 ? String.format("%.1f%%", (double) online / total * 100) : "0%";
 
         StatCardVO vo = new StatCardVO();
-        vo.setTitle("门禁点位总数");
+        vo.setTitle("门禁通道总数");
         vo.setValue(total);
         vo.setContext("在线率" + onlineRate);
         return vo;
@@ -56,7 +56,7 @@ public class DoorStatisticsServiceImpl implements IDoorStatisticsService {
         String onlineRate = total > 0 ? String.format("%.1f%%", (double) online / total * 100) : "0%";
 
         StatCardVO vo = new StatCardVO();
-        vo.setTitle("在线门禁点位");
+        vo.setTitle("在线门禁通道");
         vo.setValue(online);
         vo.setContext("在线率" + onlineRate);
         return vo;
@@ -70,7 +70,7 @@ public class DoorStatisticsServiceImpl implements IDoorStatisticsService {
         String onlineRate = total > 0 ? String.format("%.1f%%", (double) online / total * 100) : "0%";
 
         StatCardVO vo = new StatCardVO();
-        vo.setTitle("门禁设备总数");
+        vo.setTitle("门禁控制器总数");
         vo.setValue(total);
         vo.setContext("在线率" + onlineRate);
         return vo;
@@ -84,7 +84,7 @@ public class DoorStatisticsServiceImpl implements IDoorStatisticsService {
         String onlineRate = total > 0 ? String.format("%.1f%%", (double) online / total * 100) : "0%";
 
         StatCardVO vo = new StatCardVO();
-        vo.setTitle("在线门禁设备");
+        vo.setTitle("在线门禁控制器");
         vo.setValue(online);
         vo.setContext("在线率" + onlineRate);
         return vo;
@@ -110,10 +110,10 @@ public class DoorStatisticsServiceImpl implements IDoorStatisticsService {
     @Override
     public List<StatCardVO> getSummary() {
         return Arrays.asList(
-                countTotalDoorPoints(),
-                countOnlineDoorPoints(),
                 countTotalDevices(),
-                countOnlineDevices()
+                countOnlineDevices(),
+                countTotalDoorPoints(),
+                countOnlineDoorPoints()
         );
     }
 }
