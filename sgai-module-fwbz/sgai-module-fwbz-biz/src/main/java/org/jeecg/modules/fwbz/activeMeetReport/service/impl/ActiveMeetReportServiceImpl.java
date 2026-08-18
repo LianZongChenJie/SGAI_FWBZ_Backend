@@ -180,13 +180,9 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
         report.setPassengerFlow(passengerFlow);
         report.setPeakFlow(peakFlow);
 
-        // 投诉数量 & 建议数量：逐条活动日期取
-        long complaintsTotal = 0L;
-        long recommendedTotal = 0L;
-        for (ActiveMeetInfo activity : activities) {
-            complaintsTotal += countComplaintsByType("投诉", activity.getStartDate());
-            recommendedTotal += countComplaintsByType("建议", activity.getStartDate());
-        }
+        // 投诉数量 & 建议数量：按会展时间段（报告开始日期~结束日期）区间统计
+        long complaintsTotal = countComplaintsByType("投诉", report.getStartDate(), report.getEndDate());
+        long recommendedTotal = countComplaintsByType("建议", report.getStartDate(), report.getEndDate());
         report.setComplaintsTotal(complaintsTotal);
         report.setRecommendedTotal(recommendedTotal);
 
@@ -261,10 +257,10 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
     }
 
     /**
-     * 按投诉类型和日期统计数量
+     * 按投诉类型和时间段统计数量（含开始日期和结束日期）
      */
-    private long countComplaintsByType(String typeName, Date complaintDate) {
-        if (complaintDate == null) {
+    private long countComplaintsByType(String typeName, Date startDate, Date endDate) {
+        if (startDate == null) {
             return 0L;
         }
         // 查询类型ID
@@ -277,7 +273,8 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
         return complaintInfoMapper.selectCount(
                 new LambdaQueryWrapper<ComplaintInfo>()
                         .eq(ComplaintInfo::getTypeId, complaintType.getId())
-                        .eq(ComplaintInfo::getComplaintDate, complaintDate)
+                        .ge(ComplaintInfo::getComplaintDate, startDate)
+                        .le(endDate != null, ComplaintInfo::getComplaintDate, endDate)
         );
     }
 
