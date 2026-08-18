@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -82,7 +83,10 @@ public class RegionResourceServiceImpl extends ServiceImpl<RegionResourceMapper,
             entityList.add(entity);
         }
 
-        saveBatch(entityList);
+        // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，大数据量时会抛index out of range，改为循环单条插入绕开该问题
+        for (RegionResource entity : entityList) {
+            baseMapper.insert(entity);
+        }
         log.info("海康区域数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
     }
@@ -234,8 +238,7 @@ public class RegionResourceServiceImpl extends ServiceImpl<RegionResourceMapper,
                         Collectors.toList()
                 ));
 
-        // 4. 递归设置children（-1为根节点的parentIndexCode）
-        List<RegionTreeVO> rootNodes = parentChildrenMap.getOrDefault("-1", Collections.emptyList());
+        // 4. 递归设置children
         for (RegionTreeVO node : allNodes) {
             List<RegionTreeVO> children = parentChildrenMap.getOrDefault(node.getIndexCode(), Collections.emptyList());
             // 按sort排序
@@ -243,10 +246,21 @@ public class RegionResourceServiceImpl extends ServiceImpl<RegionResourceMapper,
             node.setChildren(children);
         }
 
+        // 5. 根节点 = parentIndexCode 不存在于任何节点indexCode集合中的节点（最顶层区域）
+        //    兼容海康不同版本的根节点标识（如 root000000、-1、空），避免写死导致树丢失
+        Set<String> allIndexCodes = allNodes.stream()
+                .map(RegionTreeVO::getIndexCode)
+                .collect(Collectors.toSet());
+        List<RegionTreeVO> rootNodes = allNodes.stream()
+                .filter(vo -> vo.getParentIndexCode() == null
+                        || vo.getParentIndexCode().isEmpty()
+                        || !allIndexCodes.contains(vo.getParentIndexCode()))
+                .collect(Collectors.toList());
+
         // 根节点按sort排序
         rootNodes.sort(Comparator.comparing(RegionTreeVO::getSort, Comparator.nullsLast(Comparator.naturalOrder())));
 
-        log.info("区域树构建完成, 共{}个区域节点", allNodes.size());
+        log.info("区域树构建完成, 共{}个区域节点, 根节点{}个", allNodes.size(), rootNodes.size());
         return rootNodes;
     }
 
