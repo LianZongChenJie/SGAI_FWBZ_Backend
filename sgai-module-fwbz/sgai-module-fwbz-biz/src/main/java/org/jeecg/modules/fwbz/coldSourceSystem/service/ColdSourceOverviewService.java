@@ -1,27 +1,18 @@
 package org.jeecg.modules.fwbz.coldSourceSystem.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.modules.fwbz.coldSourceSystem.entity.RealDataResp;
-import org.jeecg.modules.fwbz.coldSourceSystem.entity.RealDataValue;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * 冷源系统总览数据组装服务
+ * 冷源系统「前端字段 key -> 测点(tagId)」映射表服务
  *
- * 依据前端 centralized-water 页面的数据结构（扁平 key-value 对象）组装实时数据：
- * 1. 维护「前端字段 key -> 测点ID数组(tagId[])」映射表 FIELD_MAP（null 表示该 key 无对应测点）
- * 2. 收集所有非空 tagId 一次调用 {@link RealDataApiService#getRealData(String, String, Integer)} 批量获取
- * 3. 按 key 组装返回：单个 id 直接取该测点值；多个 id 数值求和（汇总类字段，如系统总功率）
+ * 维护 FIELD_MAP 供实时订阅推送服务（{@link ColdSourceRealPushService}）做 tagId -> key 反查：
+ * 冷源 SDK 订阅回传 tagId，此处提供该 tagId 对应的前端字段 key（一个测点可映射多个 key）。
  *
  * 说明：FIELD_MAP 中的 id 根据点表「文字描述」人工维护，注释中标明了对应描述，仅作参考，可自行修改。
  */
@@ -29,62 +20,8 @@ import java.util.stream.Collectors;
 @Service
 public class ColdSourceOverviewService {
 
-    @Autowired
-    private RealDataApiService realDataApiService;
-
     /** 前端字段 key -> 测点ID数组(tagId[])，null 表示该 key 在点表中无对应测点（返回 null） */
     private static final Map<String, List<Long>> FIELD_MAP = buildFieldMap();
-
-    /**
-     * 组装冷源系统总览实时数据（与前端 centralized-water 数据结构一致）
-     *
-     * @return 扁平 key-value 对象，如 {"station.supplyTemp": 7.1, "loop.chwFlow": 418.6, ...}
-     */
-    public Map<String, Object> buildOverview() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        // 收集需要查询的所有 tagId（去重）
-        Set<Long> tagIds = new LinkedHashSet<>();
-        for (List<Long> ids : FIELD_MAP.values()) {
-            if (ids != null) {
-                tagIds.addAll(ids);
-            }
-        }
-        // 批量获取实时数据（一次调用）
-        Map<Long, Object> pidValueMap = new HashMap<>();
-        if (!tagIds.isEmpty()) {
-            String tagIdsStr = tagIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-            pidValueMap = fetchRealValues(tagIdsStr);
-        }
-        // 按 key 组装：id 数组 -> 聚合值，返回 {"air.station.coolingCapacity": value, ...}
-        for (Map.Entry<String, List<Long>> entry : FIELD_MAP.entrySet()) {
-            String key = entry.getKey();
-            List<Long> ids = entry.getValue();
-            if (ids == null || ids.isEmpty()) {
-                result.put(key, null);
-            } else {
-                result.put(key, aggregate(ids, pidValueMap));
-            }
-        }
-        return result;
-    }
-
-    /**
-     * 调用 pSpace /RealData 获取 tagId 对应的实时值，返回 pid -> 值 映射
-     */
-    private Map<Long, Object> fetchRealValues(String tagIds) {
-        Map<Long, Object> pidValueMap = new HashMap<>();
-        RealDataResp resp = realDataApiService.getRealData(tagIds, null, 1);
-        if (resp != null && resp.isSuccess() && resp.getData() != null && resp.getData().getValues() != null) {
-            for (RealDataValue value : resp.getData().getValues()) {
-                if (value.getPid() != null) {
-                    pidValueMap.put(value.getPid(), value.getPv());
-                }
-            }
-        } else {
-            log.warn("获取实时数据失败, code={}, mesg={}", resp == null ? "null" : resp.getCode(), resp == null ? "" : resp.getMesg());
-        }
-        return pidValueMap;
-    }
 
     /** 放入 key -> id 数组映射；ids 为空/null 表示该 key 无对应测点（返回 null） */
     private static void put(Map<String, List<Long>> m, String key, Long... ids) {
@@ -99,28 +36,6 @@ public class ColdSourceOverviewService {
             }
         }
         m.put(key, list.isEmpty() ? null : list);
-    }
-
-    /**
-     * 聚合 id 数组对应的值：单个 id 直接返回该测点值；多个 id 对数值求和（布尔/字符串取第一个非空）
-     */
-    private static Object aggregate(List<Long> ids, Map<Long, Object> pidValueMap) {
-        if (ids.size() == 1) {
-            return pidValueMap.get(ids.get(0));
-        }
-        double sum = 0;
-        boolean hasNumber = false;
-        Object firstNonNull = null;
-        for (Long id : ids) {
-            Object v = pidValueMap.get(id);
-            if (v instanceof Number) {
-                sum += ((Number) v).doubleValue();
-                hasNumber = true;
-            } else if (v != null && firstNonNull == null) {
-                firstNonNull = v;
-            }
-        }
-        return hasNumber ? sum : firstNonNull;
     }
 
     /**
@@ -460,5 +375,16 @@ public class ColdSourceOverviewService {
      */
     public int getFieldCount() {
         return FIELD_MAP.size();
+    }
+
+    /**
+     * 全量返回 FIELD_MAP 映射：前端字段 key -> 测点ID数组(tagId[])，null 表示该 key 无对应测点
+     *
+     * @return 只读视图（防御性拷贝，外部修改不影响内部映射）
+     */
+    public Map<String, List<Long>> getFieldMap() {
+        Map<String, List<Long>> copy = new LinkedHashMap<>();
+        FIELD_MAP.forEach((key, ids) -> copy.put(key, ids == null ? null : new ArrayList<>(ids)));
+        return copy;
     }
 }

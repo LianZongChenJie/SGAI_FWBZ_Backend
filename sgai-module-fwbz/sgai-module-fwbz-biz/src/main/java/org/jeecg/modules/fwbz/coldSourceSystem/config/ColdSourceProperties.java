@@ -22,39 +22,6 @@ public class ColdSourceProperties {
     /** 登录密码 */
     private String password = "admin888";
 
-    /** pSpace WebApi(HTTP) 地址：留空则复用 host（/RealData 等 REST 接口所在主机） */
-    private String webApiHost = "";
-
-    /** pSpace WebApi(HTTP) 端口，默认 8080 */
-    private int webApiPort = 8080;
-
-    /** pSpace WebApi(HTTP) 请求超时（毫秒） */
-    private int webApiTimeoutMs = 5000;
-
-    public String getWebApiHost() {
-        return webApiHost;
-    }
-
-    public void setWebApiHost(String webApiHost) {
-        this.webApiHost = webApiHost;
-    }
-
-    public int getWebApiPort() {
-        return webApiPort;
-    }
-
-    public void setWebApiPort(int webApiPort) {
-        this.webApiPort = webApiPort;
-    }
-
-    public int getWebApiTimeoutMs() {
-        return webApiTimeoutMs;
-    }
-
-    public void setWebApiTimeoutMs(int webApiTimeoutMs) {
-        this.webApiTimeoutMs = webApiTimeoutMs;
-    }
-
     public String getHost() {
         return host;
     }
