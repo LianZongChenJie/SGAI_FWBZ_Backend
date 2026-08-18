@@ -1,0 +1,225 @@
+package org.jeecg.modules.fwbz.coldSourceSystem.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sunwayland.pspace.PSpaceClient;
+import com.sunwayland.pspace.callback.IRealCallback;
+import com.sunwayland.pspace.entity.PsResult;
+import com.sunwayland.pspace.entity.PsSubRealData;
+import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.coldSourceSystem.websocket.ColdSourceWsEndpoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 冷源系统实时数据订阅推送服务（冷源 SDK 订阅 -> 前端 WebSocket）
+ *
+ * 数据链路（SDK 的 realNewSubscribeAndRead 即冷源 WebSocket 长连接订阅，替代原 HTTP /RealData 轮询）：
+ * 1. 启动后台守护线程连接冷源系统(pSpace SDK)，用 realNewSubscribeAndRead 一次性订阅
+ *    FIELD_MAP 中全部测点：返回值携带全量初值，立即推送一次，前端可展示全量数据；
+ * 2. 冷源系统持续推送更新，SDK 回调 {@link IRealCallback#realDataCallBack(int, List)}
+ *    收到 PsSubRealData 列表（真实字段为 value，而非 pv）；
+ * 3. 每条数据按 tagId 反查 FIELD_MAP 中的 key：
+ *    - 单测点 key：直接推送该测点数据（value + timestamp + quality + dataType）；
+ *    - 多测点聚合 key：将新值写入测点值缓存，用缓存中该 key 全部测点值求和后推送
+ *      （即"新值 + 未变更测点的旧值"）；
+ * 4. 组装 {key: {value,...}} 通过 {@link ColdSourceWsEndpoint} 广播给前端。
+ *
+ * 说明：全程后台线程执行，不阻塞 Spring 容器启动；订阅失败按固定间隔自动重试，
+ * 冷源系统恢复后无需重启即可自动续订。
+ */
+@Slf4j
+@Service
+public class ColdSourceRealPushService {
+
+    /** 订阅失败后的重试间隔（毫秒） */
+    private static final long RETRY_INTERVAL_MS = 30_000L;
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    @Autowired
+    private ColdSourceServerService coldSourceServerService;
+
+    @Autowired
+    private ColdSourceOverviewService coldSourceOverviewService;
+
+    /** tagId -> 该测点关联的 key 列表（一个测点可能映射多个 key）；buildIndex 后只读 */
+    private volatile Map<Long, List<String>> id2Keys = Collections.emptyMap();
+
+    /** 聚合 key（映射多个测点 id，如 station.totalPower）-> 该 key 的全部测点 id；buildIndex 后只读 */
+    private volatile Map<String, List<Long>> aggregateKeys = Collections.emptyMap();
+
+    /** 测点最新值缓存：tagId -> 最新订阅数据（供聚合 key 求和：新值 + 未变更测点的旧值） */
+    private final Map<Long, PsSubRealData> tagValueCache = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    public void init() {
+        buildIndex();
+        Thread subscribeThread = new Thread(this::subscribeLoop, "cold-source-subscribe");
+        // 守护线程：订阅慢/失败都不影响应用启动与退出
+        subscribeThread.setDaemon(true);
+        subscribeThread.start();
+    }
+
+    /**
+     * 根据 FIELD_MAP 构建反查索引，构建完成后以不可变视图暴露，只读安全。
+     */
+    private void buildIndex() {
+        Map<String, List<Long>> fieldMap = coldSourceOverviewService.getFieldMap();
+        Map<Long, List<String>> id2KeysMap = new HashMap<>();
+        Map<String, List<Long>> aggregateMap = new HashMap<>();
+        for (Map.Entry<String, List<Long>> entry : fieldMap.entrySet()) {
+            String key = entry.getKey();
+            List<Long> ids = entry.getValue();
+            if (ids == null || ids.isEmpty()) {
+                continue;
+            }
+            if (ids.size() > 1) {
+                aggregateMap.put(key, ids);
+            }
+            for (Long id : ids) {
+                id2KeysMap.computeIfAbsent(id, k -> new ArrayList<>()).add(key);
+            }
+        }
+        this.id2Keys = Collections.unmodifiableMap(id2KeysMap);
+        this.aggregateKeys = Collections.unmodifiableMap(aggregateMap);
+        log.info("冷源实时订阅索引构建完成: 订阅测点数={}, 聚合key数={}", id2Keys.size(), aggregateKeys.size());
+    }
+
+    /**
+     * 订阅循环：启动即订阅，失败/异常后按固定间隔自动重试，
+     * 冷源系统恢复后无需人工干预即可自动续订。
+     */
+    private void subscribeLoop() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                if (subscribeOnce()) {
+                    // 订阅成功：后续由 SDK 回调持续推送增量，本线程退出
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("冷源实时订阅异常，{}ms 后重试: {}", RETRY_INTERVAL_MS, e.getMessage());
+            }
+            sleep(RETRY_INTERVAL_MS);
+        }
+    }
+
+    /**
+     * 建立一次订阅并推送初值。
+     *
+     * @return true 表示订阅成功（或无测点可订阅）；false 表示失败需重试
+     */
+    private boolean subscribeOnce() throws Exception {
+        PSpaceClient client = coldSourceServerService.connect();
+        List<Long> tagIds = new ArrayList<>(id2Keys.keySet());
+        if (tagIds.isEmpty()) {
+            log.warn("FIELD_MAP 中没有可订阅的测点，跳过冷源实时订阅");
+            return true;
+        }
+        // 订阅全部测点并一次性获取初值；回调在订阅期间持续触发
+        PsResult<PsSubRealData> result = client.realNewSubscribeAndRead(tagIds, Collections.singletonList(this::onRealData));
+        if (!result.isSuccess() || result.getData() == null || result.getData().isEmpty()) {
+            log.warn("冷源实时订阅失败: code={}，{}ms 后重试", result.getCode(), RETRY_INTERVAL_MS);
+            return false;
+        }
+        log.info("冷源实时订阅成功: 测点数={}, subId={}", tagIds.size(), subIdOf(result.getData().get(0)));
+        // 初值全量推送一次，前端可立即展示
+        onRealData(subIdOf(result.getData().get(0)), result.getData());
+        return true;
+    }
+
+    /**
+     * SDK 实时订阅回调：冷源推送的增量数据 -> tagId 反查 key -> 组装 -> 广播给前端。
+     */
+    private void onRealData(int subId, List<PsSubRealData> subRealDataList) {
+        if (subRealDataList == null || subRealDataList.isEmpty()) {
+            return;
+        }
+        try {
+            Map<String, Object> data = new LinkedHashMap<>();
+            for (PsSubRealData realData : subRealDataList) {
+                Long tagId = realData.getTagId();
+                if (tagId == null) {
+                    continue;
+                }
+                // 更新测点值缓存（聚合 key 求和依赖此缓存保持最新值）
+                tagValueCache.put(tagId, realData);
+                List<String> keys = id2Keys.get(tagId);
+                if (keys == null) {
+                    continue;
+                }
+                for (String key : keys) {
+                    data.put(key, aggregateKeys.containsKey(key)
+                            ? buildAggregateValue(key, realData)
+                            : buildValue(realData));
+                }
+            }
+            if (!data.isEmpty()) {
+                Map<String, Object> message = new LinkedHashMap<>();
+                message.put("type", "REAL_DATA");
+                message.put("data", data);
+                ColdSourceWsEndpoint.broadcast(OBJECT_MAPPER.writeValueAsString(message));
+            }
+        } catch (Exception e) {
+            log.warn("冷源实时数据处理/推送异常(subId={}): {}", subId, e.getMessage());
+        }
+    }
+
+    /** 单测点 key：透传 value，附带时间戳/质量/类型等其他字段 */
+    private Map<String, Object> buildValue(PsSubRealData realData) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("value", realData.getValue());
+        m.put("timestamp", realData.getTimestamp());
+        m.put("quality", enumName(realData.getQuality()));
+        m.put("dataType", enumName(realData.getDataType()));
+        return m;
+    }
+
+    /** 聚合 key：新值已写入缓存，用该 key 全部测点缓存值求和；其他字段取触发变化的测点 */
+    private Map<String, Object> buildAggregateValue(String key, PsSubRealData changed) {
+        double sum = 0;
+        boolean hasNumber = false;
+        Object firstNonNull = null;
+        for (Long id : aggregateKeys.get(key)) {
+            PsSubRealData d = tagValueCache.get(id);
+            Object v = d == null ? null : d.getValue();
+            if (v instanceof Number) {
+                sum += ((Number) v).doubleValue();
+                hasNumber = true;
+            } else if (v != null && firstNonNull == null) {
+                firstNonNull = v;
+            }
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("value", hasNumber ? sum : firstNonNull);
+        m.put("timestamp", changed.getTimestamp());
+        m.put("quality", enumName(changed.getQuality()));
+        m.put("dataType", enumName(changed.getDataType()));
+        return m;
+    }
+
+    private static int subIdOf(PsSubRealData data) {
+        Long subId = data.getSubId();
+        return subId == null ? 0 : subId.intValue();
+    }
+
+    private static String enumName(Enum<?> e) {
+        return e == null ? null : e.name();
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
