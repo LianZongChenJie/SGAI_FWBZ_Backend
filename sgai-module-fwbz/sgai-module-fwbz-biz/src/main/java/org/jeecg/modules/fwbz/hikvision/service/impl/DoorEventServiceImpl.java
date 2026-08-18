@@ -20,6 +20,9 @@ import org.jeecg.modules.fwbz.hikvision.mapper.DoorEventMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -47,7 +50,7 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
     private static final int PAGE_SIZE = 1000;
 
     /** 数据库为空时，默认往前回溯的天数（API限制最大3个月） */
-    private static final int DEFAULT_LOOKBACK_DAYS = 90;
+    private static final int DEFAULT_LOOKBACK_DAYS = 7;
 
     private final HikvisionUtil hikvisionUtil;
 
@@ -90,13 +93,17 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
             event.setGmtCreate(now);
             event.setGmtModified(now);
         }
-        saveBatch(newEvents);
+        // 达梦驱动对JDBC批量(executeBatch)支持有缺陷，会报index out of range/TypeException，改为循环单条插入绕开该问题
+        for (DoorEvent event : newEvents) {
+            baseMapper.insert(event);
+        }
         log.info("门禁点事件增量同步完成, 获取{}条, 新增{}条", allItems.size(), newEvents.size());
         return newEvents.size();
     }
 
     /**
-     * 解析起始时间：取 DB 中最新的 event_time；DB 为空时往前回溯90天。
+     * 解析起始时间：取 DB 中最新的 event_time（格式归一化为海康要求的ISO8601带时区格式）；
+     * DB 为空或格式无法解析时往前回溯90天。
      */
     private String resolveStartTime() {
         // 查询数据库中最新的事件时间
@@ -105,15 +112,53 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
                .last("FETCH FIRST 1 ROW ONLY");
         DoorEvent latest = baseMapper.selectOne(wrapper);
 
-        if (latest != null && latest.getEventTime() != null) {
-            return latest.getEventTime();
+        if (latest != null && StringUtils.isNotBlank(latest.getEventTime())) {
+            String normalized = normalizeTime(latest.getEventTime());
+            if (normalized != null) {
+                return normalized;
+            }
+            log.warn("DB中最新event_time格式无法解析: {}, 改用默认回溯时间", latest.getEventTime());
         }
 
-        // DB 为空，使用默认回溯时间
+        // DB 为空或格式异常，使用默认回溯时间
         String defaultStart = ZonedDateTime.now().minusDays(DEFAULT_LOOKBACK_DAYS)
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
-        log.info("数据库无事件记录，使用默认起始时间: {}", defaultStart);
+        log.info("数据库无事件记录或格式异常，使用默认起始时间: {}", defaultStart);
         return defaultStart;
+    }
+
+    /**
+     * 将时间字符串统一转换为海康要求的格式（yyyy-MM-dd'T'HH:mm:ssXXX）。
+     * 兼容格式：yyyy-MM-dd'T'HH:mm:ss(.SSS)(+08:00)、yyyy-MM-dd HH:mm:ss(.SSS) 等。
+     * 解析失败返回null。
+     */
+    private String normalizeTime(String time) {
+        if (time == null) {
+            return null;
+        }
+        String trimmed = time.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        // 已是海康要求的带时区格式则直接返回
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?[+-]\\d{2}:\\d{2}")) {
+            return trimmed;
+        }
+        try {
+            LocalDateTime dateTime;
+            if (trimmed.contains("T")) {
+                dateTime = LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } else {
+                // 兼容 yyyy-MM-dd HH:mm:ss 和 yyyy-MM-dd HH:mm:ss.SSS
+                String pattern = trimmed.contains(".") ? "yyyy-MM-dd HH:mm:ss.SSS" : "yyyy-MM-dd HH:mm:ss";
+                dateTime = LocalDateTime.parse(trimmed, DateTimeFormatter.ofPattern(pattern));
+            }
+            return dateTime.atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
+        } catch (Exception e) {
+            log.warn("时间字符串解析失败: {}", time);
+            return null;
+        }
     }
 
     /**
@@ -255,7 +300,7 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         DoorEvent entity = new DoorEvent();
         entity.setEventId(item.getEventId());
         entity.setEventName(item.getEventName());
-        entity.setEventTime(item.getEventTime());
+        entity.setEventTime(formatEventTimeForDb(item.getEventTime()));
         entity.setPersonId(item.getPersonId());
         entity.setCardNo(item.getCardNo());
         entity.setPersonName(item.getPersonName());
@@ -278,5 +323,34 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         entity.setStudentId(item.getStudentId());
         entity.setCertNo(item.getCertNo());
         return entity;
+    }
+
+    /**
+     * 将海康返回的ISO8601事件时间转换为达梦DATETIME列可接受的格式（yyyy-MM-dd HH:mm:ss）。
+     * <p>达梦驱动setString对DATETIME列会做隐式日期转换，无法解析ISO8601中的'T'和时区偏移，
+     * 直接存入会报"错误的日期时间类型格式"，故需先归一化。</p>
+     */
+    private String formatEventTimeForDb(String isoTime) {
+        if (StringUtils.isBlank(isoTime)) {
+            return null;
+        }
+        String trimmed = isoTime.trim();
+        try {
+            // 兼容 2026-08-17T17:30:08.000+08:00 与 2026-08-17T17:30:08+08:00
+            OffsetDateTime odt = OffsetDateTime.parse(trimmed, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return odt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            try {
+                // 兼容无时区格式：2026-08-17T17:30:08 或 2026-08-17 17:30:08
+                String candidate = trimmed.contains("T")
+                        ? trimmed
+                        : trimmed.replace(" ", "T");
+                LocalDateTime ldt = LocalDateTime.parse(candidate, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } catch (Exception ex) {
+                log.warn("event_time格式解析失败: {}, 该事件将不记录事件时间", isoTime);
+                return null;
+            }
+        }
     }
 }
