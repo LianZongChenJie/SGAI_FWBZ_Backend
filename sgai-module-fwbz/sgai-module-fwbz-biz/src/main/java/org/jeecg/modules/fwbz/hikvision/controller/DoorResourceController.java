@@ -6,13 +6,18 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlRequest;
+import org.jeecg.modules.fwbz.hikvision.dto.DoorControlResultVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 门禁点资源管理控制器
@@ -83,6 +88,27 @@ public class DoorResourceController {
         } catch (Exception e) {
             log.error("获取门禁点列表失败", e);
             return Result.error("获取门禁点列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 反向控制海康门禁点
+     * <p>请求体示例：{@code {"doorIndexCodes":["1f276203e5234bdca08f7d99e1097bba"],"controlType":3}}
+     * controlType：0-常开、1-门闭、2-门开、3-常闭，最大支持10个门禁点。
+     * 返回逐项结果，success=false 时附带海康返回的错误说明。</p>
+     *
+     * @param request 控制请求参数
+     * @return 逐项控制结果
+     */
+    @PostMapping("/control")
+    @ApiOperation(value = "反向控制海康门禁点", notes = "controlType: 0-常开、1-门闭、2-门开、3-常闭；doorIndexCodes最大10个")
+    public Result<List<DoorControlResultVO>> controlDoor(@RequestBody DoorControlRequest request) {
+        try {
+            List<DoorControlResultVO> result = doorResourceService.controlDoor(request);
+            return Result.ok(result);
+        } catch (Exception e) {
+            log.error("反向控制海康门禁点失败", e);
+            return Result.error("反向控制海康门禁点失败: " + e.getMessage());
         }
     }
 }
