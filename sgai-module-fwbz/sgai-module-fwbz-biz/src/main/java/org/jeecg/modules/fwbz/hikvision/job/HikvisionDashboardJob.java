@@ -22,7 +22,8 @@ public class HikvisionDashboardJob {
     /**
      * 每5分钟执行一次看板数据同步（客流 + 人员统计）
      */
-    @Scheduled(cron = "0 */5 * * * ?")
+    // @Scheduled(cron = "0 */5 * * * ?")
+    /*
     public void syncDashboardData() {
         log.debug("海康看板数据同步定时任务开始执行");
         try {
@@ -44,5 +45,5 @@ public class HikvisionDashboardJob {
             log.error("人员统计数据同步异常", e);
         }
         log.info("海康看板数据同步定时任务结束");
-    }
+    }*/
 }
