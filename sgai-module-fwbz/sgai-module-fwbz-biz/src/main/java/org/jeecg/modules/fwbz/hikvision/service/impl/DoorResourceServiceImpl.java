@@ -136,6 +136,30 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         log.info("从海康获取到{}条门禁状态记录", statusMap.size());
 
         // 3. 逐一比对，只更新状态有变化的记录
+        int updatedCount = updateDoorStateToDb(statusMap);
+        log.info("门禁状态同步完成, 共更新{}条记录", updatedCount);
+        return updatedCount;
+    }
+
+    /**
+     * 根据海康返回的门禁状态映射，更新本地数据库door_state字段（仅更新状态有变化的记录）
+     *
+     * @param statusMap indexCode -> doorState 映射
+     * @return 实际更新条数
+     */
+    private int updateDoorStateToDb(Map<String, String> statusMap) {
+        if (statusMap == null || statusMap.isEmpty()) {
+            log.warn("门禁状态映射为空，跳过状态更新");
+            return 0;
+        }
+        // 仅查询涉及的门禁点
+        List<DoorResource> dbList = baseMapper.selectList(new LambdaQueryWrapper<DoorResource>()
+                .in(DoorResource::getIndexCode, statusMap.keySet()));
+        if (dbList.isEmpty()) {
+            log.warn("数据库中没有匹配的门禁点记录，跳过状态更新");
+            return 0;
+        }
+
         int updatedCount = 0;
         Date now = new Date();
         for (DoorResource db : dbList) {
@@ -157,7 +181,7 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 log.debug("门禁点[{}]状态变更: {} -> {}", indexCode, oldState, newState);
             }
         }
-        log.info("门禁状态同步完成, 共更新{}条记录", updatedCount);
+        log.info("门禁状态更新完成, 共更新{}条记录", updatedCount);
         return updatedCount;
     }
 
@@ -457,6 +481,10 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 resultList.add(vo);
             }
             log.info("海康反向控制门禁点完成, 共{}个门禁点, 成功{}个", items.size(), successCount);
+
+            // 6. 反控成功后同步门禁点状态（以海康实际状态为准）
+            syncDoorStateAfterControl(resultList);
+
             return resultList;
 
         } catch (RuntimeException e) {
@@ -464,6 +492,34 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         } catch (Exception e) {
             log.error("海康反向控制门禁点异常", e);
             throw new RuntimeException("海康反向控制门禁点失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 反控成功后同步门禁点状态
+     * <p>对反控成功的门禁点重新查询海康实际状态并更新本地door_state，
+     * 状态同步失败只记录警告，不影响反控结果返回。</p>
+     *
+     * @param resultList 反控结果列表
+     */
+    private void syncDoorStateAfterControl(List<DoorControlResultVO> resultList) {
+        // 收集反控成功的门禁点
+        List<String> successDoorCodes = new ArrayList<>();
+        for (DoorControlResultVO vo : resultList) {
+            if (Boolean.TRUE.equals(vo.getSuccess()) && StringUtils.isNotBlank(vo.getDoorIndexCode())) {
+                successDoorCodes.add(vo.getDoorIndexCode());
+            }
+        }
+        if (successDoorCodes.isEmpty()) {
+            log.info("无反控成功的门禁点，跳过状态同步");
+            return;
+        }
+        try {
+            Map<String, String> statusMap = fetchDoorStatusInBatches(successDoorCodes);
+            int updatedCount = updateDoorStateToDb(statusMap);
+            log.info("反控成功后同步{}个门禁点状态, 更新{}条", successDoorCodes.size(), updatedCount);
+        } catch (Exception e) {
+            log.warn("反控成功后同步门禁点状态失败, 不影响反控结果, 门禁点={}", successDoorCodes, e);
         }
     }
 }
