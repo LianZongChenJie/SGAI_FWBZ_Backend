@@ -1,9 +1,12 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest;
 import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
+
+import java.util.List;
 
 /**
  * 海康事件通知服务接口
@@ -43,4 +46,23 @@ public interface IEventNotifyService extends IService<EventNotify> {
                                            Integer status, Integer eventLvl,
                                            String srcIndex, String srcName, String srcType,
                                            String happenTimeStart, String happenTimeEnd);
+
+    /**
+     * 查询事件订阅情况
+     * <p>请求海康OpenAPI /api/eventService/v1/eventSubscriptionView，
+     * 返回响应中的 data 部分（包含订阅事件类型及接收地址列表）。</p>
+     *
+     * @return 订阅详情 data（如 {"detail": [...]}）
+     */
+    JSONObject viewSubscription() throws Exception;
+
+    /**
+     * 按事件类型订阅事件
+     * <p>请求海康OpenAPI /api/eventService/v1/eventSubscriptionByEventTypes 订阅指定类型的事件推送，
+     * 事件接收地址使用服务端配置的 eventDest（subType 使用默认值0，eventLvl 使用默认值）。</p>
+     *
+     * @param eventTypes 事件类型编码列表（非空）
+     * @return 海康订阅响应（{"code": "0", "msg": "success"}）
+     */
+    JSONObject subscribeByEventTypes(List<Integer> eventTypes) throws Exception;
 }

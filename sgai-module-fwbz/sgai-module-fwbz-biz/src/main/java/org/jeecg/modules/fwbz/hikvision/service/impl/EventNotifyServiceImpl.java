@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
@@ -18,6 +17,8 @@ import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest.EventNotifyPa
 import org.jeecg.modules.fwbz.hikvision.service.IEventNotifyService;
 import org.jeecg.modules.fwbz.hikvision.mapper.EventNotifyMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.EventTypeMapper;
+import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,11 +35,27 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@AllArgsConstructor
 public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, EventNotify>
         implements IEventNotifyService {
 
     private final EventTypeMapper eventTypeMapper;
+
+    private final HikvisionUtil hikvisionUtil;
+
+    /**
+     * 事件订阅接收地址（eventDest），restful回调，支持http和https，不超过1024个字符
+     * <p>事件接收地址由应用方负责按规范提供，可通过配置中心（Nacos）覆盖：
+     * <pre>hikvision:
+     *   event-recv-url: https://ip:port/eventRcv</pre>
+     * 默认指向本系统事件接收接口。
+     */
+    @Value("${hikvision.event-recv-url:https://10.61.8.20:7206/fwbz/hikvision/eventNotify/receive}")
+    private String eventRecvUrl;
+
+    public EventNotifyServiceImpl(EventTypeMapper eventTypeMapper, HikvisionUtil hikvisionUtil) {
+        this.eventTypeMapper = eventTypeMapper;
+        this.hikvisionUtil = hikvisionUtil;
+    }
 
     @Override
     public int handleEventNotify(EventNotifyPushRequest pushRequest) {
@@ -168,6 +185,42 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
 
         log.info("分页查询事件通知记录完成, 共{}条, 当前页{}条", resultPage.getTotal(), resultPage.getRecords().size());
         return resultPage;
+    }
+
+    @Override
+    public JSONObject viewSubscription() throws Exception {
+        log.info("查询海康事件订阅情况");
+        String responseBody = hikvisionUtil.doPostJson("/api/eventService/v1/eventSubscriptionView", "{}");
+        if (!hikvisionUtil.isSuccess(responseBody)) {
+            JSONObject resp = JSON.parseObject(responseBody);
+            String code = resp.getString("code");
+            String msg = resp.getString("msg");
+            throw new RuntimeException("查询事件订阅失败, code=" + code + ", msg=" + msg);
+        }
+        JSONObject data = hikvisionUtil.getResponseData(responseBody);
+        log.info("查询海康事件订阅情况成功: {}", data);
+        return data;
+    }
+
+    @Override
+    public JSONObject subscribeByEventTypes(List<Integer> eventTypes) throws Exception {
+        if (eventTypes == null || eventTypes.isEmpty()) {
+            throw new IllegalArgumentException("事件类型列表不能为空");
+        }
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("eventTypes", eventTypes);
+        requestBody.put("eventDest", eventRecvUrl);
+        log.info("按事件类型订阅事件, eventTypes={}, eventDest={}", eventTypes, eventRecvUrl);
+
+        String responseBody = hikvisionUtil.doPostJson("/api/eventService/v1/eventSubscriptionByEventTypes", requestBody.toJSONString());
+        JSONObject resp = JSON.parseObject(responseBody);
+        if (!hikvisionUtil.isSuccess(responseBody)) {
+            String code = resp.getString("code");
+            String msg = resp.getString("msg");
+            throw new RuntimeException("订阅事件失败, code=" + code + ", msg=" + msg);
+        }
+        log.info("按事件类型订阅事件成功, code={}, msg={}", resp.getString("code"), resp.getString("msg"));
+        return resp;
     }
 
     /**
