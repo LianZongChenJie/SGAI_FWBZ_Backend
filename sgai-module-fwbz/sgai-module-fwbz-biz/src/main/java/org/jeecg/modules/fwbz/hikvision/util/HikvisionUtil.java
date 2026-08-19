@@ -45,7 +45,7 @@ public class HikvisionUtil {
      * 使用https协议时填nginx的IP:Port，使用http协议时填artemis服务的IP:Port（默认9016）
      */
 
-    private String host="10.22.155.3:443";
+    private String host="10.61.8.20:443";
 
     /**
      * 合作方Key

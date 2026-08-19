@@ -67,4 +67,23 @@ public class RegionResourceController {
             return Result.error("获取区域树失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 同步区域摄像头资源数量
+     * <p>根据摄像头资源表统计各区域的本区域资源数（local_quantity）和总资源数（total_quantity）并更新。
+     * 本区域资源数为直接挂载在该区域下的摄像头数量，总资源数包含该区域及所有下级区域。</p>
+     *
+     * @return 同步结果（包含更新的区域条数）
+     */
+    @PostMapping("/syncCameraQuantity")
+    @ApiOperation(value = "同步区域摄像头资源数量", notes = "根据摄像头资源表统计并更新每个区域的本区域资源数和总资源数")
+    public Result<Integer> syncCameraQuantity() {
+        try {
+            int count = regionResourceService.syncCameraQuantity();
+            return Result.ok(count);
+        } catch (Exception e) {
+            log.error("同步区域摄像头资源数量失败", e);
+            return Result.error("同步区域摄像头资源数量失败: " + e.getMessage());
+        }
+    }
 }

@@ -3,15 +3,18 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionNodesRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionNodesResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionTreeVO;
 import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
+import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.RegionResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +25,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -54,6 +59,8 @@ public class RegionResourceServiceImpl extends ServiceImpl<RegionResourceMapper,
     };
 
     private final HikvisionUtil hikvisionUtil;
+
+    private final CameraResourceMapper cameraResourceMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -283,5 +290,98 @@ public class RegionResourceServiceImpl extends ServiceImpl<RegionResourceMapper,
         vo.setLocalQuantity(entity.getLocalQuantity());
         vo.setTotalQuantity(entity.getTotalQuantity());
         return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int syncCameraQuantity() {
+        log.info("开始根据摄像头资源表同步区域资源数量...");
+
+        // 1. 查询全部区域
+        List<RegionResource> allRegions = list();
+        if (allRegions.isEmpty()) {
+            log.warn("区域资源表为空，跳过资源数量同步");
+            return 0;
+        }
+
+        // 2. 统计各区域直接挂载的摄像头数量：
+        //    SELECT region_index_code, COUNT(*) AS cnt FROM table_camera_resource WHERE region_index_code IS NOT NULL GROUP BY region_index_code
+        Map<String, Long> cameraCountByRegion = new HashMap<>();
+        for (Map<String, Object> row : cameraResourceMapper.selectMaps(new QueryWrapper<CameraResource>()
+                .select("region_index_code", "COUNT(*) AS cnt")
+                .isNotNull("region_index_code")
+                .groupBy("region_index_code"))) {
+            Object regionCode = getColumnValue(row, "region_index_code");
+            if (regionCode == null) {
+                continue;
+            }
+            Object cnt = getColumnValue(row, "cnt");
+            cameraCountByRegion.put(String.valueOf(regionCode),
+                    cnt == null ? 0L : ((Number) cnt).longValue());
+        }
+
+        // 3. 构建 parentIndexCode -> 子区域列表 映射，用于递归汇总总资源数
+        Map<String, List<RegionResource>> parentChildrenMap = allRegions.stream()
+                .collect(Collectors.groupingBy(r -> r.getParentIndexCode() != null ? r.getParentIndexCode() : ""));
+
+        // 4. 计算每个区域的 localQuantity 与 totalQuantity
+        Map<String, Integer> totalQuantityMap = new HashMap<>();
+        for (RegionResource region : allRegions) {
+            computeTotalQuantity(region.getIndexCode(), parentChildrenMap, cameraCountByRegion, totalQuantityMap);
+        }
+
+        // 5. 逐条更新（达梦驱动对JDBC批量支持有缺陷，沿用循环单条更新的方式）
+        Date now = new Date();
+        int updated = 0;
+        for (RegionResource region : allRegions) {
+            int local = cameraCountByRegion.getOrDefault(region.getIndexCode(), 0L).intValue();
+            int total = totalQuantityMap.getOrDefault(region.getIndexCode(), 0);
+            // 值未变化则跳过，避免无效写库
+            if (Objects.equals(region.getLocalQuantity(), local)
+                    && Objects.equals(region.getTotalQuantity(), total)) {
+                continue;
+            }
+            RegionResource update = new RegionResource();
+            update.setId(region.getId());
+            update.setLocalQuantity(local);
+            update.setTotalQuantity(total);
+            update.setGmtModified(now);
+            baseMapper.updateById(update);
+            updated++;
+        }
+
+        log.info("区域摄像头资源数量同步完成, 共更新{}个区域", updated);
+        return updated;
+    }
+
+    /**
+     * 递归计算某区域及其全部下级区域的摄像头总数，结果缓存到 totalQuantityMap
+     */
+    private int computeTotalQuantity(String indexCode,
+                                     Map<String, List<RegionResource>> parentChildrenMap,
+                                     Map<String, Long> cameraCountByRegion,
+                                     Map<String, Integer> totalQuantityMap) {
+        Integer cached = totalQuantityMap.get(indexCode);
+        if (cached != null) {
+            return cached;
+        }
+        int total = cameraCountByRegion.getOrDefault(indexCode, 0L).intValue();
+        for (RegionResource child : parentChildrenMap.getOrDefault(indexCode, Collections.emptyList())) {
+            total += computeTotalQuantity(child.getIndexCode(), parentChildrenMap, cameraCountByRegion, totalQuantityMap);
+        }
+        totalQuantityMap.put(indexCode, total);
+        return total;
+    }
+
+    /**
+     * 从结果集中按列名（不区分大小写）取值，兼容达梦返回大写列名的情况
+     */
+    private Object getColumnValue(Map<String, Object> row, String columnName) {
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(columnName)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }
