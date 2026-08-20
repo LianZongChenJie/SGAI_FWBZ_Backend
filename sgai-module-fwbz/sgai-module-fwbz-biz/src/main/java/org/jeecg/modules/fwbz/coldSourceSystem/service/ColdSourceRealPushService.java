@@ -8,17 +8,13 @@ import com.sunwayland.pspace.entity.PsSubRealData;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.coldSourceSystem.config.ColdSourceProperties;
 import org.jeecg.modules.fwbz.coldSourceSystem.websocket.ColdSourceWsEndpoint;
-import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
-import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,17 +57,11 @@ public class ColdSourceRealPushService {
     @Autowired
     private ColdSourceProperties properties;
 
-    @Autowired
-    private IDeviceAttributeService deviceAttributeService;
-
     /** tagId -> 该测点关联的 key 列表（一个测点可能映射多个 key）；buildIndex 后只读 */
     private volatile Map<Long, List<String>> id2Keys = Collections.emptyMap();
 
     /** 聚合 key（映射多个测点 id，如 station.totalPower）-> 该 key 的全部测点 id；buildIndex 后只读 */
     private volatile Map<String, List<Long>> aggregateKeys = Collections.emptyMap();
-
-    /** 设备属性中配置的冷源点ID集合（device_attribute.acquisition_coding 为纯数字的部分）；buildIndex 后只读 */
-    private volatile Set<Long> attributePointIds = Collections.emptySet();
 
     /** 测点最新值缓存：tagId -> 最新订阅数据（供聚合 key 求和：新值 + 未变更测点的旧值） */
     private final Map<Long, PsSubRealData> tagValueCache = new ConcurrentHashMap<>();
@@ -126,8 +116,7 @@ public class ColdSourceRealPushService {
     }
 
     /**
-     * 根据 FIELD_MAP 与设备属性采集编码构建反查索引，构建完成后以不可变视图暴露，只读安全。
-     * 订阅点集 = FIELD_MAP 中全部测点 ∪ 设备属性 acquisition_coding 中为纯数字的点ID。
+     * 根据 FIELD_MAP 构建反查索引，构建完成后以不可变视图暴露，只读安全。
      */
     private void buildIndex() {
         Map<String, List<Long>> fieldMap = coldSourceOverviewService.getFieldMap();
@@ -148,22 +137,7 @@ public class ColdSourceRealPushService {
         }
         this.id2Keys = Collections.unmodifiableMap(id2KeysMap);
         this.aggregateKeys = Collections.unmodifiableMap(aggregateMap);
-
-        // 加载设备属性中配置的冷源点ID（acquisition_coding 为纯数字的部分）
-        Set<Long> pointIds = new HashSet<>();
-        List<DeviceAttribute> attrs = deviceAttributeService.findByAcquisitionCodingExists();
-        if (attrs != null) {
-            for (DeviceAttribute attr : attrs) {
-                try {
-                    pointIds.add(Long.parseLong(attr.getAcquisitionCoding()));
-                } catch (NumberFormatException ignore) {
-                    // 非纯数字的采集编码（如网关-BACnet 格式）不属于冷源点ID，跳过
-                }
-            }
-        }
-        this.attributePointIds = Collections.unmodifiableSet(pointIds);
-        log.info("冷源实时订阅索引构建完成: FIELD_MAP测点数={}, 聚合key数={}, 设备属性点ID数={}",
-                id2Keys.size(), aggregateKeys.size(), attributePointIds.size());
+        log.info("冷源实时订阅索引构建完成: 订阅测点数={}, 聚合key数={}", id2Keys.size(), aggregateKeys.size());
     }
 
     /**
@@ -191,12 +165,9 @@ public class ColdSourceRealPushService {
      */
     private boolean subscribeOnce() throws Exception {
         PSpaceClient client = coldSourceServerService.connect();
-        // 订阅点集 = FIELD_MAP 测点 ∪ 设备属性配置的冷源点ID
-        Set<Long> allPointIds = new HashSet<>(id2Keys.keySet());
-        allPointIds.addAll(attributePointIds);
-        List<Long> tagIds = new ArrayList<>(allPointIds);
+        List<Long> tagIds = new ArrayList<>(id2Keys.keySet());
         if (tagIds.isEmpty()) {
-            log.warn("FIELD_MAP 与设备属性中没有可订阅的测点，跳过冷源实时订阅");
+            log.warn("FIELD_MAP 中没有可订阅的测点，跳过冷源实时订阅");
             return true;
         }
         // 订阅全部测点并一次性获取初值；回调在订阅期间持续触发
@@ -228,15 +199,6 @@ public class ColdSourceRealPushService {
                 }
                 // 更新测点值缓存（聚合 key 求和依赖此缓存保持最新值）
                 tagValueCache.put(tagId, realData);
-                // 若该点ID配置在设备属性中，写库更新 value（含历史/MQ联动）
-                if (attributePointIds.contains(tagId)) {
-                    try {
-                        deviceAttributeService.updateAttributeValueByPointId(
-                                tagId, String.valueOf(realData.getValue()), LocalDateTime.now());
-                    } catch (Exception e) {
-                        log.warn("冷源点ID写库失败(tagId={}): {}", tagId, e.getMessage());
-                    }
-                }
                 List<String> keys = id2Keys.get(tagId);
                 if (keys == null) {
                     continue;
