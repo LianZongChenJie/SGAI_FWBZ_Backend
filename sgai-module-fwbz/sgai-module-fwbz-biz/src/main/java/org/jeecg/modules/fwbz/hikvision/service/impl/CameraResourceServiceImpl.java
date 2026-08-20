@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
@@ -38,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -467,7 +469,6 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         LambdaQueryWrapper<CameraResource> wrapper = new LambdaQueryWrapper<CameraResource>()
                 .eq(StringUtils.isNotBlank(dto.getIndexCode()), CameraResource::getIndexCode, dto.getIndexCode())
                 .like(StringUtils.isNotBlank(dto.getName()), CameraResource::getName, dto.getName())
-                .like(StringUtils.isNotBlank(dto.getRegionName()), CameraResource::getRegionName, dto.getRegionName())
                 .eq(StringUtils.isNotBlank(dto.getTreatyType()), CameraResource::getTreatyType, dto.getTreatyType())
                 .like(StringUtils.isNotBlank(dto.getInstallLocation()), CameraResource::getInstallLocation, dto.getInstallLocation())
                 .eq(dto.getOnline() != null, CameraResource::getOnline, dto.getOnline())
@@ -475,11 +476,48 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
                 .orderByAsc(CameraResource::getDisOrder)
                 .orderByAsc(CameraResource::getId);
 
+        // 区域名称过滤 —— 联动table_region_resource表
+        if (StringUtils.isNotBlank(dto.getRegionName())) {
+            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
+                    .like(RegionResource::getName, dto.getRegionName())
+                    .select(RegionResource::getIndexCode)
+                    .list()
+                    .stream()
+                    .map(RegionResource::getIndexCode)
+                    .collect(Collectors.toList());
+            if (matchedRegionCodes.isEmpty()) {
+                IPage<CameraListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                log.info("分页查询摄像头列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
+                return emptyPage;
+            }
+            wrapper.in(CameraResource::getRegionIndexCode, matchedRegionCodes);
+        }
+
         IPage<CameraResource> cameraPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
+        Set<String> regionIndexCodes = cameraPage.getRecords().stream()
+                .map(CameraResource::getRegionIndexCode)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, String> regionNameMap = Collections.emptyMap();
+        if (!regionIndexCodes.isEmpty()) {
+            regionNameMap = regionResourceService.lambdaQuery()
+                    .in(RegionResource::getIndexCode, regionIndexCodes)
+                    .list()
+                    .stream()
+                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+        }
 
         List<CameraListVO> voList = new ArrayList<>(cameraPage.getRecords().size());
         for (CameraResource camera : cameraPage.getRecords()) {
-            voList.add(cameraToVO(camera));
+            CameraListVO vo = cameraToVO(camera);
+            // 优先使用区域资源表的区域名称，取不到时兜底摄像头表冗余的regionName
+            String resolvedRegionName = regionNameMap.getOrDefault(camera.getRegionIndexCode(), camera.getRegionName());
+            vo.setRegionName(resolvedRegionName);
+            voList.add(vo);
         }
 
         IPage<CameraListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), cameraPage.getTotal());
