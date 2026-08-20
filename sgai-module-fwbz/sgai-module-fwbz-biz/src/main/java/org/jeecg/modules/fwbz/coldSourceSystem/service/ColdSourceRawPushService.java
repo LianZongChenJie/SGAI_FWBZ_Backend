@@ -38,13 +38,13 @@ public class ColdSourceRawPushService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Autowired
-    private ColdSourceServerService coldSourceServerService;
-
-    @Autowired
     private ColdSourceOverviewService coldSourceOverviewService;
 
     @Autowired
     private ColdSourceProperties properties;
+
+    /** 独立的 pSpace 客户端（与原 ColdSourceRealPushService 的连接隔离，避免订阅冲突） */
+    private volatile PSpaceClient client;
 
     /** 订阅的测点 id 集合（FIELD_MAP 全部 id），buildPointIds 后只读 */
     private volatile List<Long> tagIds = Collections.emptyList();
@@ -59,6 +59,25 @@ public class ColdSourceRawPushService {
         Thread subscribeThread = new Thread(this::subscribeLoop, "cold-source-raw-subscribe");
         subscribeThread.setDaemon(true);
         subscribeThread.start();
+    }
+
+    /**
+     * 建立独立连接（幂等：已连接则直接返回）。
+     * 注意：不复用 ColdSourceServerService 的连接，否则与原有订阅冲突会导致收不到推送。
+     */
+    private synchronized PSpaceClient connect() throws Exception {
+        if (client != null) {
+            return client;
+        }
+        PSpaceClient c = PSpaceClient.getInstance(
+                properties.getHost(),
+                properties.getPort(),
+                properties.getUsername(),
+                properties.getPassword());
+        c.connect();
+        log.info("冷源原始数据观察连接成功(独立连接): {}:{}", properties.getHost(), properties.getPort());
+        this.client = c;
+        return c;
     }
 
     /**
@@ -97,23 +116,23 @@ public class ColdSourceRawPushService {
     }
 
     /**
-     * 建立一次订阅并获取初值。
+     * 建立一次订阅并获取初值（使用独立连接）。
      *
      * @return true 订阅成功（或无测点可订阅）；false 失败需重试
      */
     private boolean subscribeOnce() throws Exception {
-        PSpaceClient client = coldSourceServerService.connect();
         if (tagIds.isEmpty()) {
             log.warn("FIELD_MAP 中没有可订阅的测点，跳过冷源原始数据订阅");
             return true;
         }
+        PSpaceClient c = connect();
         // 订阅全部测点并一次性获取初值；回调在订阅期间持续触发（只推原始数据，不做映射）
-        PsResult<PsSubRealData> result = client.realNewSubscribeAndRead(tagIds, Collections.singletonList(this::onRawData));
+        PsResult<PsSubRealData> result = c.realNewSubscribeAndRead(tagIds, Collections.singletonList(this::onRawData));
         if (!result.isSuccess() || result.getData() == null || result.getData().isEmpty()) {
             log.warn("冷源原始数据订阅失败: code={}，{}ms 后重试", result.getCode(), RETRY_INTERVAL_MS);
             return false;
         }
-        log.info("冷源原始数据订阅成功: 测点数={}", tagIds.size());
+        log.info("冷源原始数据订阅成功(独立连接): 测点数={}", tagIds.size());
         onRawData(0, result.getData());
         return true;
     }
