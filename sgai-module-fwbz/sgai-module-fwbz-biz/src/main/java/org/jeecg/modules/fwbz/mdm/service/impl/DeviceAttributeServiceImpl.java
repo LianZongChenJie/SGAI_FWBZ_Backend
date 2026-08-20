@@ -267,5 +267,70 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
         return gatewayAdr + "-" + bacnetAdr;
     }
 
+    @Override
+    public List<DeviceAttribute> findByAcquisitionCodingExists() {
+        // 查询所有 acquisition_coding 非空非空串的属性，再过滤纯数字点ID
+        List<DeviceAttribute> all = list(new LambdaQueryWrapper<DeviceAttribute>()
+                .isNotNull(DeviceAttribute::getAcquisitionCoding)
+                .ne(DeviceAttribute::getAcquisitionCoding, ""));
+        if (all == null || all.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return all.stream()
+                .filter(a -> a.getAcquisitionCoding() != null && isNumericPointId(a.getAcquisitionCoding()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 冷源点ID 是否为纯数字（如 "600"）
+     */
+    private static boolean isNumericPointId(String coding) {
+        if (coding == null || coding.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < coding.length(); i++) {
+            char c = coding.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void updateAttributeValueByPointId(Long tagId, String value, LocalDateTime collectionTime) {
+        if (tagId == null) {
+            return;
+        }
+        String key = String.valueOf(tagId);
+        update(new LambdaUpdateWrapper<DeviceAttribute>()
+                .eq(DeviceAttribute::getAcquisitionCoding, key)
+                .set(DeviceAttribute::getValue, value)
+                .set(DeviceAttribute::getGatherTime, collectionTime)
+        );
+        // 获取点位关联设备属性
+        List<DeviceAttribute> list = list(new LambdaQueryWrapper<DeviceAttribute>().eq(DeviceAttribute::getAcquisitionCoding, key));
+        if (CollectionUtil.isEmpty(list)) {
+            return;
+        }
+        Set<Long> deviceIds = list.stream().map(DeviceAttribute::getDeviceId).collect(Collectors.toSet());
+        Map<Long, Device> deviceMap = deviceService.findByDeviceIds(deviceIds)
+                .stream()
+                .collect(Collectors.toMap(Device::getId, Function.identity(), (k1, k2) -> k2));
+        List<DeviceAttribute> updateList = new ArrayList<>();
+
+        for (DeviceAttribute item : list) {
+            Device device = deviceMap.get(item.getDeviceId());
+            if (device == null) {
+                continue;
+            }
+            updateList.add(item);
+            // 设备点位值变更
+            mqSendService.sendDeviceAttributeValueChange(item.getDeviceId(), item.getId(), value);
+            mqSendService.sendDeviceLastGatherTime(device.getDeviceCode(), collectionTime, collectionTime.plusMinutes(20));
+        }
+        deviceAttributeHistoryService.saveAttributeHistory(updateList);
+    }
+
 
 }

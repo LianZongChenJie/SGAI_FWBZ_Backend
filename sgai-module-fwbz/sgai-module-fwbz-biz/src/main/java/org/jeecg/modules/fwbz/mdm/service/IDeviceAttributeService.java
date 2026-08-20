@@ -59,4 +59,20 @@ public interface IDeviceAttributeService extends IService<DeviceAttribute> {
     List<DeviceAttribute> findByDeviceIdsAndCode(Collection<Long> deviceIds,String code);
 
     DeviceAttribute findByDeviceIdAndCode(Long deviceIds,String code);
+
+    /**
+     * 查询所有配置了采集编码(acquisitionCoding)且为纯数字点ID 的设备属性
+     *
+     * @return 设备属性列表（仅含 acquisitionCoding 非空且可解析为 Long 的记录）
+     */
+    List<DeviceAttribute> findByAcquisitionCodingExists();
+
+    /**
+     * 冷源系统按点ID(tagId) 推送时更新设备属性 value
+     *
+     * @param tagId         冷源系统点ID（对应 device_attribute.acquisition_coding）
+     * @param value         采集值
+     * @param collectionTime 采集时间
+     */
+    void updateAttributeValueByPointId(Long tagId, String value, LocalDateTime collectionTime);
 }
