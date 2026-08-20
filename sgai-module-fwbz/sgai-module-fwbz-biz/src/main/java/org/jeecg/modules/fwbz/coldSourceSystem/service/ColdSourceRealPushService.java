@@ -66,10 +66,13 @@ public class ColdSourceRealPushService {
     /** tagId -> 该测点关联的 key 列表（一个测点可能映射多个 key）；buildIndex 后只读 */
     private volatile Map<Long, List<String>> id2Keys = Collections.emptyMap();
 
-    /** 聚合 key（映射多个测点 id，如 station.totalPower）-> 该 key 的全部测点 id；buildIndex 后只读 */
-    private volatile Map<String, List<Long>> aggregateKeys = Collections.emptyMap();
+    /** 映射 key -> 该 key 关联的全部测点 id（单测点 key 仅 1 个，聚合 key 多个）；buildIndex 后只读 */
+    private volatile Map<String, List<Long>> key2Ids = Collections.emptyMap();
 
-    /** 测点最新值缓存：tagId -> 最新订阅数据（供聚合 key 求和：新值 + 未变更测点的旧值） */
+    /** 全部映射 key（FIELD_MAP 中配置了测点的 key），保持 FIELD_MAP 顺序；buildIndex 后只读 */
+    private volatile List<String> allKeys = Collections.emptyList();
+
+    /** 测点最新值缓存：tagId -> 最新订阅数据（供全量推送时取最新值） */
     private final Map<Long, PsSubRealData> tagValueCache = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -93,7 +96,8 @@ public class ColdSourceRealPushService {
      * 用于无冷源网络环境下的全链路联调测试。
      */
     private void startMockGenerator() {
-        Set<Long> aggregateIds = aggregateKeys.values().stream()
+        Set<Long> aggregateIds = key2Ids.values().stream()
+                .filter(ids -> ids.size() > 1)
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
         MockColdSourceDataGenerator generator = new MockColdSourceDataGenerator(
@@ -123,28 +127,31 @@ public class ColdSourceRealPushService {
     }
 
     /**
-     * 根据 FIELD_MAP 构建反查索引，构建完成后以不可变视图暴露，只读安全。
+     * 根据 FIELD_MAP 构建索引，构建完成后以不可变视图暴露，只读安全。
+     * key2Ids：映射 key -> 该 key 关联的测点 id（单测点 1 个，聚合 key 多个）；
+     * allKeys：全部配置了测点的映射 key，保持 FIELD_MAP 顺序，供每次推送全量数据。
      */
     private void buildIndex() {
         Map<String, List<Long>> fieldMap = coldSourceOverviewService.getFieldMap();
         Map<Long, List<String>> id2KeysMap = new HashMap<>();
-        Map<String, List<Long>> aggregateMap = new HashMap<>();
+        Map<String, List<Long>> key2IdsMap = new LinkedHashMap<>();
+        List<String> keys = new ArrayList<>();
         for (Map.Entry<String, List<Long>> entry : fieldMap.entrySet()) {
             String key = entry.getKey();
             List<Long> ids = entry.getValue();
             if (ids == null || ids.isEmpty()) {
                 continue;
             }
-            if (ids.size() > 1) {
-                aggregateMap.put(key, ids);
-            }
+            keys.add(key);
+            key2IdsMap.put(key, new ArrayList<>(ids));
             for (Long id : ids) {
                 id2KeysMap.computeIfAbsent(id, k -> new ArrayList<>()).add(key);
             }
         }
         this.id2Keys = Collections.unmodifiableMap(id2KeysMap);
-        this.aggregateKeys = Collections.unmodifiableMap(aggregateMap);
-        log.info("冷源实时订阅索引构建完成: 订阅测点数={}, 聚合key数={}", id2Keys.size(), aggregateKeys.size());
+        this.key2Ids = Collections.unmodifiableMap(key2IdsMap);
+        this.allKeys = Collections.unmodifiableList(keys);
+        log.info("冷源实时订阅索引构建完成: 订阅测点数={}, 映射key数={}", id2Keys.size(), allKeys.size());
     }
 
     /**
@@ -190,7 +197,10 @@ public class ColdSourceRealPushService {
     }
 
     /**
-     * 实时数据回调：冷源 SDK 推送（或模拟数据源产生）的增量数据 -> tagId 反查 key -> 组装 -> 广播给前端。
+     * 实时数据回调：冷源 SDK 推送（或模拟数据源产生）的增量数据。
+     * 先更新测点值缓存，再按映射集合中全部 key 组装全量数据广播给前端：
+     *  - 有对应测点值：推送该 key 的最新值（聚合 key 求和、单测点透传）；
+     *  - 无对应 id 关系（映射 key 对应测点尚无缓存值）：该 key 的 value 推 {@link #UNMAPPED_VALUE}（"???"）。
      * 包内可见：模拟数据源 {@link MockColdSourceDataGenerator} 直接调用，与真实 SDK 回调走同一处理链路。
      */
     void onRealData(int subId, List<PsSubRealData> subRealDataList) {
@@ -198,24 +208,14 @@ public class ColdSourceRealPushService {
             return;
         }
         try {
-            Map<String, Object> data = new LinkedHashMap<>();
             for (PsSubRealData realData : subRealDataList) {
                 Long tagId = realData.getTagId();
                 if (tagId == null) {
                     continue;
                 }
-                // 更新测点值缓存（聚合 key 求和依赖此缓存保持最新值）
                 tagValueCache.put(tagId, realData);
-                List<String> keys = id2Keys.get(tagId);
-                if (keys == null) {
-                    continue;
-                }
-                for (String key : keys) {
-                    data.put(key, aggregateKeys.containsKey(key)
-                            ? buildAggregateValue(key, realData)
-                            : buildValue(realData));
-                }
             }
+            Map<String, Object> data = buildAllData();
             if (!data.isEmpty()) {
                 Map<String, Object> message = new LinkedHashMap<>();
                 message.put("type", "REAL_DATA");
@@ -225,6 +225,33 @@ public class ColdSourceRealPushService {
         } catch (Exception e) {
             log.warn("冷源实时数据处理/推送异常(subId={}): {}", subId, e.getMessage());
         }
+    }
+
+    /**
+     * 按映射集合中全部 key 组装全量数据：
+     * 遍历 {@link #allKeys}，对每个映射 key 从测点值缓存取最新值组装；
+     * 若该 key 没有对应的 id 关系（关联测点均无缓存值），则该 key 的 value 推 {@link #UNMAPPED_VALUE}（"???"）。
+     *
+     * @return data 部分（不含 type 包裹）
+     */
+    private Map<String, Object> buildAllData() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        for (String key : allKeys) {
+            List<Long> ids = key2Ids.get(key);
+            if (ids == null || ids.isEmpty()) {
+                continue;
+            }
+            if (ids.size() > 1) {
+                // 聚合 key：对全部测点缓存值求和；无缓存值时 value 为 "???"
+                Map<String, Object> agg = buildAggregateValue(key);
+                data.put(key, agg);
+            } else {
+                // 单测点 key：取该测点缓存值；无缓存值时 value 为 "???"
+                PsSubRealData realData = tagValueCache.get(ids.get(0));
+                data.put(key, realData == null ? UNMAPPED_VALUE : buildValue(realData));
+            }
+        }
+        return data;
     }
 
     /** 单测点 key：透传 value，附带时间戳/质量/类型等其他字段 */
@@ -237,62 +264,61 @@ public class ColdSourceRealPushService {
         return m;
     }
 
-    /** 聚合 key：新值已写入缓存，用该 key 全部测点缓存值求和；其他字段取触发变化的测点 */
-    private Map<String, Object> buildAggregateValue(String key, PsSubRealData changed) {
+    /**
+     * 聚合 key：用该 key 全部测点缓存值求和。
+     * 无任何缓存值（无对应 id 关系）时，value 返回 {@link #UNMAPPED_VALUE}（"???"），
+     * 其余字段取第一个有缓存值的测点。
+     */
+    private Map<String, Object> buildAggregateValue(String key) {
+        List<Long> ids = key2Ids.get(key);
         double sum = 0;
         boolean hasNumber = false;
         Object firstNonNull = null;
-        for (Long id : aggregateKeys.get(key)) {
-            PsSubRealData d = tagValueCache.get(id);
-            Object v = d == null ? null : d.getValue();
-            if (v instanceof Number) {
-                sum += ((Number) v).doubleValue();
-                hasNumber = true;
-            } else if (v != null && firstNonNull == null) {
-                firstNonNull = v;
+        PsSubRealData any = null;
+        if (ids != null) {
+            for (Long id : ids) {
+                PsSubRealData d = tagValueCache.get(id);
+                if (d == null) {
+                    continue;
+                }
+                if (any == null) {
+                    any = d;
+                }
+                Object v = d.getValue();
+                if (v instanceof Number) {
+                    sum += ((Number) v).doubleValue();
+                    hasNumber = true;
+                } else if (v != null && firstNonNull == null) {
+                    firstNonNull = v;
+                }
             }
         }
         Map<String, Object> m = new LinkedHashMap<>();
+        if (any == null) {
+            // 无对应 id 关系：value 推 "???"
+            m.put("value", UNMAPPED_VALUE);
+            return m;
+        }
         m.put("value", hasNumber ? sum : firstNonNull);
-        m.put("timestamp", changed.getTimestamp());
-        m.put("quality", enumName(changed.getQuality()));
-        m.put("dataType", enumName(changed.getDataType()));
+        m.put("timestamp", any.getTimestamp());
+        m.put("quality", enumName(any.getQuality()));
+        m.put("dataType", enumName(any.getDataType()));
         return m;
     }
 
     /**
      * 构建冷源实时数据全量快照（供前端 WebSocket 连接建立时首次推送）。
-     * 遍历测点值缓存中全部测点：
-     *  - 有 FIELD_MAP 映射：按映射 key 组装（聚合 key 求和、单测点透传），value 取缓存最新值；
-     *  - 无 FIELD_MAP 映射：以 tagId 字符串作为 key，value 统一传 {@link #UNMAPPED_VALUE}（"???"）。
+     * 与每次增量推送使用同一构建逻辑：按映射集合中全部 key 组装，
+     * 无对应 id 关系的 key value 推 {@link #UNMAPPED_VALUE}（"???"）。
      *
-     * @return data 部分（不含 type 包裹），无缓存数据时返回空 Map
+     * @return data 部分（不含 type 包裹）
      */
     public static Map<String, Object> buildSnapshotData() {
-        Map<String, Object> data = new LinkedHashMap<>();
         ColdSourceRealPushService svc = instance;
         if (svc == null) {
-            return data;
+            return Collections.emptyMap();
         }
-        for (Map.Entry<Long, PsSubRealData> entry : svc.tagValueCache.entrySet()) {
-            Long tagId = entry.getKey();
-            if (tagId == null) {
-                continue;
-            }
-            List<String> keys = svc.id2Keys.get(tagId);
-            if (keys == null) {
-                // 无 FIELD_MAP 映射的测点：value 传 "???"
-                data.put(String.valueOf(tagId), UNMAPPED_VALUE);
-                continue;
-            }
-            PsSubRealData realData = entry.getValue();
-            for (String key : keys) {
-                data.put(key, svc.aggregateKeys.containsKey(key)
-                        ? svc.buildAggregateValue(key, realData)
-                        : svc.buildValue(realData));
-            }
-        }
-        return data;
+        return svc.buildAllData();
     }
 
     private static int subIdOf(PsSubRealData data) {
