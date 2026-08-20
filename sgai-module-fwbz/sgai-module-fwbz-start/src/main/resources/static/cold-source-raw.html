@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冷源原始数据观察</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; margin: 0; background: #f0f2f5; color: #333; }
+  .header { background: #1f2d3d; color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  .badge { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: #f56c6c; color: #fff; }
+  .badge.on { background: #67c23a; }
+  .panel { background: #fff; margin: 16px; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; }
+  .row label { color: #666; }
+  input[type=text] { width: 460px; padding: 6px 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; }
+  button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; background: #409eff; color: #fff; font-size: 13px; }
+  button:disabled { background: #a0cfff; cursor: not-allowed; }
+  .stat { display: inline-flex; gap: 20px; margin-left: auto; color: #909399; }
+  .stat b { color: #303133; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+  th, td { border: 1px solid #ebeef5; padding: 6px 8px; text-align: left; white-space: nowrap; }
+  th { background: #f5f7fa; color: #606266; position: sticky; top: 0; }
+  td.num { font-family: Consolas, monospace; text-align: right; }
+  td.id { font-family: Consolas, monospace; color: #409eff; }
+  .fresh { background: #ecf5ff; }
+  #empty { color: #909399; text-align: center; padding: 30px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>冷源系统原始数据观察</h1>
+  <span id="status" class="badge">未连接</span>
+</div>
+
+<div class="panel">
+  <div class="row">
+    <label>连接地址</label>
+    <input type="text" id="wsUrl" value="ws://192.168.204.51:9999/sgai-tp/fwbz/coldSource/rawTest/ws">
+    <button id="btnConnect" onclick="connect()">连接</button>
+    <button id="btnDisconnect" onclick="disconnect()" disabled>断开</button>
+    <span class="stat">
+      <span>消息: <b id="msgCount">0</b></span>
+      <span>最近: <b id="lastTime">-</b></span>
+      <span>测点: <b id="pointCount">0</b></span>
+    </span>
+  </div>
+  <div id="log" style="margin-top:8px; font-size:12px; color:#909399;"></div>
+</div>
+
+<div class="panel">
+  <div style="font-size:13px; color:#606266;">
+    冷源系统推送的原始数据（tagId / value / timestamp / quality / dataType，不做任何映射/聚合）
+    <button id="btnPause" onclick="togglePause()" style="margin-left:12px;">暂停刷新</button>
+  </div>
+  <table id="grid">
+    <thead>
+      <tr><th>#</th><th>点ID (tagId)</th><th>value</th><th>quality</th><th>dataType</th><th>timestamp</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="empty">等待数据…</div>
+</div>
+
+<script>
+  let ws = null, msgCount = 0, paused = false;
+  const tbody = document.getElementById("tbody");
+  const empty = document.getElementById("empty");
+  const cellMap = {};
+
+  function log(msg) {
+    const el = document.getElementById("log");
+    el.textContent = "[" + new Date().toLocaleTimeString() + "] " + msg;
+  }
+  function setStatus(on, text) {
+    const s = document.getElementById("status");
+    s.textContent = text;
+    s.className = "badge" + (on ? " on" : "");
+  }
+
+  function connect() {
+    const url = document.getElementById("wsUrl").value.trim();
+    if (!url) { alert("请输入 WebSocket 地址"); return; }
+    ws = new WebSocket(url);
+    ws.onopen = () => {
+      setStatus(true, "已连接");
+      document.getElementById("btnConnect").disabled = true;
+      document.getElementById("btnDisconnect").disabled = false;
+      log("已连接: " + url);
+    };
+    ws.onmessage = (ev) => {
+      msgCount++;
+      document.getElementById("msgCount").textContent = msgCount;
+      document.getElementById("lastTime").textContent = new Date().toLocaleTimeString();
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "RAW_DATA" && msg.data) {
+          render(msg.data);
+        } else {
+          log("收到未知消息类型: " + msg.type);
+        }
+      } catch (e) {
+        log("消息解析失败: " + e.message);
+      }
+    };
+    ws.onerror = () => { log("WebSocket 错误，请确认服务已启动且地址正确"); };
+    ws.onclose = () => {
+      setStatus(false, "已断开");
+      document.getElementById("btnConnect").disabled = false;
+      document.getElementById("btnDisconnect").disabled = true;
+      log("连接已关闭");
+      ws = null;
+    };
+  }
+
+  function disconnect() {
+    if (ws) { ws.close(); ws = null; }
+  }
+
+  function togglePause() {
+    paused = !paused;
+    document.getElementById("btnPause").textContent = paused ? "继续刷新" : "暂停刷新";
+  }
+
+  function render(data) {
+    if (paused) return;
+    empty.style.display = "none";
+    let idx = 0;
+    for (const tagId in data) {
+      idx++;
+      const item = data[tagId];
+      if (!cellMap[tagId]) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + idx + "</td><td class='id'>" + tagId + "</td>" +
+          "<td class='num'></td><td></td><td></td><td></td>";
+        tbody.appendChild(tr);
+        cellMap[tagId] = {
+          tr: tr,
+          valCell: tr.cells[2],
+          qCell: tr.cells[3],
+          tCell: tr.cells[4],
+          tsCell: tr.cells[5]
+        };
+      }
+      const c = cellMap[tagId];
+      const v = item.value;
+      const isNum = typeof v === "number";
+      c.valCell.textContent = isNum ? (Number.isInteger(v) ? v : v.toFixed(2)) : String(v);
+      c.valCell.className = "num";
+      c.qCell.textContent = item.quality || "-";
+      c.tCell.textContent = item.dataType || "-";
+      const ts = item.timestamp;
+      c.tsCell.textContent = ts ? new Date(ts).toLocaleTimeString() : "-";
+      c.tr.classList.remove("fresh");
+      void c.tr.offsetWidth;
+      c.tr.classList.add("fresh");
+      setTimeout(() => c.tr.classList.remove("fresh"), 2000);
+    }
+    document.getElementById("pointCount").textContent = Object.keys(cellMap).length;
+  }
+</script>
+</body>
+</html>
