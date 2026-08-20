@@ -26,7 +26,7 @@ public class VenueVisitorFlowJob {
      */
     @Scheduled(cron = "0 */5 * * * ?")
     public void syncAllFlowData() {
-        log.debug("场馆客流同步定时任务开始执行");
+        log.info("场馆客流同步定时任务开始执行");
         try {
             int count = venueVisitorFlowService.syncFromApi();
             log.info("场馆整体客流同步完成，成功同步 {} 项", count);
@@ -39,6 +39,6 @@ public class VenueVisitorFlowJob {
         } catch (Exception e) {
             log.error("各场馆客流同步异常", e);
         }
-        log.debug("场馆客流同步定时任务执行完毕");
+        log.info("场馆客流同步定时任务执行完毕");
     }
 }
