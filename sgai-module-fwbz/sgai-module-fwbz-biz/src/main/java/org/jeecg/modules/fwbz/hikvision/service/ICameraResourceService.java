@@ -1,9 +1,11 @@
 package org.jeecg.modules.fwbz.hikvision.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
 
 import java.util.List;
@@ -45,6 +47,15 @@ public interface ICameraResourceService extends IService<CameraResource> {
      * @return 摄像头列表
      */
     List<CameraListVO> getCameraList();
+
+    /**
+     * 分页查询摄像头列表
+     * <p>支持按名称、唯一编码、区域名称、接入协议、安装位置、在线状态、监控点类型检索，条件为空查全部。</p>
+     *
+     * @param dto 分页查询参数
+     * @return 分页摄像头列表
+     */
+    IPage<CameraListVO> getCameraPage(CameraResourcePageDto dto);
 
     /**
      * 获取区域摄像头分组信息

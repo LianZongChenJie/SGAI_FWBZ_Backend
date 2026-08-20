@@ -2,6 +2,7 @@ package org.jeecg.modules.fwbz.hikvision.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.springframework.http.HttpMethod;
@@ -116,6 +118,26 @@ public class CameraResourceController {
         } catch (Exception e) {
             log.error("获取摄像头列表失败", e);
             return Result.error("获取摄像头列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 分页获取摄像头列表
+     * <p>从本地数据库分页查询摄像头数据，支持按名称、唯一编码、区域名称、接入协议、
+     * 安装位置、在线状态、监控点类型检索，条件为空查全部。</p>
+     *
+     * @param dto 分页查询参数
+     * @return 分页摄像头列表
+     */
+    @GetMapping("/page")
+    @ApiOperation(value = "分页获取摄像头列表", notes = "分页查询摄像头数据，支持按名称、唯一编码、区域名称、接入协议、安装位置、在线状态、监控点类型检索，条件为空查全部")
+    public Result<IPage<CameraListVO>> getCameraPage(CameraResourcePageDto dto) {
+        try {
+            IPage<CameraListVO> page = cameraResourceService.getCameraPage(dto);
+            return Result.ok(page);
+        } catch (Exception e) {
+            log.error("分页获取摄像头列表失败", e);
+            return Result.error("分页获取摄像头列表失败: " + e.getMessage());
         }
     }
 

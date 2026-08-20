@@ -3,9 +3,12 @@ package org.jeecg.modules.fwbz.hikvision.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
@@ -452,6 +456,37 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         }
         log.info("查询摄像头列表完成, 共{}条", result.size());
         return result;
+    }
+
+    @Override
+    public IPage<CameraListVO> getCameraPage(CameraResourcePageDto dto) {
+        log.info("分页查询摄像头列表, pageNo={}, pageSize={}, indexCode={}, name={}, regionName={}, treatyType={}, installLocation={}, online={}, cameraType={}",
+                dto.getPageNo(), dto.getPageSize(), dto.getIndexCode(), dto.getName(), dto.getRegionName(),
+                dto.getTreatyType(), dto.getInstallLocation(), dto.getOnline(), dto.getCameraType());
+
+        LambdaQueryWrapper<CameraResource> wrapper = new LambdaQueryWrapper<CameraResource>()
+                .eq(StringUtils.isNotBlank(dto.getIndexCode()), CameraResource::getIndexCode, dto.getIndexCode())
+                .like(StringUtils.isNotBlank(dto.getName()), CameraResource::getName, dto.getName())
+                .like(StringUtils.isNotBlank(dto.getRegionName()), CameraResource::getRegionName, dto.getRegionName())
+                .eq(StringUtils.isNotBlank(dto.getTreatyType()), CameraResource::getTreatyType, dto.getTreatyType())
+                .like(StringUtils.isNotBlank(dto.getInstallLocation()), CameraResource::getInstallLocation, dto.getInstallLocation())
+                .eq(dto.getOnline() != null, CameraResource::getOnline, dto.getOnline())
+                .eq(dto.getCameraType() != null, CameraResource::getCameraType, dto.getCameraType())
+                .orderByAsc(CameraResource::getDisOrder)
+                .orderByAsc(CameraResource::getId);
+
+        IPage<CameraResource> cameraPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+
+        List<CameraListVO> voList = new ArrayList<>(cameraPage.getRecords().size());
+        for (CameraResource camera : cameraPage.getRecords()) {
+            voList.add(cameraToVO(camera));
+        }
+
+        IPage<CameraListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), cameraPage.getTotal());
+        resultPage.setRecords(voList);
+
+        log.info("分页查询摄像头列表完成, 共{}条, 当前页{}条", cameraPage.getTotal(), voList.size());
+        return resultPage;
     }
 
     /**
