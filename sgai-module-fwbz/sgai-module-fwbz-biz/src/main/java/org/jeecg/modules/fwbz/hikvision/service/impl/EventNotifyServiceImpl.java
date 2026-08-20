@@ -18,7 +18,6 @@ import org.jeecg.modules.fwbz.hikvision.service.IEventNotifyService;
 import org.jeecg.modules.fwbz.hikvision.mapper.EventNotifyMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.EventTypeMapper;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,16 +40,6 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
     private final EventTypeMapper eventTypeMapper;
 
     private final HikvisionUtil hikvisionUtil;
-
-    /**
-     * 事件订阅接收地址（eventDest），restful回调，支持http和https，不超过1024个字符
-     * <p>事件接收地址由应用方负责按规范提供，可通过配置中心（Nacos）覆盖：
-     * <pre>hikvision:
-     *   event-recv-url: https://ip:port/eventRcv</pre>
-     * 默认指向本系统事件接收接口。
-     */
-    @Value("${hikvision.event-recv-url:https://10.61.8.20:7206/fwbz/hikvision/eventNotify/receive}")
-    private String eventRecvUrl;
 
     public EventNotifyServiceImpl(EventTypeMapper eventTypeMapper, HikvisionUtil hikvisionUtil) {
         this.eventTypeMapper = eventTypeMapper;
@@ -203,14 +192,17 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
     }
 
     @Override
-    public JSONObject subscribeByEventTypes(List<Integer> eventTypes) throws Exception {
+    public JSONObject subscribeByEventTypes(List<Integer> eventTypes, String eventDest) throws Exception {
         if (eventTypes == null || eventTypes.isEmpty()) {
             throw new IllegalArgumentException("事件类型列表不能为空");
         }
+        if (StringUtils.isBlank(eventDest)) {
+            throw new IllegalArgumentException("事件接收地址eventDest不能为空");
+        }
         JSONObject requestBody = new JSONObject();
         requestBody.put("eventTypes", eventTypes);
-        requestBody.put("eventDest", eventRecvUrl);
-        log.info("按事件类型订阅事件, eventTypes={}, eventDest={}", eventTypes, eventRecvUrl);
+        requestBody.put("eventDest", eventDest);
+        log.info("按事件类型订阅事件, eventTypes={}, eventDest={}", eventTypes, eventDest);
 
         String responseBody = hikvisionUtil.doPostJson("/api/eventService/v1/eventSubscriptionByEventTypes", requestBody.toJSONString());
         JSONObject resp = JSON.parseObject(responseBody);
@@ -220,6 +212,26 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
             throw new RuntimeException("订阅事件失败, code=" + code + ", msg=" + msg);
         }
         log.info("按事件类型订阅事件成功, code={}, msg={}", resp.getString("code"), resp.getString("msg"));
+        return resp;
+    }
+
+    @Override
+    public JSONObject unsubscribeByEventTypes(List<Integer> eventTypes) throws Exception {
+        if (eventTypes == null || eventTypes.isEmpty()) {
+            throw new IllegalArgumentException("事件类型列表不能为空");
+        }
+        JSONObject requestBody = new JSONObject();
+        requestBody.put("eventTypes", eventTypes);
+        log.info("按事件类型取消订阅, eventTypes={}", eventTypes);
+
+        String responseBody = hikvisionUtil.doPostJson("/api/eventService/v1/eventUnSubscriptionByEventTypes", requestBody.toJSONString());
+        JSONObject resp = JSON.parseObject(responseBody);
+        if (!hikvisionUtil.isSuccess(responseBody)) {
+            String code = resp.getString("code");
+            String msg = resp.getString("msg");
+            throw new RuntimeException("取消订阅事件失败, code=" + code + ", msg=" + msg);
+        }
+        log.info("按事件类型取消订阅成功, code={}, msg={}", resp.getString("code"), resp.getString("msg"));
         return resp;
     }
 

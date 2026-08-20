@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.EventNotifyPushRequest;
 import org.jeecg.modules.fwbz.hikvision.entity.EventNotify;
@@ -73,23 +74,50 @@ public class EventNotifyController {
 
     /**
      * 按事件类型订阅事件
-     * <p>前端仅需传事件类型数组，如 {"eventTypes": [123, 223]}；
-     * 事件接收地址（eventDest）由服务端配置，订阅类型使用默认值0。</p>
+     * <p>前端需传事件类型数组及事件接收地址，
+     * 如 {"eventTypes": [123, 223], "eventDest": "https://ip:port/eventRcv"}，
+     * 订阅类型使用默认值0。</p>
      */
     @PostMapping("/subscribe")
     @ApiOperation(value = "按事件类型订阅事件", notes = "请求海康SDK /api/eventService/v1/eventSubscriptionByEventTypes，按事件类型订阅事件推送")
-    public Result<JSONObject> subscribeByEventTypes(@RequestBody @ApiParam(value = "订阅请求，如 {\"eventTypes\": [123, 223]}") JSONObject body) {
+    public Result<JSONObject> subscribeByEventTypes(@RequestBody @ApiParam(value = "订阅请求，如 {\"eventTypes\": [123, 223], \"eventDest\": \"https://ip:port/eventRcv\"}") JSONObject body) {
+        try {
+            JSONArray eventTypes = body.getJSONArray("eventTypes");
+            if (eventTypes == null || eventTypes.isEmpty()) {
+                return Result.error("事件类型列表不能为空");
+            }
+            String eventDest = body.getString("eventDest");
+            if (StringUtils.isBlank(eventDest)) {
+                return Result.error("事件接收地址eventDest不能为空");
+            }
+            List<Integer> types = eventTypes.toJavaList(Integer.class);
+            JSONObject resp = eventNotifyService.subscribeByEventTypes(types, eventDest);
+            return Result.ok(resp);
+        } catch (Exception e) {
+            log.error("按事件类型订阅事件失败", e);
+            return Result.error("按事件类型订阅事件失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 按事件类型取消订阅
+     * <p>前端仅需传事件类型数组，如 {"eventTypes": [123, 223]}，
+     * 请求海康SDK取消对应类型的事件推送。</p>
+     */
+    @PostMapping("/unsubscribe")
+    @ApiOperation(value = "按事件类型取消订阅", notes = "请求海康SDK /api/eventService/v1/eventUnSubscriptionByEventTypes，按事件类型取消订阅事件推送")
+    public Result<JSONObject> unsubscribeByEventTypes(@RequestBody @ApiParam(value = "取消订阅请求，如 {\"eventTypes\": [123, 223]}") JSONObject body) {
         try {
             JSONArray eventTypes = body.getJSONArray("eventTypes");
             if (eventTypes == null || eventTypes.isEmpty()) {
                 return Result.error("事件类型列表不能为空");
             }
             List<Integer> types = eventTypes.toJavaList(Integer.class);
-            JSONObject resp = eventNotifyService.subscribeByEventTypes(types);
+            JSONObject resp = eventNotifyService.unsubscribeByEventTypes(types);
             return Result.ok(resp);
         } catch (Exception e) {
-            log.error("按事件类型订阅事件失败", e);
-            return Result.error("按事件类型订阅事件失败: " + e.getMessage());
+            log.error("按事件类型取消订阅失败", e);
+            return Result.error("按事件类型取消订阅失败: " + e.getMessage());
         }
     }
 
@@ -112,4 +140,5 @@ public class EventNotifyController {
             return Result.ok();
         }
     }
+
 }

@@ -59,10 +59,20 @@ public interface IEventNotifyService extends IService<EventNotify> {
     /**
      * 按事件类型订阅事件
      * <p>请求海康OpenAPI /api/eventService/v1/eventSubscriptionByEventTypes 订阅指定类型的事件推送，
-     * 事件接收地址使用服务端配置的 eventDest（subType 使用默认值0，eventLvl 使用默认值）。</p>
+     * 事件接收地址由调用方传入（subType 使用默认值0，eventLvl 使用默认值）。</p>
      *
      * @param eventTypes 事件类型编码列表（非空）
+     * @param eventDest  事件接收地址（restful回调，http/https，不超过1024字符）
      * @return 海康订阅响应（{"code": "0", "msg": "success"}）
      */
-    JSONObject subscribeByEventTypes(List<Integer> eventTypes) throws Exception;
+    JSONObject subscribeByEventTypes(List<Integer> eventTypes, String eventDest) throws Exception;
+
+    /**
+     * 按事件类型取消订阅
+     * <p>请求海康OpenAPI /api/eventService/v1/eventUnSubscriptionByEventTypes 取消指定类型的事件订阅。</p>
+     *
+     * @param eventTypes 事件类型编码列表（非空）
+     * @return 海康取消订阅响应（{"code": "0", "msg": "success"}）
+     */
+    JSONObject unsubscribeByEventTypes(List<Integer> eventTypes) throws Exception;
 }
