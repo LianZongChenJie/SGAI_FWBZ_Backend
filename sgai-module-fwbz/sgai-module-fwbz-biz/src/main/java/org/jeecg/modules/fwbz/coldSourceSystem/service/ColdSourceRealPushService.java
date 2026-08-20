@@ -201,9 +201,10 @@ public class ColdSourceRealPushService {
 
     /**
      * 实时数据回调：冷源 SDK 推送（或模拟数据源产生）的增量数据。
-     * 先更新测点值缓存，再按映射集合中全部 key 组装全量数据广播给前端：
-     *  - 有对应测点值：推送该 key 的最新值（聚合 key 求和、单测点透传）；
-     *  - 无对应 id 关系（映射 key 对应测点尚无缓存值）：该 key 的 value 推 {@link #UNMAPPED_VALUE}（"???"）。
+     * 更新测点值缓存后，仅推送本次发生变化的测点对应的 key（增量推送）：
+     *  - 单测点 key：透传该测点最新值；
+     *  - 聚合 key：用缓存中该 key 全部测点值求和；
+     *  - 无 FIELD_MAP 映射的测点：跳过，不推送（首次连接时全量数据已由 WS 端点推送）。
      * 包内可见：模拟数据源 {@link MockColdSourceDataGenerator} 直接调用，与真实 SDK 回调走同一处理链路。
      */
     void onRealData(int subId, List<PsSubRealData> subRealDataList) {
@@ -211,14 +212,23 @@ public class ColdSourceRealPushService {
             return;
         }
         try {
+            Map<String, Object> data = new LinkedHashMap<>();
             for (PsSubRealData realData : subRealDataList) {
                 Long tagId = realData.getTagId();
                 if (tagId == null) {
                     continue;
                 }
                 tagValueCache.put(tagId, realData);
+                List<String> keys = id2Keys.get(tagId);
+                if (keys == null) {
+                    continue;
+                }
+                for (String key : keys) {
+                    data.put(key, key2Ids.get(key).size() > 1
+                            ? buildAggregateValue(key)
+                            : buildValue(realData));
+                }
             }
-            Map<String, Object> data = buildAllData();
             if (!data.isEmpty()) {
                 Map<String, Object> message = new LinkedHashMap<>();
                 message.put("type", "REAL_DATA");
