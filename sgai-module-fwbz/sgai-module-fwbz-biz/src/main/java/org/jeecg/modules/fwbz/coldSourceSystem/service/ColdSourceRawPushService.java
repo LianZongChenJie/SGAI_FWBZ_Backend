@@ -37,11 +37,17 @@ public class ColdSourceRawPushService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /** 全局单例引用：供 WebSocket 端点在连接建立时推送最近一次全量原始数据 */
+    private static volatile ColdSourceRawPushService instance;
+
     @Autowired
     private ColdSourceOverviewService coldSourceOverviewService;
 
     @Autowired
     private ColdSourceProperties properties;
+
+    /** 最近一次推送的原始数据全量快照：tagId -> {value,timestamp,quality,dataType}（供首次连接展示） */
+    private final Map<Long, Map<String, Object>> latestSnapshot = new ConcurrentHashMap<>();
 
     /** 独立的 pSpace 客户端（与原 ColdSourceRealPushService 的连接隔离，避免订阅冲突） */
     private volatile PSpaceClient client;
@@ -51,6 +57,7 @@ public class ColdSourceRawPushService {
 
     @PostConstruct
     public void init() {
+        instance = this;
         buildPointIds();
         if (properties.isMock()) {
             log.warn("【模拟模式】冷源原始数据观察：不连接真实冷源，跳过订阅（无原始数据可推）");
@@ -144,6 +151,13 @@ public class ColdSourceRawPushService {
         if (subRealDataList == null || subRealDataList.isEmpty()) {
             return;
         }
+        // 调试：每次回调都打印冷源系统推送的原始数据
+        try {
+            log.info("[冷源原始数据回调] subId={}, 收到 {} 条: {}", subId,
+                    subRealDataList.size(), OBJECT_MAPPER.writeValueAsString(subRealDataList));
+        } catch (Exception ex) {
+            log.warn("[冷源原始数据回调] 序列化打印失败: {}", ex.getMessage());
+        }
         try {
             Map<String, Object> data = new LinkedHashMap<>();
             for (PsSubRealData realData : subRealDataList) {
@@ -157,6 +171,8 @@ public class ColdSourceRawPushService {
                 item.put("quality", enumName(realData.getQuality()));
                 item.put("dataType", enumName(realData.getDataType()));
                 data.put(String.valueOf(tagId), item);
+                // 缓存最近一次原始数据，供新连接首次推送全量快照
+                latestSnapshot.put(tagId, item);
             }
             if (!data.isEmpty()) {
                 Map<String, Object> message = new LinkedHashMap<>();
@@ -167,6 +183,23 @@ public class ColdSourceRawPushService {
         } catch (Exception e) {
             log.warn("冷源原始数据处理/推送异常(subId={}): {}", subId, e.getMessage());
         }
+    }
+
+    /**
+     * 构建最近一次的原始数据全量快照（供前端 WebSocket 连接建立时首次推送）。
+     *
+     * @return data 部分（不含 type 包裹），key 为 tagId 字符串
+     */
+    public static Map<String, Object> buildSnapshotData() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        ColdSourceRawPushService svc = instance;
+        if (svc == null) {
+            return data;
+        }
+        for (Map.Entry<Long, Map<String, Object>> entry : svc.latestSnapshot.entrySet()) {
+            data.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return data;
     }
 
     private static String enumName(Enum<?> e) {
