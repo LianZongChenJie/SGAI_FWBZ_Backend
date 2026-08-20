@@ -211,13 +211,6 @@ public class ColdSourceRealPushService {
         if (subRealDataList == null || subRealDataList.isEmpty()) {
             return;
         }
-        // 调试：每次收到冷源系统推送的原始数据，打印到日志（不做任何映射/聚合）
-        try {
-            log.info("[冷源原始数据] subId={}, 收到 {} 条推送: {}", subId,
-                    subRealDataList.size(), OBJECT_MAPPER.writeValueAsString(subRealDataList));
-        } catch (Exception ex) {
-            log.warn("[冷源原始数据] 序列化打印失败: {}", ex.getMessage());
-        }
         try {
             Map<String, Object> data = new LinkedHashMap<>();
             for (PsSubRealData realData : subRealDataList) {
