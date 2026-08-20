@@ -48,6 +48,12 @@ public class ColdSourceRealPushService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /** 全局单例引用：供 WebSocket 端点（非 Spring 单例）在连接建立时构建全量快照 */
+    private static volatile ColdSourceRealPushService instance;
+
+    /** 无 FIELD_MAP 映射测点的 value 占位值 */
+    private static final String UNMAPPED_VALUE = "???";
+
     @Autowired
     private ColdSourceServerService coldSourceServerService;
 
@@ -68,6 +74,7 @@ public class ColdSourceRealPushService {
 
     @PostConstruct
     public void init() {
+        instance = this;
         buildIndex();
         if (properties.isMock()) {
             log.warn("【模拟模式】fwbz.cold-source.mock=true：不连接真实冷源系统，改用内置模拟数据源测试全链路");
@@ -251,6 +258,41 @@ public class ColdSourceRealPushService {
         m.put("quality", enumName(changed.getQuality()));
         m.put("dataType", enumName(changed.getDataType()));
         return m;
+    }
+
+    /**
+     * 构建冷源实时数据全量快照（供前端 WebSocket 连接建立时首次推送）。
+     * 遍历测点值缓存中全部测点：
+     *  - 有 FIELD_MAP 映射：按映射 key 组装（聚合 key 求和、单测点透传），value 取缓存最新值；
+     *  - 无 FIELD_MAP 映射：以 tagId 字符串作为 key，value 统一传 {@link #UNMAPPED_VALUE}（"???"）。
+     *
+     * @return data 部分（不含 type 包裹），无缓存数据时返回空 Map
+     */
+    public static Map<String, Object> buildSnapshotData() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        ColdSourceRealPushService svc = instance;
+        if (svc == null) {
+            return data;
+        }
+        for (Map.Entry<Long, PsSubRealData> entry : svc.tagValueCache.entrySet()) {
+            Long tagId = entry.getKey();
+            if (tagId == null) {
+                continue;
+            }
+            List<String> keys = svc.id2Keys.get(tagId);
+            if (keys == null) {
+                // 无 FIELD_MAP 映射的测点：value 传 "???"
+                data.put(String.valueOf(tagId), UNMAPPED_VALUE);
+                continue;
+            }
+            PsSubRealData realData = entry.getValue();
+            for (String key : keys) {
+                data.put(key, svc.aggregateKeys.containsKey(key)
+                        ? svc.buildAggregateValue(key, realData)
+                        : svc.buildValue(realData));
+            }
+        }
+        return data;
     }
 
     private static int subIdOf(PsSubRealData data) {

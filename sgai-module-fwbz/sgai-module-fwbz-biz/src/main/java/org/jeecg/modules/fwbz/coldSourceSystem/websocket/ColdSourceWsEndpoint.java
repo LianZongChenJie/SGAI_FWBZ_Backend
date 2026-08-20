@@ -1,6 +1,8 @@
 package org.jeecg.modules.fwbz.coldSourceSystem.websocket;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceRealPushService;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -9,6 +11,8 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,10 +40,35 @@ public class ColdSourceWsEndpoint {
     /** 所有已连接的前端会话 */
     private static final Set<Session> SESSIONS = ConcurrentHashMap.newKeySet();
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     @OnOpen
     public void onOpen(Session session) {
         SESSIONS.add(session);
         log.info("冷源实时数据客户端接入: session={}, 当前连接数={}", session.getId(), SESSIONS.size());
+        // 首次推送全量快照（含无映射测点，其 value 为 "???"）
+        sendSnapshot(session);
+    }
+
+    /**
+     * 向指定 session 推送冷源实时数据全量快照。
+     * 全量数据来自测点值缓存；无 FIELD_MAP 映射的测点 value 传 "???"。
+     */
+    private void sendSnapshot(Session session) {
+        try {
+            Map<String, Object> snapshotData = ColdSourceRealPushService.buildSnapshotData();
+            if (snapshotData == null || snapshotData.isEmpty()) {
+                return;
+            }
+            Map<String, Object> message = new LinkedHashMap<>();
+            message.put("type", "REAL_DATA");
+            message.put("data", snapshotData);
+            synchronized (session) {
+                session.getBasicRemote().sendText(OBJECT_MAPPER.writeValueAsString(message));
+            }
+        } catch (Exception e) {
+            log.warn("冷源实时数据全量快照推送失败: session={}, err={}", session.getId(), e.getMessage());
+        }
     }
 
     @OnClose
