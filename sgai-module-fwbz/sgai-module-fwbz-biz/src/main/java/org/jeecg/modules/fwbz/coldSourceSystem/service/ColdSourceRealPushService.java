@@ -128,8 +128,10 @@ public class ColdSourceRealPushService {
 
     /**
      * 根据 FIELD_MAP 构建索引，构建完成后以不可变视图暴露，只读安全。
+     * allKeys：FIELD_MAP 中全部 key（含未配置测点 id 的 key，如 makeup.pressure），保持顺序；
      * key2Ids：映射 key -> 该 key 关联的测点 id（单测点 1 个，聚合 key 多个）；
-     * allKeys：全部配置了测点的映射 key，保持 FIELD_MAP 顺序，供每次推送全量数据。
+     *          未配置 id 的 key 不放入，即 key2Ids.get(key) 为 null；
+     * id2Keys：tagId -> 关联的 key 列表。
      */
     private void buildIndex() {
         Map<String, List<Long>> fieldMap = coldSourceOverviewService.getFieldMap();
@@ -139,10 +141,11 @@ public class ColdSourceRealPushService {
         for (Map.Entry<String, List<Long>> entry : fieldMap.entrySet()) {
             String key = entry.getKey();
             List<Long> ids = entry.getValue();
+            // 全部 key 都进入 allKeys（未配置测点 id 的 key 也推送，全量时 value 为 "???"）
+            keys.add(key);
             if (ids == null || ids.isEmpty()) {
                 continue;
             }
-            keys.add(key);
             key2IdsMap.put(key, new ArrayList<>(ids));
             for (Long id : ids) {
                 id2KeysMap.computeIfAbsent(id, k -> new ArrayList<>()).add(key);
@@ -239,6 +242,8 @@ public class ColdSourceRealPushService {
         for (String key : allKeys) {
             List<Long> ids = key2Ids.get(key);
             if (ids == null || ids.isEmpty()) {
+                // 未配置测点 id 的映射 key（如 makeup.pressure）：value 推 "???"
+                data.put(key, UNMAPPED_VALUE);
                 continue;
             }
             if (ids.size() > 1) {
