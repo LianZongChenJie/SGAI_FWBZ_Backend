@@ -99,7 +99,7 @@ public class ColdSourceOverviewService {
         put(m, "control.chillerOrder", 591L);            // 冷机设定排序
 
         // ================= towerControl 冷却塔控制 =================
-        put(m, "towerControl.approachSetpoint", null);   // 趋近温度设定（点表无）
+        put(m, "towerControl.approachSetpoint", 502L);   // 趋近温度设定（点表无）
         put(m, "towerControl.highTempLimit", 503L);      // 回水温度设定高限
         put(m, "towerControl.lowTempLimit", 504L);       // 回水温度设定低限
         put(m, "towerControl.addDelay", 505L);           // 加塔延时设定
