@@ -38,9 +38,9 @@ public class BuildingControlController {
      */
     @PostMapping("/updRealData")
     @ApiOperation(value = "实时数据写入", notes = "接收前端 tagid 与设定值，调用外部系统 PUT /UpdRealData 接口写入实时数据")
-    public Result<UpdRealDataResponse> updRealData(@RequestBody @Valid List<UpdRealDataItemDto> items) {
+    public Result<UpdRealDataResponse> updRealData(@RequestBody @Valid UpdRealDataItemDto items) {
         try {
-            UpdRealDataResponse response = buildingControlService.updRealData(items);
+            String  response = buildingControlService.updRealData(items);
             return Result.ok(response);
         } catch (IllegalArgumentException e) {
             log.warn("实时数据写入参数校验失败：{}", e.getMessage());

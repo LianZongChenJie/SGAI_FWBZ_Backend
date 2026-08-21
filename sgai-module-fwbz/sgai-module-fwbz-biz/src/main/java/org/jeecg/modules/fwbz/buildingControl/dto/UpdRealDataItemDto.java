@@ -25,12 +25,4 @@ public class UpdRealDataItemDto implements Serializable {
     @NotNull(message = "设定值pv不能为空")
     @ApiModelProperty(value = "设定值", required = true, example = "2489")
     private Object pv;
-
-    /** 时间，可选，默认当前时间 */
-    @ApiModelProperty(value = "时间，可选，默认当前时间", example = "2022-05-09 10:30:00.16")
-    private String tm;
-
-    /** 质量戳，可选，默认192 */
-    @ApiModelProperty(value = "质量戳，可选，默认192", example = "192")
-    private Integer qy;
 }
