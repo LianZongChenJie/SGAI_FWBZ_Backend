@@ -1,5 +1,5 @@
 server:
-  port: 7206
+  port: 7207
 spring:
   application:
     name: sgai-fwbz-dev
@@ -24,6 +24,13 @@ spring:
         username:
         password:
         group: DEFAULT_GROUP
+mqtt:
+  broker: tcp://10.61.13.131:18083
+  username: admin
+  password: zaq!@wsx
+  client-id: sgai-fwbz-mqtt-consumer
+  topic: sendData       # ← 订阅主题，默认占位，请改成实际主题
+  qos: 1
 
 mybatis-plus:
 #  configuration:
