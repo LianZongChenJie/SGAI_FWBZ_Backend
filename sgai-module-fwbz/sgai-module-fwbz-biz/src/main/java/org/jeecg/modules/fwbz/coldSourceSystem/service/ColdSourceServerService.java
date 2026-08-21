@@ -1,15 +1,19 @@
 package org.jeecg.modules.fwbz.coldSourceSystem.service;
 
 import com.sunwayland.pspace.PSpaceClient;
+import com.sunwayland.pspace.entity.Base;
 import com.sunwayland.pspace.entity.PsConnectInfo;
 import com.sunwayland.pspace.entity.PsResult;
 import com.sunwayland.pspace.entity.PsServerProp;
+import com.sunwayland.pspace.enums.PsQualityEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.coldSourceSystem.config.ColdSourceProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 冷源系统(pSpace) Server API 服务（对应 SDK 自带 ServerAPIDemo）
@@ -122,6 +126,52 @@ public class ColdSourceServerService {
             log.info("服务器属性: {}", prop);
         } else {
             log.error("获取服务器属性失败: {}", result.getCode());
+        }
+        return result;
+    }
+
+    /**
+     * 更新点位信息数据（写点/控制），按测点ID(tagId)写入值
+     * 质量戳使用 232(WRITE_BY_CONTROL，通过下置组件写的值 GOOD)
+     *
+     * @param tagId 测点ID（对应 device_attribute.acquisition_coding）
+     * @param value 要写入的值（字符串形式，SDK 内部按点位类型转换）
+     * @return PsResult：成功时 isSuccess()=true
+     */
+    public PsResult<Base> realWrite(Long tagId, String value) {
+        if (tagId == null) {
+            throw new IllegalArgumentException("tagId 不能为空");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value 不能为空");
+        }
+        PsResult<Base> result = connect().realWrite(tagId, value, PsQualityEnum.WRITE_BY_CONTROL, System.currentTimeMillis());
+        if (result.isSuccess()) {
+            log.info("冷源写点成功: tagId={}, value={}, quality=232(WRITE_BY_CONTROL)", tagId, value);
+        } else {
+            log.error("冷源写点失败: tagId={}, value={}, code={}", tagId, value, result.getCode());
+        }
+        return result;
+    }
+
+    /**
+     * 更新点位信息数据（批量写点），按测点ID列表批量写入值
+     *
+     * @param tagIds  测点ID列表
+     * @param values  值列表（与 tagIds 一一对应）
+     * @return PsResult：成功时 isSuccess()=true
+     */
+    public PsResult<Base> realWriteList(List<Long> tagIds, List<String> values) {
+        if (tagIds == null || tagIds.isEmpty() || values == null || tagIds.size() != values.size()) {
+            throw new IllegalArgumentException("tagIds 与 values 不能为空且数量必须一致");
+        }
+        PsResult<Base> result = connect().realWriteList(tagIds, values,
+                Collections.nCopies(tagIds.size(), PsQualityEnum.WRITE_BY_CONTROL),
+                Collections.nCopies(tagIds.size(), System.currentTimeMillis()));
+        if (result.isSuccess()) {
+            log.info("冷源批量写点成功: count={}, quality=232(WRITE_BY_CONTROL)", tagIds.size());
+        } else {
+            log.error("冷源批量写点失败: count={}, code={}", tagIds.size(), result.getCode());
         }
         return result;
     }
