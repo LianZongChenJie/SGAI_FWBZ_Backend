@@ -19,4 +19,12 @@ public interface IMqttHistoryService extends IService<MqttHistory> {
      * @return 是否成功
      */
     boolean saveHistoryList(List<MqttHistory> list);
+
+    /**
+     * 根据采集编码（uniqueKey）批量更新设备属性表中的采集值和采集时间
+     *
+     * @param list MQTT数据列表
+     * @return 影响行数
+     */
+    int updateDeviceAttributeByUniqueKey(List<MqttHistory> list);
 }

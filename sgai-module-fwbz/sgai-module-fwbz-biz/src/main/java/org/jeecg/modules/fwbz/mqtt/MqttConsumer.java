@@ -141,6 +141,13 @@ public class MqttConsumer {
             }
             boolean success = mqttHistoryService.saveHistoryList(list);
             log.info("MQTT消息消费完成, topic={}, 共{}条, 落库{}", topicName, list.size(), success ? "成功" : "失败");
+
+            // 根据采集编码（uniqueKey）更新设备属性表中的采集值和采集时间
+            try {
+                mqttHistoryService.updateDeviceAttributeByUniqueKey(list);
+            } catch (Exception e) {
+                log.error("设备属性采集值更新失败, topic={}", topicName, e);
+            }
         } catch (Exception e) {
             log.error("MQTT消息消费失败, topic={}, payload={}", topicName, payload, e);
         }
