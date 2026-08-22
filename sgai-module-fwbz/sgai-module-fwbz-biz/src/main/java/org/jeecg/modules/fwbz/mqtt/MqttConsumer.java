@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -231,7 +230,7 @@ public class MqttConsumer {
         }
         Object value = json.get("value");
         if (value != null) {
-            history.setValue(new BigDecimal(value.toString()));
+            history.setValue(value.toString());
         }
         return history;
     }

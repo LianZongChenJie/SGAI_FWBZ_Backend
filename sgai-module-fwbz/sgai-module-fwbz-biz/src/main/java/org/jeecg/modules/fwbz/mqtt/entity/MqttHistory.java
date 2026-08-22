@@ -11,7 +11,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -45,5 +44,5 @@ public class MqttHistory implements Serializable {
     private String desc;
 
     @ApiModelProperty("遥测值")
-    private BigDecimal value;
+    private String value;
 }
