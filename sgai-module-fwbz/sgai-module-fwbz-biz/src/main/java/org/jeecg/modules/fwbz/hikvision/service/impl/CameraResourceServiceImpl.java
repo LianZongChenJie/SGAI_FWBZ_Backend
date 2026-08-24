@@ -6,9 +6,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
@@ -17,7 +18,9 @@ import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
+import org.jeecg.modules.fwbz.hikvision.util.CameraHlsStream;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
+import org.jeecg.modules.fwbz.hikvision.util.HlsStreamManager;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +53,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper, CameraResource>
         implements ICameraResourceService {
 
@@ -87,6 +90,16 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     private final HikvisionUtil hikvisionUtil;
 
     private final IRegionResourceService regionResourceService;
+
+    /**
+     * HLS流管理器：负责RTSP拉流转码、流复用与无人观看自动停止
+     */
+    private final HlsStreamManager hlsStreamManager;
+
+    /**
+     * HLS转码相关配置
+     */
+    private final HlsProperties hlsProperties;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -289,52 +302,95 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
             return Collections.emptyList();
         }
 
-        log.info("开始从海康获取{}个摄像头的播放地址", cameraIndexCodes.size());
+        log.info("开始获取{}个摄像头的本地HLS播放地址", cameraIndexCodes.size());
         List<CameraPlayUrlVO> result = new ArrayList<>();
 
         for (String cameraIndexCode : cameraIndexCodes) {
             try {
+                // 1. 请求海康SDK获取RTSP播放地址
                 PlayUrlRequest request = buildPlayUrlRequest(cameraIndexCode);
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康摄像头播放地址, cameraIndexCode={}", cameraIndexCode);
+                log.info("请求海康摄像头RTSP播放地址, cameraIndexCode={}", cameraIndexCode);
 
                 String responseBody = hikvisionUtil.doPostJson(CAMERA_PREVIEW_URL_API, requestBody);
 
                 if (!hikvisionUtil.isSuccess(responseBody)) {
-                    log.error("获取摄像头[{}]播放地址失败, 海康响应: {}", cameraIndexCode, responseBody);
+                    log.error("获取摄像头[{}]RTSP地址失败, 海康响应: {}", cameraIndexCode, responseBody);
                     continue;
                 }
 
                 JSONObject dataJson = hikvisionUtil.getResponseData(responseBody);
-                log.info("获取摄像头[{}]播放地址成功, 海康响应: {}", cameraIndexCode, dataJson);
-                if (dataJson == null) {
-                    log.warn("海康返回的data为空");
-                } else {
-                    // 解析返回的播放地址列表
-                    result.add(new CameraPlayUrlVO(cameraIndexCode, dataJson.get("url").toString()));
-                    log.info("海康批量播放地址获取成功, cameraIndexCode={}, url={}", cameraIndexCode, dataJson.get("url").toString());
+                if (dataJson == null || StringUtils.isBlank(dataJson.getString("url"))) {
+                    log.warn("摄像头[{}] 海康未返回RTSP地址", cameraIndexCode);
+                    continue;
                 }
+                String rtspUrl = dataJson.getString("url");
+                log.info("摄像头[{}] RTSP地址获取成功: {}", cameraIndexCode, rtspUrl);
+
+                // 2. 通过HLS流管理器获取本地HLS流：同一摄像头正在拉流时直接复用，不重复转码
+                CameraHlsStream stream = hlsStreamManager.getOrCreate(cameraIndexCode, rtspUrl);
+                if (stream == null) {
+                    log.error("摄像头[{}] HLS转码任务创建失败", cameraIndexCode);
+                    continue;
+                }
+
+                // 3. 等待HLS流就绪（首个切片已生成），超时仍返回地址由前端自行重试
+                boolean ready = stream.awaitReady(hlsProperties.getReadyWaitSeconds());
+                if (!ready) {
+                    if (!stream.isRunning()) {
+                        // 拉流启动失败，清理无效任务
+                        log.error("摄像头[{}] HLS转码启动失败: {}", cameraIndexCode, stream.getErrorMessage());
+                        hlsStreamManager.removeStream(cameraIndexCode);
+                        continue;
+                    }
+                    log.warn("摄像头[{}] HLS流未在{}s内就绪, 仍返回地址由前端重试",
+                            cameraIndexCode, hlsProperties.getReadyWaitSeconds());
+                }
+
+                // 4. 返回本地HLS相对播放地址（由Controller拼装完整访问地址）
+                result.add(new CameraPlayUrlVO(cameraIndexCode, stream.getHlsRelativeUrl()));
+                log.info("摄像头[{}] 本地HLS播放地址: {}", cameraIndexCode, stream.getHlsRelativeUrl());
             } catch (Exception e) {
-                log.error("批量获取海康播放地址异常", e);
+                log.error("获取摄像头[{}]本地HLS播放地址异常", cameraIndexCode, e);
             }
         }
 
-        // 海康请求失败或未返回的摄像头不再兜底返回测试地址，保持真实结果
-        log.info("海康播放地址获取完成, 成功{}个/共{}个", result.size(), cameraIndexCodes.size());
+        log.info("本地HLS播放地址获取完成, 成功{}个/共{}个", result.size(), cameraIndexCodes.size());
         return result;
     }
 
+    @Override
+    public void releasePlay(List<String> cameraIndexCodes) {
+        if (cameraIndexCodes == null || cameraIndexCodes.isEmpty()) {
+            return;
+        }
+        for (String cameraIndexCode : cameraIndexCodes) {
+            hlsStreamManager.release(cameraIndexCode);
+        }
+        log.info("已释放{}个摄像头的观看, 无人观看时将自动停止拉流", cameraIndexCodes.size());
+    }
+
+    @Override
+    public void heartbeat(List<String> cameraIndexCodes) {
+        if (cameraIndexCodes == null || cameraIndexCodes.isEmpty()) {
+            return;
+        }
+        for (String cameraIndexCode : cameraIndexCodes) {
+            hlsStreamManager.heartbeat(cameraIndexCode);
+        }
+        log.debug("已续期{}个摄像头的心跳", cameraIndexCodes.size());
+    }
+
     /**
-     * 构建获取播放地址的固定请求参数
+     * 构建获取RTSP播放地址的固定请求参数（协议为rtsp，由JavaCV拉流转码为本地HLS）
      */
     private PlayUrlRequest buildPlayUrlRequest(String cameraIndexCode) {
         PlayUrlRequest request = new PlayUrlRequest();
         request.setCameraIndexCode(cameraIndexCode);
         request.setStreamType(0);
-        request.setProtocol("hls");
+        request.setProtocol("rtsp");
         request.setTransmode(1);
         request.setExpand("transcode=0");
-        request.setStreamform("ps");
         return request;
     }
 

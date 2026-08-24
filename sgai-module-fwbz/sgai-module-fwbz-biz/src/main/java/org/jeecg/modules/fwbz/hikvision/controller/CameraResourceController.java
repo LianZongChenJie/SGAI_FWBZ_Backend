@@ -5,10 +5,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 @RequestMapping("/fwbz/hikvision/camera")
 @Api(tags = "海康摄像头资源管理")
 public class CameraResourceController {
@@ -45,6 +47,12 @@ public class CameraResourceController {
     private static final List<String> PACKAGE_KEYWORD = Arrays.asList("服贸会", "园区高点");
 
     private final ICameraResourceService cameraResourceService;
+
+    /**
+     * HLS转码相关配置（含 publicBaseUrl：前端可访问的后端基础地址，
+     * 配置后HLS播放地址固定使用该地址拼接；不配置则自动取当前请求的Host）
+     */
+    private final HlsProperties hlsProperties;
 
     /**
      * 触发全量同步海康摄像头数据
@@ -66,23 +74,95 @@ public class CameraResourceController {
     }
 
     /**
-     * 获取摄像头播放地址
-     * <p>前端传入1个或多个摄像头唯一编码，逐个请求海康获取播放地址后统一返回。</p>
+     * 获取摄像头本地HLS播放地址
+     * <p>流程：前端传入1个或多个摄像头唯一编码 -> 海康SDK获取RTSP地址 -> JavaCV转码为本地HLS ->
+     * 返回 /hls/{编码}/index.m3u8 完整访问地址。同一摄像头正在拉流时直接复用已生成的HLS流，不做重复转码。</p>
      *
-     * @param body 请求体，其中 cameraIndexCode 为摄像头唯一编码列表
+     * @param body    请求体，其中 cameraIndexCode 为摄像头唯一编码列表
+     * @param request 当前请求，用于拼接HLS访问地址
      * @return 播放地址列表（每项包含 cameraIndexCode 和 url）
      */
     @PostMapping("/playUrls")
-    @ApiOperation(value = "获取摄像头播放地址", notes = "传入 {\\\"cameraIndexCode\\\": [...]}，返回对应的播放地址")
-    public Result<List<CameraPlayUrlVO>> getPlayUrls(@RequestBody Map<String, List<String>> body) {
+    @ApiOperation(value = "获取摄像头本地HLS播放地址", notes = "传入 {\\\"cameraIndexCode\\\": [...]}，返回对应的本地HLS播放地址（海康RTSP经JavaCV转码）")
+    public Result<List<CameraPlayUrlVO>> getPlayUrls(@RequestBody Map<String, List<String>> body,
+                                                     HttpServletRequest request) {
         try {
             List<String> cameraIndexCodes = body.get("cameraIndexCode");
             List<CameraPlayUrlVO> playUrls = cameraResourceService.getPlayUrls(cameraIndexCodes);
+            // 将服务端返回的相对地址拼接为前端可访问的完整地址
+            String baseUrl = buildBaseUrl(request);
+            for (CameraPlayUrlVO vo : playUrls) {
+                if (vo.getUrl() != null && vo.getUrl().startsWith("/")) {
+                    vo.setUrl(baseUrl + vo.getUrl());
+                }
+            }
             return Result.ok(playUrls);
         } catch (Exception e) {
             log.error("获取摄像头播放地址失败", e);
             return Result.error("获取摄像头播放地址失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 释放摄像头观看（前端停止播放时调用）
+     * <p>对应摄像头观看人数-1，无人观看时由HLS流管理器延迟自动停止RTSP拉流，释放摄像头通道。</p>
+     *
+     * @param body 请求体，其中 cameraIndexCode 为摄像头唯一编码列表
+     * @return 操作结果
+     */
+    @PostMapping("/releasePlay")
+    @ApiOperation(value = "释放摄像头观看", notes = "前端停止播放时调用，无人观看时自动停止RTSP拉流")
+    public Result<Boolean> releasePlay(@RequestBody Map<String, List<String>> body) {
+        try {
+            List<String> cameraIndexCodes = body.get("cameraIndexCode");
+            cameraResourceService.releasePlay(cameraIndexCodes);
+            return Result.ok(true);
+        } catch (Exception e) {
+            log.error("释放摄像头观看失败", e);
+            return Result.error("释放摄像头观看失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 摄像头播放心跳续期（播放过程中周期调用）
+     * <p>前端正常播放时每30秒调用一次，防止页面异常关闭导致拉流泄漏无人回收。</p>
+     *
+     * @param body 请求体，其中 cameraIndexCode 为摄像头唯一编码列表
+     * @return 操作结果
+     */
+    @PostMapping("/heartbeat")
+    @ApiOperation(value = "摄像头播放心跳续期", notes = "播放过程中周期调用，防止页面异常关闭导致拉流泄漏")
+    public Result<Boolean> heartbeat(@RequestBody Map<String, List<String>> body) {
+        try {
+            List<String> cameraIndexCodes = body.get("cameraIndexCode");
+            cameraResourceService.heartbeat(cameraIndexCodes);
+            return Result.ok(true);
+        } catch (Exception e) {
+            log.error("摄像头播放心跳续期失败", e);
+            return Result.error("摄像头播放心跳续期失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 构建HLS播放地址的完整访问基础地址
+     * <p>优先使用配置 fwbz.hls.public-base-url；未配置时取当前请求的Host
+     * （兼容网关转发场景，优先取 X-Forwarded-Host）。</p>
+     */
+    private String buildBaseUrl(HttpServletRequest request) {
+        if (StringUtils.isNotBlank(hlsProperties.getPublicBaseUrl())) {
+            return StringUtils.removeEnd(hlsProperties.getPublicBaseUrl(), "/");
+        }
+        String scheme = request.getScheme();
+        String host = request.getHeader("X-Forwarded-Host");
+        if (StringUtils.isBlank(host)) {
+            host = request.getHeader("Host");
+        }
+        if (StringUtils.isBlank(host)) {
+            host = request.getServerName()
+                    + (request.getServerPort() == 80 || request.getServerPort() == 443
+                    ? "" : ":" + request.getServerPort());
+        }
+        return scheme + "://" + host;
     }
 
     /**

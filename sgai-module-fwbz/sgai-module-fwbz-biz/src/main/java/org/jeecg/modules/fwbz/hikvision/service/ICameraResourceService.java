@@ -26,12 +26,29 @@ public interface ICameraResourceService extends IService<CameraResource> {
     int syncFromHikvision();
 
     /**
-     * 根据摄像头唯一编码列表，从海康平台获取播放地址
+     * 根据摄像头唯一编码列表，获取本地HLS播放地址
+     * <p>流程：海康SDK获取RTSP地址 -> JavaCV转码为本地HLS -> 返回 /hls/{编码}/index.m3u8 相对地址。
+     * 同一摄像头正在拉流时直接复用已生成的HLS流，不做重复转码。</p>
      *
      * @param cameraIndexCodes 摄像头唯一编码列表（1个或多个）
-     * @return 每个摄像头的播放地址列表
+     * @return 每个摄像头的本地HLS播放地址列表
      */
     List<CameraPlayUrlVO> getPlayUrls(List<String> cameraIndexCodes);
+
+    /**
+     * 释放观看（前端停止播放时调用）
+     * <p>对应摄像头观看人数-1，无人观看时由HLS流管理器延迟自动停止拉流。</p>
+     *
+     * @param cameraIndexCodes 摄像头唯一编码列表
+     */
+    void releasePlay(List<String> cameraIndexCodes);
+
+    /**
+     * 播放心跳续期（前端播放过程中周期调用，防止页面异常关闭导致拉流泄漏）
+     *
+     * @param cameraIndexCodes 摄像头唯一编码列表
+     */
+    void heartbeat(List<String> cameraIndexCodes);
 
     /**
      * 从海康平台查询监控点在线状态并更新到数据库
