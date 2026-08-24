@@ -12,7 +12,7 @@ import org.jeecg.modules.fwbz.activeMeetPreparation.entity.Device;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.LightingCircuit;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.SmokeDetector;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.ActiveMeetPreparationTypeMapper;
-import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.DeviceMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.ADeviceMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.LightingCircuitMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.SmokeDetectorMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.service.IActiveMeetPreparationService;
@@ -38,7 +38,7 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
     private final ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper;
     private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
     private final ActiveMeetPreparationTypeMapper activeMeetPreparationTypeMapper;
-    private final DeviceMapper deviceMapper;
+    private final ADeviceMapper deviceMapper;
     private final CameraResourceMapper cameraResourceMapper;
     private final DoorResourceMapper doorResourceMapper;
     private final AcsDeviceMapper acsDeviceMapper;
@@ -49,7 +49,7 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
                                             ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper,
                                             ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
                                             ActiveMeetPreparationTypeMapper activeMeetPreparationTypeMapper,
-                                            DeviceMapper deviceMapper,
+                                            ADeviceMapper deviceMapper,
                                             CameraResourceMapper cameraResourceMapper,
                                             DoorResourceMapper doorResourceMapper,
                                             AcsDeviceMapper acsDeviceMapper,

@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
-import org.jeecg.modules.fwbz.complaint.entity.AlarmRecord;
+import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
+import org.jeecg.modules.fwbz.alarm.mapper.AlarmRecordMapper;
 import org.jeecg.modules.fwbz.complaint.entity.BuildingControlPointSendHistory;
 import org.jeecg.modules.fwbz.complaint.entity.ComplaintInfo;
 import org.jeecg.modules.fwbz.complaint.entity.LightingOperationLog;
-import org.jeecg.modules.fwbz.complaint.mapper.AlarmRecordMapper;
-import org.jeecg.modules.fwbz.complaint.mapper.BuildingControlPointSendHistoryMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.CBuildingControlPointSendHistoryMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.LightingOperationLogMapper;
 import org.jeecg.modules.fwbz.complaint.service.IComplaintStatisticsService;
@@ -30,13 +30,13 @@ import java.util.List;
 public class ComplaintStatisticsServiceImpl implements IComplaintStatisticsService {
 
     private final ActiveMeetInfoMapper activeMeetInfoMapper;
-    private final BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper;
+    private final CBuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper;
     private final LightingOperationLogMapper lightingOperationLogMapper;
     private final ComplaintInfoMapper complaintInfoMapper;
     private final AlarmRecordMapper alarmRecordMapper;
 
     public ComplaintStatisticsServiceImpl(ActiveMeetInfoMapper activeMeetInfoMapper,
-                                          BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper,
+                                          CBuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper,
                                           LightingOperationLogMapper lightingOperationLogMapper,
                                           ComplaintInfoMapper complaintInfoMapper,
                                           AlarmRecordMapper alarmRecordMapper) {

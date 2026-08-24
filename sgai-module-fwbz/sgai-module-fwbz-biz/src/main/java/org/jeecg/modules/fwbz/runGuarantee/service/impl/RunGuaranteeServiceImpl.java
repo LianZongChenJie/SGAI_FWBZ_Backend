@@ -6,12 +6,12 @@ import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetsDeviceTypeMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.Device;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.LightingCircuit;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.SmokeDetector;
-import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.DeviceMapper;
+import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.ADeviceMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.LightingCircuitMapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.mapper.SmokeDetectorMapper;
 import org.jeecg.modules.fwbz.activeMeetStatistics.vo.StatCardVO;
-import org.jeecg.modules.fwbz.complaint.mapper.BuildingControlPointHistoryMapper;
-import org.jeecg.modules.fwbz.complaint.mapper.BuildingControlPointSendHistoryMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.CBuildingControlPointHistoryMapper;
+import org.jeecg.modules.fwbz.complaint.mapper.CBuildingControlPointSendHistoryMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.LightingOperationLogMapper;
 import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
@@ -36,25 +36,25 @@ import java.util.List;
 public class RunGuaranteeServiceImpl implements IRunGuaranteeService {
 
     private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
-    private final DeviceMapper deviceMapper;
+    private final ADeviceMapper deviceMapper;
     private final CameraResourceMapper cameraResourceMapper;
     private final DoorResourceMapper doorResourceMapper;
     private final AcsDeviceMapper acsDeviceMapper;
     private final SmokeDetectorMapper smokeDetectorMapper;
     private final LightingCircuitMapper lightingCircuitMapper;
-    private final BuildingControlPointHistoryMapper buildingControlPointHistoryMapper;
-    private final BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper;
+    private final CBuildingControlPointHistoryMapper buildingControlPointHistoryMapper;
+    private final CBuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper;
     private final LightingOperationLogMapper lightingOperationLogMapper;
 
     public RunGuaranteeServiceImpl(ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
-                                   DeviceMapper deviceMapper,
+                                   ADeviceMapper deviceMapper,
                                    CameraResourceMapper cameraResourceMapper,
                                    DoorResourceMapper doorResourceMapper,
                                    AcsDeviceMapper acsDeviceMapper,
                                    SmokeDetectorMapper smokeDetectorMapper,
                                    LightingCircuitMapper lightingCircuitMapper,
-                                   BuildingControlPointHistoryMapper buildingControlPointHistoryMapper,
-                                   BuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper,
+                                   CBuildingControlPointHistoryMapper buildingControlPointHistoryMapper,
+                                   CBuildingControlPointSendHistoryMapper buildingControlPointSendHistoryMapper,
                                    LightingOperationLogMapper lightingOperationLogMapper) {
         this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
         this.deviceMapper = deviceMapper;

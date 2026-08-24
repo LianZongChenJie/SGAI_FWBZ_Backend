@@ -254,8 +254,8 @@ public class EventNotifyServiceImpl extends ServiceImpl<EventNotifyMapper, Event
             if (eventTypeName != null && !eventTypeName.isEmpty()) {
                 // 尝试通过事件类型名找到对应的数组字段
                 Object eventArray = data.get(eventTypeName);
-                if (eventArray instanceof java.util.List) {
-                    java.util.List<?> list = (java.util.List<?>) eventArray;
+                if (eventArray instanceof List) {
+                    List<?> list = (List<?>) eventArray;
                     if (!list.isEmpty() && list.get(0) instanceof JSONObject) {
                         JSONObject firstItem = (JSONObject) list.get(0);
                         JSONObject targetAttrs = firstItem.getJSONObject("targetAttrs");

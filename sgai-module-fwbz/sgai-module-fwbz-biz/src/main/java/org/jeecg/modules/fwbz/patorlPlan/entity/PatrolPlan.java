@@ -7,7 +7,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 import org.jeecgframework.poi.excel.annotation.Excel;
 
 /**

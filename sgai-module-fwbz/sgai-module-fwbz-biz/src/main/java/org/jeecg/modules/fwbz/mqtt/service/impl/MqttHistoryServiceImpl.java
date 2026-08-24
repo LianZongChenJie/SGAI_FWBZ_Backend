@@ -3,7 +3,7 @@ package org.jeecg.modules.fwbz.mqtt.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.mqtt.entity.MqttHistory;
-import org.jeecg.modules.fwbz.mqtt.mapper.DeviceAttributeMapper;
+import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
 import org.jeecg.modules.fwbz.mqtt.mapper.MqttHistoryMapper;
 import org.jeecg.modules.fwbz.mqtt.service.IMqttHistoryService;
 import org.springframework.stereotype.Service;
@@ -21,9 +21,9 @@ import java.util.List;
 public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttHistory>
         implements IMqttHistoryService {
 
-    private final DeviceAttributeMapper deviceAttributeMapper;
+    private final MDeviceAttributeMapper deviceAttributeMapper;
 
-    public MqttHistoryServiceImpl(DeviceAttributeMapper deviceAttributeMapper) {
+    public MqttHistoryServiceImpl(MDeviceAttributeMapper deviceAttributeMapper) {
         this.deviceAttributeMapper = deviceAttributeMapper;
     }
 

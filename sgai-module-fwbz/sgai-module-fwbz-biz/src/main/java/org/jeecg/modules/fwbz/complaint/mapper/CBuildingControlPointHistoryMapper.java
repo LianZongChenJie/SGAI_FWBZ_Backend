@@ -15,7 +15,7 @@ import java.util.Date;
  * @Version: V1.0
  */
 @Mapper
-public interface BuildingControlPointHistoryMapper extends BaseMapper<BuildingControlPointHistory> {
+public interface CBuildingControlPointHistoryMapper extends BaseMapper<BuildingControlPointHistory> {
 
     /**
      * 统计今日采集条数

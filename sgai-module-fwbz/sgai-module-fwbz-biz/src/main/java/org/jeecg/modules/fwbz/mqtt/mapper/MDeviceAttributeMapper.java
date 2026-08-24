@@ -15,7 +15,7 @@ import java.util.List;
  * @author fwbz
  */
 @Mapper
-public interface DeviceAttributeMapper extends BaseMapper<DeviceAttribute> {
+public interface MDeviceAttributeMapper extends BaseMapper<DeviceAttribute> {
 
     /**
      * 根据采集编码（acquisition_coding 对应 MQTT uniqueKey）批量更新采集值和采集时间

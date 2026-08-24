@@ -13,7 +13,7 @@ import org.jeecg.modules.fwbz.complaint.entity.BuildingControlPointSendHistory;
  * @Version: V1.0
  */
 @Mapper
-public interface BuildingControlPointSendHistoryMapper extends BaseMapper<BuildingControlPointSendHistory> {
+public interface CBuildingControlPointSendHistoryMapper extends BaseMapper<BuildingControlPointSendHistory> {
 
     /**
      * 统计今日下发条数

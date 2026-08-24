@@ -5,5 +5,5 @@ import org.apache.ibatis.annotations.Mapper;
 import org.jeecg.modules.fwbz.activeMeetPreparation.entity.Device;
 
 @Mapper
-public interface DeviceMapper extends BaseMapper<Device> {
+public interface ADeviceMapper extends BaseMapper<Device> {
 }

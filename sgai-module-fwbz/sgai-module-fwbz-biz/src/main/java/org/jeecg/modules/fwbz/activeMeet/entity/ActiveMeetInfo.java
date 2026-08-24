@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.sql.Time;
