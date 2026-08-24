@@ -66,7 +66,7 @@ public class DataAmendLog {
     /**
      * 操作人
      */
-    private java.lang.String updateBy;
+    private String updateBy;
 
     /**
      * 操作时间

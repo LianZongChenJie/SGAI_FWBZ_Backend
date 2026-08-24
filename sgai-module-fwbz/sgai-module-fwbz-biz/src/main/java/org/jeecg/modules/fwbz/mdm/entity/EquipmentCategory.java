@@ -41,32 +41,32 @@ public class EquipmentCategory extends BaseEntity implements Serializable {
 	/**父级节点*/
 	@Excel(name = "父级节点", width = 15)
     @ApiModelProperty(value = "父级节点")
-    private java.lang.Long pid;
+    private Long pid;
 	/**是否有子节点*/
 	@Excel(name = "是否有子节点", width = 15, dicCode = "yn")
 	@Dict(dicCode = "yn")
     @ApiModelProperty(value = "是否有子节点")
-    private java.lang.String hasChild;
+    private String hasChild;
 	/**类别名称*/
 	@Excel(name = "类别名称", width = 15)
     @ApiModelProperty(value = "类别名称")
-    private java.lang.String categoryName;
+    private String categoryName;
 	/**排序*/
 	@Excel(name = "排序", width = 15)
     @ApiModelProperty(value = "排序")
-    private java.lang.Integer sort;
+    private Integer sort;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @ApiModelProperty(value = "备注")
-    private java.lang.String remark;
+    private String remark;
 	/**全称*/
 	@Excel(name = "全称", width = 15)
     @ApiModelProperty(value = "全称")
-    private java.lang.String fullName;
+    private String fullName;
 	/**父级id*/
 	@Excel(name = "父级id", width = 15)
     @ApiModelProperty(value = "父级id")
-    private java.lang.String fullId;
+    private String fullId;
 
     public static SelectTreeModel convert(EquipmentCategory category){
         if(category == null){

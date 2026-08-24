@@ -31,7 +31,7 @@ public class HourData extends MeterData{
 
     /**更新人*/
     @ApiModelProperty(value = "更新人")
-    private java.lang.String updateBy;
+    private String updateBy;
     /**更新日期*/
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
