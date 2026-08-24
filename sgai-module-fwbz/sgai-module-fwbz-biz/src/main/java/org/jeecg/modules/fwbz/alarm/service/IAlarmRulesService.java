@@ -1,0 +1,24 @@
+package org.jeecg.modules.fwbz.alarm.service;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
+import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRuleStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
+
+import java.util.Collection;
+import java.util.List;
+
+public interface IAlarmRulesService extends IService<AlarmRules> {
+
+    void startRule(Long id);
+    void stopRule(Long id);
+    AlarmRules getDetailById(Long id);
+    IPage<AlarmRules> listPage(AlarmRules params);
+
+    List<AlarmRules> listEnabledByIds(Collection<Long> ids);
+
+    AlarmRuleStatisticsDto statistics() ;
+
+
+}

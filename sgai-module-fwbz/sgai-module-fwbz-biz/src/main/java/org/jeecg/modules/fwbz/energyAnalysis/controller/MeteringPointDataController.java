@@ -1,0 +1,213 @@
+package org.jeecg.modules.fwbz.energyAnalysis.controller;
+
+import cn.hutool.core.util.StrUtil;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.AllArgsConstructor;
+import org.jeecg.common.api.vo.Result;
+import org.jeecg.common.aspect.annotation.AutoLog;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointChatDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDataDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.RecalculateDto;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInTimePeriodVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ElectricityInVenueVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.chat.PieChat;
+import org.jeecg.modules.fwbz.mq.send.MqSendService;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+
+@Api(tags = "计量点位数据信息")
+@RestController
+@RequestMapping("/fwbz/meterPointData")
+@AllArgsConstructor
+public class MeteringPointDataController {
+
+    private final IMeteringPointDataService service;
+
+    private final MqSendService mqSendService;
+
+    @GetMapping("/findMinute")
+    public Result<MeteringPointDataChartVo> findMinute(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMinute(param.getEnergyFlowDiagramIds(), param.getHour())));
+    }
+
+    @ApiOperation(value = "查询日数据", notes = "查询日数据")
+    @GetMapping("/findDay")
+    public Result<MeteringPointDataChartVo> findDay(MeteringPointDataDto param) {
+        return Result.ok(new MeteringPointDataChartVo(service.findDay(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @ApiOperation(value = "查询月数据", notes = "查询月数据")
+    @GetMapping("/findMonth")
+    public Result<MeteringPointDataChartVo> findMonth(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonth(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @ApiOperation(value = "查询年数据", notes = "查询年数据")
+    @GetMapping("/findYear")
+    public Result<MeteringPointDataChartVo> findYear(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYear(param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @ApiOperation(value = "重新计算", notes = "重新计算")
+    @AutoLog(value = "计量点位-重新计算")
+//    @RequiresPermissions("Fwbz:meterPointData:calculateValue")
+    @PostMapping("/calculateValue")
+    public Result<String> calculateValue(@RequestBody MeteringPointDataDto param){
+        service.calculateValue(param.getHour());
+        return Result.ok("计算成功");
+    }
+
+    /**
+     * 重新计算，批量
+     * @param param
+     * @return
+     */
+    @PostMapping("/recalculate")
+    public Result<String> recalculate(@RequestBody RecalculateDto param){
+        if(param.getTime() == null || StrUtil.isEmpty(param.getMeteringPointIds())){
+            return Result.error("参数错误");
+        }
+        String[] split = param.getMeteringPointIds().split(",");
+        for(String id : split) {
+            mqSendService.sendMeteringPointValueUpdate(Long.valueOf(id),param.getTime());
+        }
+        return Result.ok();
+    }
+
+    /**
+     * 饼图
+     */
+    @GetMapping("/findPieChat")
+    public Result<PieChat> findPieChat(MeteringPointChatDto param){
+        return Result.ok(service.findPieChat(param));
+    }
+
+    /**
+     * 折线图
+     */
+    @GetMapping("/findLineChat")
+    public Result<Chat> findLineChat(MeteringPointChatDto param){
+        return Result.ok(service.findLineChat(param));
+    }
+
+    /**
+     * 柱状图
+     */
+    @GetMapping("/findBarChat")
+    public Result<Chat> findBarChat(MeteringPointChatDto param){
+        return Result.ok(service.findBarChat(param));
+    }
+
+    /**
+     * 堆叠柱状图
+     */
+    @GetMapping("/findStackedColumnChart")
+    public Result<Chat> findStackedColumnChart(MeteringPointChatDto param){
+        return Result.ok(service.findStackedColumnChart(param));
+    }
+
+
+    /**
+     * 计量分析数据统计
+     * @return 统计结果
+     */
+    @GetMapping("/statistics")
+    public Result<?> statistics(){
+        return Result.ok(service.statistics());
+    }
+
+
+
+    @GetMapping("/findDayVenueElectricity")
+    public Result<MeteringPointDataChartVo> findDayVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findDayVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findMonthVenueElectricity")
+    public Result<MeteringPointDataChartVo> findMonthVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonthVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findYearVenueElectricity")
+    public Result<MeteringPointDataChartVo> findYearVenueElectricity(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYearVenueElectricity(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+    @GetMapping("/findDayEnergyStructure")
+    public Result<MeteringPointDataChartVo> findDayEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findDayEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findMonthEnergyStructure")
+    public Result<MeteringPointDataChartVo> findMonthEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findMonthEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+    @GetMapping("/findYearEnergyStructure")
+    public Result<MeteringPointDataChartVo> findYearEnergyStructure(MeteringPointDataDto param){
+        return Result.ok(new MeteringPointDataChartVo(service.findYearEnergyStructure(param.getBusinessConfigKey(),param.getEnergyFlowDiagramIds(), param.getDay())));
+    }
+
+
+
+    /**
+     * 近七日能耗趋势-电
+     */
+    @GetMapping("/energyConsumptionPSDElectricity")
+    public Result<Chat> energyConsumptionPSDElectricity(){
+        return Result.ok(service.energyConsumptionPSDElectricity());
+    }
+
+
+    /**
+     * 各时段用电分布
+     */
+    @GetMapping("/electricityInTimePeriod")
+    public Result<List<ElectricityInTimePeriodVo>> electricityInTimePeriod(){
+        return Result.ok(service.electricityInTimePeriod());
+    }
+
+    /**
+     * 各场馆用电量
+     */
+    @GetMapping("/electricityInVenue")
+    public Result<List<ElectricityInVenueVo>> electricityInVenue(){
+        return Result.ok(service.electricityInVenue());
+    }
+
+
+    /**
+     * 用能结构分布
+     */
+    @GetMapping("/energyStructure")
+    public Result<List<ElectricityInVenueVo>> energyStructure(){
+        return Result.ok(service.energyStructure());
+    }
+
+    /**
+     * 根据时间范围查询总用电量日表数据
+     */
+    @GetMapping("/findDayElectricityByDateRange")
+    public Result<BigDecimal> findDayElectricityByDateRange(MeterPointDataQueryDto dto){
+        return Result.ok(service.findDayElectricityByDateRange(dto));
+    }
+
+    /**
+     * 根据时间范围查询总用电量小时数据
+     */
+    @GetMapping("/findHourElectricityByDateRange")
+    public Result<BigDecimal> findHourElectricityByDateRange(MeterPointDataQueryDto dto){
+        return Result.ok(service.findHourElectricityByDateRange(dto));
+    }
+
+
+}
