@@ -21,10 +21,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @Description: 首页统计卡片
- * @Author: jeecg-boot
- * @Date:   2026-08-06
- * @Version: V1.0
+ * &#064;Description:  首页统计卡片
+ * &#064;Author:  jeecg-boot
+ * &#064;Date:    2026-08-06
+ * &#064;Version:  V1.0
  */
 @Service
 public class ComplaintStatisticsServiceImpl implements IComplaintStatisticsService {
@@ -113,7 +113,7 @@ public class ComplaintStatisticsServiceImpl implements IComplaintStatisticsServi
         StatCardVO vo = new StatCardVO();
         vo.setTitle("投诉建议");
         vo.setValue(todayCount);
-        vo.setContext(buildCompareContext(todayCount, yesterdayCount, " 较昨日"));
+        vo.setContext(buildCompareContext(todayCount, yesterdayCount));
         return vo;
     }
 
@@ -141,7 +141,7 @@ public class ComplaintStatisticsServiceImpl implements IComplaintStatisticsServi
         StatCardVO vo = new StatCardVO();
         vo.setTitle("设备异常");
         vo.setValue(todayCount);
-        vo.setContext("已处理" + handledCount + " " + buildCompareContext(todayCount, yesterdayCount, " 较昨日"));
+        vo.setContext("已处理" + handledCount + " " + buildCompareContext(todayCount, yesterdayCount));
         return vo;
     }
 
@@ -183,12 +183,12 @@ public class ComplaintStatisticsServiceImpl implements IComplaintStatisticsServi
     /**
      * 构建较昨日的对比文案
      */
-    private String buildCompareContext(long current, long last, String suffix) {
+    private String buildCompareContext(long current, long last) {
         long diff = current - last;
         if (diff > 0) {
-            return "↑" + diff + suffix;
+            return "↑" + diff + " 较昨日";
         } else if (diff < 0) {
-            return "↓" + (-diff) + suffix;
+            return "↓" + (-diff) + " 较昨日";
         }
         return "";
     }
