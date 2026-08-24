@@ -142,7 +142,7 @@ public class HikvisionUtil {
     public String doPostJson(String apiPath, String body, boolean useHttps,
                               Map<String, String> query, Map<String, String> customHeaders) throws Exception {
         Map<String, String> path = buildPath(apiPath, useHttps);
-        log.info("海康POST请求: path={}, body={}", path, body);
+        log.info("海康POST请求: path={}", path);
         return ArtemisHttpUtil.doPostStringArtemis(buildConfig(), path, body, query, null, "application/json", customHeaders);
     }
 
