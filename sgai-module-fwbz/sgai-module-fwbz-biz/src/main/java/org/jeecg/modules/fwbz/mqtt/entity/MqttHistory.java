@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.mqtt.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -45,4 +46,8 @@ public class MqttHistory implements Serializable {
 
     @ApiModelProperty("遥测值")
     private String value;
+
+    @TableField(exist = false)
+    @ApiModelProperty("数据类型：yc-遥测，yx-遥信，kwh-电度（表底值）")
+    private String dataType;
 }
