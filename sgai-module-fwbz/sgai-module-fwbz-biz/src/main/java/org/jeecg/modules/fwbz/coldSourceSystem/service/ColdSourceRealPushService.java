@@ -219,9 +219,9 @@ public class ColdSourceRealPushService {
                     continue;
                 }
                 // 只获取质量戳为 GOOD 的数据（isGood() 判断），非 GOOD 数据不缓存、不推送
-                if (realData.getQuality() == null || !realData.getQuality().isGood()) {
-                    continue;
-                }
+//                if (realData.getQuality() == null || !realData.getQuality().isGood()) {
+//                    continue;
+//                }
                 tagValueCache.put(tagId, realData);
                 List<String> keys = id2Keys.get(tagId);
                 if (keys == null) {
