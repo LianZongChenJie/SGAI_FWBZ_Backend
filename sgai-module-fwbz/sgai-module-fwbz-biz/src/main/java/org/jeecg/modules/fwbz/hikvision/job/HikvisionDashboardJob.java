@@ -40,7 +40,6 @@ public class HikvisionDashboardJob {
      */
     @Scheduled(cron = "0 */1 * * * ?")
     public void syncDeviceStatus() {
-        log.debug("设备在线状态及门禁点事件同步定时任务开始执行");
 //        try {
 //            int count = cameraResourceService.syncOnlineStatus();
 //            log.info("摄像头在线情况同步完成, 更新{}条", count);
@@ -49,23 +48,19 @@ public class HikvisionDashboardJob {
 //        }
         try {
             int count = doorResourceService.syncDoorStatus();
-            log.info("门禁点在线情况同步完成, 更新{}条", count);
         } catch (Exception e) {
             log.error("门禁点在线情况同步异常", e);
         }
         try {
             int count = acsDeviceService.syncOnlineStatus();
-            log.info("门禁设备在线情况同步完成, 更新{}条", count);
         } catch (Exception e) {
             log.error("门禁设备在线情况同步异常", e);
         }
         try {
             int count = doorEventService.syncFromHikvision();
-            log.info("门禁点事件同步完成, 新增{}条", count);
         } catch (Exception e) {
             log.error("门禁点事件同步异常", e);
         }
-        log.info("设备在线状态及门禁点事件同步定时任务结束");
     }
 
     /**

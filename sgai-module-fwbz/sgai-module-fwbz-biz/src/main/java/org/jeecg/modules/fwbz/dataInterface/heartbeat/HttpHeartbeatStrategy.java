@@ -59,9 +59,7 @@ public class HttpHeartbeatStrategy implements HeartbeatStrategy {
             RequestEntity<Void> request = buildRequest(url, headers);
             ResponseEntity<String> response = restTemplate.exchange(request, String.class);
             long elapsed = System.currentTimeMillis() - startTime;
-            log.debug("HTTP心跳完成 - URL: {}, 耗时: {}ms", url, elapsed);
             if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("HTTP心跳在线 - URL: {}, 耗时: {}ms", url, elapsed);
                 return HeartbeatResult.online(elapsed);
             } else {
                 log.warn("HTTP心跳异常状态码 - URL: {}, 状态码: {}, 耗时: {}ms",

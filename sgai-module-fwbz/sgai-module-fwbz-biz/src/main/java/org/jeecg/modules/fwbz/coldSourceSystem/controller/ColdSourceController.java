@@ -12,6 +12,7 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceWriteDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceOverviewService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
+import org.jeecg.modules.fwbz.coldSourceSystem.service.SaveHisttoryService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,6 +38,24 @@ public class ColdSourceController {
     private final ColdSourceServerService coldSourceServerService;
 
     private final ColdSourceOverviewService coldSourceOverviewService;
+
+    private final SaveHisttoryService saveHisttoryService;
+
+    /**
+     * 手动触发一次冷源历史数据保存
+     * （等价于整十分钟定时任务执行一次：取 is_save=1 的 tagid -> 读值 -> 写 table_cold_source_history）
+     */
+    @PostMapping("/saveHistory")
+    @ApiOperation(value = "手动触发冷源历史数据保存", notes = "从 table_tagid_info 取 is_save=1 的采集点，读取最新值写入 table_cold_source_history")
+    public Result<String> saveHistory() {
+        try {
+            saveHisttoryService.saveHistory();
+            return Result.ok("冷源历史数据保存任务执行完成");
+        } catch (Exception e) {
+            log.error("冷源历史数据保存异常", e);
+            return Result.error("冷源历史数据保存异常: " + e.getMessage());
+        }
+    }
 
     /**
      * FIELD_MAP 全量映射查询：前端字段 key -> 测点ID数组(tagId[])，null 表示无对应测点

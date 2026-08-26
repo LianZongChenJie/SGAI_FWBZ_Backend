@@ -3,8 +3,11 @@ package org.jeecg.modules.fwbz.coldSourceSystem.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sunwayland.pspace.entity.PsData;
 import com.sunwayland.pspace.entity.PsResult;
+import com.sunwayland.pspace.entity.PsSubRealData;
+import com.sunwayland.pspace.enums.PsDataTypeEnum;
 import com.sunwayland.pspace.enums.PsErrorCodeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.jeecg.modules.fwbz.coldSourceSystem.config.ColdSourceProperties;
 import org.jeecg.modules.fwbz.coldSourceSystem.entity.TableColdSourceHistory;
 import org.jeecg.modules.fwbz.coldSourceSystem.entity.TableTagidInfo;
 import org.jeecg.modules.fwbz.coldSourceSystem.mapper.TableColdSourceHistoryMapper;
@@ -55,6 +58,12 @@ public class SaveHisttoryService {
     @Autowired
     private ColdSourceServerService coldSourceServerService;
 
+    @Autowired
+    private ColdSourceRealPushService coldSourceRealPushService;
+
+    @Autowired
+    private ColdSourceProperties coldSourceProperties;
+
     /** 历史数据保存定时任务：整十分钟执行一次 */
     private ScheduledExecutorService historyScheduler;
 
@@ -103,6 +112,8 @@ public class SaveHisttoryService {
         log.info("冷源历史数据保存开始: 采集点数={}, 记录时间={}", tagInfos.size(), dataTime);
 
         // 2. 逐个读取实时值并组装历史记录
+        //    优先取 ColdSourceRealPushService 订阅缓存（mock 数据源/订阅回调维护的最新值，
+        //    避免 mock 模式下 connect() 返回 null 无法读点），无缓存时回退 realRead 读点
         List<TableColdSourceHistory> historyList = new ArrayList<>();
         for (TableTagidInfo info : tagInfos) {
             Long tagId = info.getTagId();
@@ -110,17 +121,15 @@ public class SaveHisttoryService {
                 continue;
             }
             try {
-                PsResult<PsData> result = coldSourceServerService.connect().realRead(tagId);
-                if (!Objects.equals(result.getCode(), PsErrorCodeEnum.PSRET_OK)
-                        || result.getData() == null || result.getData().isEmpty()) {
-                    log.warn("冷源历史数据读取失败: tagId={}, code={}", tagId, result.getCode());
+                TagValue tagValue = readLatestValue(tagId);
+                if (tagValue == null) {
+                    log.warn("冷源历史数据读取失败(无数据): tagId={}", tagId);
                     continue;
                 }
-                PsData data = result.getData().get(0);
                 TableColdSourceHistory history = new TableColdSourceHistory();
                 history.setTagId(tagId);
-                history.setValue(convertValue(data.getValue()));
-                history.setValueType(data.getDataType() == null ? null : data.getDataType().name());
+                history.setValue(convertValue(tagValue.value));
+                history.setValueType(tagValue.dataType == null ? null : tagValue.dataType.name());
                 history.setDataTime(dataTime);
                 historyList.add(history);
             } catch (Exception e) {
@@ -144,6 +153,47 @@ public class SaveHisttoryService {
         }
         log.info("冷源历史数据保存完成: 采集点={}, 读取成功={}, 写入={}",
                 tagInfos.size(), historyList.size(), saved);
+    }
+
+    /**
+     * 读取测点最新值：
+     * <ol>
+     *   <li>优先取订阅缓存 {@link ColdSourceRealPushService#getLatestRealData}（mock/真实环境均有）；</li>
+     *   <li>缓存无值且非 mock 模式下，回退 {@code realRead} 读点；</li>
+     *   <li>mock 模式下 connect() 返回 null、realRead 不可用，返回 null（读取失败）。</li>
+     * </ol>
+     *
+     * @param tagId 测点ID
+     * @return 测点值及数据类型；读取失败返回 null
+     */
+    private TagValue readLatestValue(Long tagId) {
+        PsSubRealData cached = coldSourceRealPushService.getLatestRealData(tagId);
+        if (cached != null && cached.getValue() != null) {
+            return new TagValue(cached.getValue(), cached.getDataType());
+        }
+        if (!coldSourceProperties.isMock()) {
+            PsResult<PsData> result = coldSourceServerService.connect().realRead(tagId);
+            if (Objects.equals(result.getCode(), PsErrorCodeEnum.PSRET_OK)
+                    && result.getData() != null && !result.getData().isEmpty()) {
+                PsData data = result.getData().get(0);
+                return new TagValue(data.getValue(), data.getDataType());
+            }
+            log.warn("冷源历史数据 realRead 读取失败: tagId={}, code={}", tagId, result.getCode());
+        } else {
+            log.warn("冷源历史数据无缓存且处于 mock 模式(connect 不可用), 无法读取: tagId={}", tagId);
+        }
+        return null;
+    }
+
+    /** 读取到的测点值及数据类型 */
+    private static class TagValue {
+        private final Object value;
+        private final PsDataTypeEnum dataType;
+
+        TagValue(Object value, PsDataTypeEnum dataType) {
+            this.value = value;
+            this.dataType = dataType;
+        }
     }
 
     /**

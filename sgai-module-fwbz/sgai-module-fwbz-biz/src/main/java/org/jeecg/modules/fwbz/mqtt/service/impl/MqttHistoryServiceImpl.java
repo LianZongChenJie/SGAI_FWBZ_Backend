@@ -84,7 +84,6 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
             return 0;
         }
         int rows = deviceAttributeMapper.updateValueByUniqueKeys(list);
-        log.info("设备属性采集值更新完成, 共{}条数据, 更新{}行", list.size(), rows);
         return rows;
     }
 
@@ -133,7 +132,6 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                 }
             }
         }
-        log.info("MQTT能耗计算触发完成, 电度数据共{}条, 命中01Wp{}条", list.size(), matched);
     }
 
     /**

@@ -326,6 +326,19 @@ public class ColdSourceRealPushService {
     }
 
     /**
+     * 获取指定测点的最新订阅数据（tagId -> 最新值）。
+     * <p>复用订阅/模拟数据源维护的测点值缓存 {@link #tagValueCache}，
+     * 供历史数据保存等场景直接取最新值，避免额外读点请求；
+     * 未订阅到该测点数据时返回 null。
+     *
+     * @param tagId 测点ID
+     * @return 最新订阅数据；无缓存时返回 null
+     */
+    public PsSubRealData getLatestRealData(Long tagId) {
+        return tagValueCache.get(tagId);
+    }
+
+    /**
      * 构建冷源实时数据全量快照（供前端 WebSocket 连接建立时首次推送）。
      * 与每次增量推送使用同一构建逻辑：按映射集合中全部 key 组装，
      * 无对应 id 关系的 key value 推 {@link #UNMAPPED_VALUE}（"???"）。

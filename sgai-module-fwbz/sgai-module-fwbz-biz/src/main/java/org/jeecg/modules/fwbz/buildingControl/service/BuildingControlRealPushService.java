@@ -67,9 +67,7 @@ public class BuildingControlRealPushService {
             log.warn("device_attribute 中没有配置数字采集编码(检测点ID)的属性，跳过楼控读点");
             return;
         }
-        log.info("楼控读点开始: 检测点数={}", tagIds.size());
         if (buildingControlServerService.realReadList(tagIds)) {
-            log.info("楼控读点获取成功");
         } else {
             log.warn("楼控读点获取失败");
         }
