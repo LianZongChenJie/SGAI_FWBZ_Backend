@@ -13,10 +13,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -42,15 +41,12 @@ public class BuildingControlRealPushService {
     @Autowired
     private IDeviceAttributeService deviceAttributeService;
 
-    /** 检测点ID(tagId) -> 关联的设备属性列表；buildIndex 后只读 */
-    private volatile Map<Long, List<DeviceAttribute>> tag2Attributes = Collections.emptyMap();
-
     /** 楼控读点定时任务：每分钟执行一次 */
     private ScheduledExecutorService readScheduler;
 
     @PostConstruct
     public void init() {
-        buildIndex();
+
         // 每分钟读取一次点位信息数据（读点）：按检测点ID(tagId)读取值，并更新 device_attribute 表
         readScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "building-control-read");
@@ -63,15 +59,15 @@ public class BuildingControlRealPushService {
 
     /**
      * 读取点位信息数据（读点）：按检测点ID(tagId)读取值
-     * 从索引取全部检测点ID，调用楼控读点接口并打印返回结果，验证是否获取成功
+     * 每次从数据中取全部检测点ID，调用楼控读点接口并打印返回结果，验证是否获取成功
      */
     public void readRealDataOnce() {
-        List<Long> tagIds = new ArrayList<>(tag2Attributes.keySet());
+        List<Long> tagIds = getTagIds();
         if (tagIds.isEmpty()) {
             log.warn("device_attribute 中没有配置数字采集编码(检测点ID)的属性，跳过楼控读点");
             return;
         }
-        log.info("楼控读点开始: 检测点数={}, tagIds={}", tagIds.size(), tagIds);
+        log.info("楼控读点开始: 检测点数={}", tagIds.size());
         if (buildingControlServerService.realReadList(tagIds)) {
             log.info("楼控读点获取成功");
         } else {
@@ -80,29 +76,29 @@ public class BuildingControlRealPushService {
     }
 
     /**
-     * 构建 检测点ID -> 设备属性 索引：
-     * device_attribute.acquisition_coding 为数字(=检测点ID) 的属性参与楼控实时订阅。
+     * 获取全部楼控检测点ID(tagId)：每次直接从 device_attribute 表查询，
+     * 取采集编码(acquisition_coding)为数字的记录，该值即楼控检测点ID。
+     *
+     * @return 去重后的检测点ID列表（保持查询顺序）
      */
-    private void buildIndex() {
+    public List<Long> getTagIds() {
         List<DeviceAttribute> list = deviceAttributeService.list(new LambdaQueryWrapper<DeviceAttribute>()
                 .isNotNull(DeviceAttribute::getAcquisitionCoding)
                 .ne(DeviceAttribute::getAcquisitionCoding, ""));
-        Map<Long, List<DeviceAttribute>> map = new HashMap<>();
+        Set<Long> tagIds = new LinkedHashSet<>();
         for (DeviceAttribute attr : list) {
             String coding = attr.getAcquisitionCoding();
             if (coding == null || coding.trim().isEmpty()) {
                 continue;
             }
             try {
-                Long tagId = Long.valueOf(coding.trim());
-                map.computeIfAbsent(tagId, k -> new ArrayList<>()).add(attr);
+                tagIds.add(Long.valueOf(coding.trim()));
             } catch (NumberFormatException e) {
                 // 非数字采集编码（如 gatewayAdr-bacnetAdr 格式）不参与楼控实时订阅
                 log.debug("采集编码非数字，跳过楼控订阅: id={}, acquisitionCoding={}", attr.getId(), coding);
             }
         }
-        this.tag2Attributes = Collections.unmodifiableMap(map);
-        log.info("楼控实时订阅索引构建完成: 订阅检测点数={}, 关联属性数={}", map.size(), list.size());
+        return new ArrayList<>(tagIds);
     }
 
 
