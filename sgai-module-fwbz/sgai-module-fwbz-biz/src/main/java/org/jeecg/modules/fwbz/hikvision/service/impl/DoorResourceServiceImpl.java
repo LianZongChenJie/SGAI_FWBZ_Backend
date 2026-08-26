@@ -110,7 +110,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int syncDoorStatus() {
-        log.info("开始从海康平台同步门禁状态...");
 
         // 1. 从数据库获取所有门禁点的 indexCode
         List<DoorResource> dbList = baseMapper.selectList(new LambdaQueryWrapper<>());
@@ -125,7 +124,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 allIndexCodes.add(db.getIndexCode());
             }
         }
-        log.info("数据库中共有{}条门禁点记录", allIndexCodes.size());
 
         // 2. 分批（每批最多200个）请求海康门禁状态接口
         Map<String, String> statusMap = fetchDoorStatusInBatches(allIndexCodes);
@@ -133,11 +131,9 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             log.warn("海康门禁状态数据为空，跳过同步");
             return 0;
         }
-        log.info("从海康获取到{}条门禁状态记录", statusMap.size());
 
         // 3. 逐一比对，只更新状态有变化的记录
         int updatedCount = updateDoorStateToDb(statusMap);
-        log.info("门禁状态同步完成, 共更新{}条记录", updatedCount);
         return updatedCount;
     }
 
@@ -178,10 +174,8 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 db.setGmtModified(now);
                 baseMapper.updateById(db);
                 updatedCount++;
-                log.debug("门禁点[{}]状态变更: {} -> {}", indexCode, oldState, newState);
             }
         }
-        log.info("门禁状态更新完成, 共更新{}条记录", updatedCount);
         return updatedCount;
     }
 
@@ -200,7 +194,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
 
             try {
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康门禁点列表, pageNo={}, pageSize={}", pageNo, PAGE_SIZE);
 
                 String responseBody = hikvisionUtil.doPostJson(DOOR_SEARCH_API, requestBody);
 
@@ -219,12 +212,10 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 List<DoorSearchResponse.DoorItem> doorList = response.getList();
 
                 if (doorList == null || doorList.isEmpty()) {
-                    log.info("海康门禁点列表为空，拉取结束");
                     break;
                 }
 
                 allItems.addAll(doorList);
-                log.info("第{}页拉取完成, 本页{}条, 累计{}条", pageNo, doorList.size(), allItems.size());
 
                 // 判断是否还有下一页
                 int total = response.getTotal() != null ? response.getTotal() : 0;
@@ -240,7 +231,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             }
         }
 
-        log.info("海康数据拉取完成, 共获取{}条门禁点记录", allItems.size());
         return allItems;
     }
 
@@ -274,7 +264,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 DoorStatusRequest request = new DoorStatusRequest()
                         .setDoorIndexCodes(batch);
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康门禁状态, 第{}/{}批, 本批{}条", batchNo + 1, totalBatches, batch.size());
 
                 String responseBody = hikvisionUtil.doPostJson(DOOR_STATUS_API, requestBody);
 
@@ -306,10 +295,7 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                         }
                     }
                 }
-                log.info("第{}/{}批门禁状态拉取完成, 本批获取{}条, 累计{}条",
-                        batchNo + 1, totalBatches,
-                        authList != null ? authList.size() : 0,
-                        statusMap.size());
+
 
             } catch (Exception e) {
                 log.error("拉取海康门禁状态数据异常, 第{}/{}批", batchNo + 1, totalBatches, e);
@@ -352,8 +338,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
 
     @Override
     public IPage<DoorListVO> getDoorList(DoorResourcePageDto dto) {
-        log.info("分页查询门禁点列表, pageNo={}, pageSize={}, name={}, doorNo={}, regionName={}, doorState={}, treatyType={}, installLocation={}",
-                dto.getPageNo(), dto.getPageSize(), dto.getName(), dto.getDoorNo(), dto.getRegionName(), dto.getDoorState(), dto.getTreatyType(), dto.getInstallLocation());
 
         LambdaQueryWrapper<DoorResource> wrapper = new LambdaQueryWrapper<DoorResource>()
                 .like(StringUtils.isNotBlank(dto.getName()), DoorResource::getName, dto.getName())
@@ -375,7 +359,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 IPage<DoorListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
                 emptyPage.setRecords(Collections.emptyList());
                 emptyPage.setTotal(0);
-                log.info("分页查询门禁点列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
                 return emptyPage;
             }
             wrapper.in(DoorResource::getRegionIndexCode, matchedRegionCodes);
@@ -419,7 +402,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         IPage<DoorListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), doorPage.getTotal());
         resultPage.setRecords(voList);
 
-        log.info("分页查询门禁点列表完成, 共{}条, 当前页{}条", doorPage.getTotal(), voList.size());
         return resultPage;
     }
 
@@ -442,7 +424,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
         try {
             // 2. 请求海康反向控制接口
             String requestBody = JSON.toJSONString(request);
-            log.info("请求海康反向控制门禁点, 门禁点数={}, controlType={}", doorIndexCodes.size(), controlType);
 
             String responseBody = hikvisionUtil.doPostJson(DOOR_CONTROL_API, requestBody);
 
@@ -480,7 +461,6 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
                 }
                 resultList.add(vo);
             }
-            log.info("海康反向控制门禁点完成, 共{}个门禁点, 成功{}个", items.size(), successCount);
 
             // 6. 反控成功后同步门禁点状态（以海康实际状态为准）
             syncDoorStateAfterControl(resultList);
@@ -511,13 +491,11 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
             }
         }
         if (successDoorCodes.isEmpty()) {
-            log.info("无反控成功的门禁点，跳过状态同步");
             return;
         }
         try {
             Map<String, String> statusMap = fetchDoorStatusInBatches(successDoorCodes);
             int updatedCount = updateDoorStateToDb(statusMap);
-            log.info("反控成功后同步{}个门禁点状态, 更新{}条", successDoorCodes.size(), updatedCount);
         } catch (Exception e) {
             log.warn("反控成功后同步门禁点状态失败, 不影响反控结果, 门禁点={}", successDoorCodes, e);
         }

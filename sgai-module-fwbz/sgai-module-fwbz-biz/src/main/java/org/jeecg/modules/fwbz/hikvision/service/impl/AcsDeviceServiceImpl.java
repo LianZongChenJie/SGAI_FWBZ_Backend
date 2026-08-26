@@ -61,7 +61,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int syncFromHikvision() {
-        log.info("开始从海康平台全量同步门禁设备数据...");
 
         List<AcsDeviceSearchResponse.AcsDeviceItem> allItems = fetchAllFromHikvision();
 
@@ -71,7 +70,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         }
 
         int deletedCount = baseMapper.delete(null);
-        log.info("已清空门禁设备资源表, 删除{}条记录", deletedCount);
 
         Date now = new Date();
         List<AcsDevice> entityList = new ArrayList<>(allItems.size());
@@ -86,14 +84,12 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         for (AcsDevice entity : entityList) {
             baseMapper.insert(entity);
         }
-        log.info("海康门禁设备数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int syncOnlineStatus() {
-        log.info("开始从海康平台同步门禁设备在线状态...");
 
         // 1. 从数据库获取所有门禁设备的 indexCode
         List<AcsDevice> dbList = baseMapper.selectList(new LambdaQueryWrapper<>());
@@ -108,7 +104,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                 allIndexCodes.add(db.getIndexCode());
             }
         }
-        log.info("数据库中共有{}条门禁设备记录", allIndexCodes.size());
 
         // 2. 分批（每批最多500个）请求海康在线状态接口
         Map<String, String> onlineMap = fetchOnlineStatusInBatches(allIndexCodes);
@@ -116,7 +111,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             log.warn("海康门禁设备在线状态数据为空，跳过同步");
             return 0;
         }
-        log.info("从海康获取到{}条设备在线状态", onlineMap.size());
 
         // 3. 逐一比对，只更新状态有变化的记录
         int updatedCount = 0;
@@ -139,7 +133,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                 log.debug("门禁设备[{}]在线状态变更: {} -> {}", indexCode, oldOnline, newOnline);
             }
         }
-        log.info("门禁设备在线状态同步完成, 共更新{}条记录", updatedCount);
         return updatedCount;
     }
 
@@ -155,7 +148,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
 
             try {
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康门禁设备列表, pageNo={}, pageSize={}", pageNo, PAGE_SIZE);
 
                 String responseBody = hikvisionUtil.doPostJson(ACS_DEVICE_SEARCH_API, requestBody);
 
@@ -179,7 +171,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                 }
 
                 allItems.addAll(deviceList);
-                log.info("第{}页拉取完成, 本页{}条, 累计{}条", pageNo, deviceList.size(), allItems.size());
 
                 int total = response.getTotal() != null ? response.getTotal() : 0;
                 if (pageNo * PAGE_SIZE >= total) {
@@ -194,7 +185,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             }
         }
 
-        log.info("海康数据拉取完成, 共获取{}条门禁设备记录", allItems.size());
         return allItems;
     }
 
@@ -218,7 +208,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                 AcsDeviceOnlineRequest request = new AcsDeviceOnlineRequest()
                         .setIndexCodes(batch);
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康门禁设备在线状态, 第{}/{}批, 本批{}条", batchNo + 1, totalBatches, batch.size());
 
                 String responseBody = hikvisionUtil.doPostJson(ACS_DEVICE_ONLINE_API, requestBody);
 
@@ -243,10 +232,7 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                         }
                     }
                 }
-                log.info("第{}/{}批在线状态拉取完成, 本批获取{}条, 累计{}条",
-                        batchNo + 1, totalBatches,
-                        onlineList != null ? onlineList.size() : 0,
-                        onlineMap.size());
+
 
             } catch (Exception e) {
                 log.error("拉取海康门禁设备在线状态异常, 第{}/{}批", batchNo + 1, totalBatches, e);
@@ -254,14 +240,11 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
             }
         }
 
-        log.info("海康门禁设备在线状态全部拉取完成, 共获取{}条", onlineMap.size());
         return onlineMap;
     }
 
     @Override
     public IPage<AcsDeviceListVO> getDeviceList(AcsDevicePageDto dto) {
-        log.info("分页查询门禁设备列表, pageNo={}, pageSize={}, name={}, devTypeCode={}, regionName={}, online={}, ip={}",
-                dto.getPageNo(), dto.getPageSize(), dto.getName(), dto.getDevTypeCode(), dto.getRegionName(), dto.getOnline(), dto.getIp());
 
         LambdaQueryWrapper<AcsDevice> wrapper = new LambdaQueryWrapper<AcsDevice>()
                 .like(StringUtils.isNotBlank(dto.getName()), AcsDevice::getName, dto.getName())
@@ -282,7 +265,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
                 IPage<AcsDeviceListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
                 emptyPage.setRecords(Collections.emptyList());
                 emptyPage.setTotal(0);
-                log.info("分页查询门禁设备列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
                 return emptyPage;
             }
             wrapper.in(AcsDevice::getRegionIndexCode, matchedRegionCodes);
@@ -329,7 +311,6 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         IPage<AcsDeviceListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), devicePage.getTotal());
         resultPage.setRecords(voList);
 
-        log.info("分页查询门禁设备列表完成, 共{}条, 当前页{}条", devicePage.getTotal(), voList.size());
         return resultPage;
     }
 

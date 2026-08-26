@@ -57,21 +57,17 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int syncFromHikvision() {
-        log.info("开始从海康平台增量同步门禁点事件...");
 
         // 1. 确定时间范围
         String startTime = resolveStartTime();
         String endTime = ZonedDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
-        log.info("事件同步时间范围: startTime={}, endTime={}", startTime, endTime);
 
         // 2. 逐页拉取海康事件数据
         List<DoorEventSearchResponse.DoorEventItem> allItems = fetchAllFromHikvision(startTime, endTime);
         if (allItems.isEmpty()) {
-            log.info("海康在该时间范围内无新事件，跳过同步");
             return 0;
         }
-        log.info("从海康获取到{}条事件记录", allItems.size());
 
         // 3. 根据 event_id 去重，过滤已存在的记录
         Set<String> existingEventIds = getExistingEventIds(allItems);
@@ -83,7 +79,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         }
 
         if (newEvents.isEmpty()) {
-            log.info("所有事件已存在，无新增, 总数={}", allItems.size());
             return 0;
         }
 
@@ -122,7 +117,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         // DB 为空或格式异常，使用默认回溯时间
         String defaultStart = ZonedDateTime.now().minusDays(DEFAULT_LOOKBACK_DAYS)
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
-        log.info("数据库无事件记录或格式异常，使用默认起始时间: {}", defaultStart);
         return defaultStart;
     }
 
@@ -178,7 +172,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
 
             try {
                 String requestBody = JSON.toJSONString(request);
-                log.info("请求海康门禁点事件, pageNo={}, pageSize={}", pageNo, PAGE_SIZE);
 
                 String responseBody = hikvisionUtil.doPostJson(DOOR_EVENT_API, requestBody);
 
@@ -197,12 +190,10 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
                 List<DoorEventSearchResponse.DoorEventItem> eventList = response.getList();
 
                 if (eventList == null || eventList.isEmpty()) {
-                    log.info("海康门禁点事件列表为空，拉取结束");
                     break;
                 }
 
                 allItems.addAll(eventList);
-                log.info("第{}页拉取完成, 本页{}条, 累计{}条", pageNo, eventList.size(), allItems.size());
 
                 int total = response.getTotal() != null ? response.getTotal() : 0;
                 if (pageNo * PAGE_SIZE >= total) {
@@ -217,7 +208,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
             }
         }
 
-        log.info("海康事件数据拉取完成, 共获取{}条", allItems.size());
         return allItems;
     }
 
@@ -249,9 +239,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
 
     @Override
     public IPage<DoorEventListVO> getEventList(DoorEventPageDto dto) {
-        log.info("分页查询门禁点事件列表, pageNo={}, pageSize={}, personName={}, doorName={}, doorIndexCode={}, eventType={}, inAndOutType={}, cardNo={}, startTime={}, endTime={}",
-                dto.getPageNo(), dto.getPageSize(), dto.getPersonName(), dto.getDoorName(), dto.getDoorIndexCode(),
-                dto.getEventType(), dto.getInAndOutType(), dto.getCardNo(), dto.getStartTime(), dto.getEndTime());
 
         LambdaQueryWrapper<DoorEvent> wrapper = new LambdaQueryWrapper<DoorEvent>()
                 .like(StringUtils.isNotBlank(dto.getPersonName()), DoorEvent::getPersonName, dto.getPersonName())
@@ -291,7 +278,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         IPage<DoorEventListVO> resultPage = new Page<>(dto.getPageNo(), dto.getPageSize(), eventPage.getTotal());
         resultPage.setRecords(voList);
 
-        log.info("分页查询门禁点事件列表完成, 共{}条, 当前页{}条", eventPage.getTotal(), voList.size());
         return resultPage;
     }
 

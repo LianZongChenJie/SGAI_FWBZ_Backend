@@ -47,32 +47,26 @@ public class InterfaceHeartbeatJob {
      */
     @Scheduled(cron = "0 */1 * * * ?")
     public void execute() {
-        log.info("接口心跳检测定时任务开始执行");
 
         List<InterfaceInfo> monitorList = interfaceInfoService.listAll();
 
         if (monitorList.isEmpty()) {
-            log.info("无接口数据");
             return;
         }
 
         int total = monitorList.size();
-        log.info("开始心跳检测，共 {} 个接口", total);
 
         int index = 0;
         for (InterfaceInfo info : monitorList) {
             index++;
             try {
-                log.info("[{}/{}] 检测接口 - 系统: {}, 地址: {}", index, total, info.getSysName(), info.getInterfacePath());
                 doHeartbeat(info);
-                log.info("[{}/{}] 接口检测完成 - 系统: {}", index, total, info.getSysName());
             } catch (Exception e) {
                 log.error("接口心跳检测异常 - ID: {}, 系统: {}, 地址: {}",
                         info.getId(), info.getSysName(), info.getInterfacePath(), e);
             }
         }
 
-        log.info("接口心跳检测定时任务执行完毕");
     }
 
     /**
@@ -82,7 +76,6 @@ public class InterfaceHeartbeatJob {
         // 根据协议类型选择策略
         HeartbeatStrategy strategy = strategyFactory.getStrategy(info.getProtocolTypeId());
         if (strategy == null) {
-            log.info("无对应心跳策略，跳过 - ID: {}, 协议类型: {}", info.getId(), info.getProtocolTypeId());
             return;
         }
 
