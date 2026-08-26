@@ -209,9 +209,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
         if (hasData) {
             insertOrUpdate(entity);
         }
-        log.info("同步停车统计完成: todayEntry={}, currentIn={}, remainingSpace={}, avgDuration={}",
-                entity.getTodayEntryCount(), entity.getCurrentInCount(),
-                entity.getRemainingSpaceCount(), entity.getAverageParkingDuration());
     }
 
     private void syncTodayEntryFromApi() {
@@ -220,7 +217,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
             ParkingCount entity = getOrCreateToday();
             entity.setTodayEntryCount(value);
             insertOrUpdate(entity);
-            log.info("同步今日进场车辆数: {}", value);
         }
     }
 
@@ -230,7 +226,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
             ParkingCount entity = getOrCreateToday();
             entity.setCurrentInCount(parkingNumber[0]);
             insertOrUpdate(entity);
-            log.info("同步当前在场车辆数: {}", parkingNumber[0]);
         }
     }
 
@@ -240,7 +235,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
             ParkingCount entity = getOrCreateToday();
             entity.setRemainingSpaceCount(parkingNumber[1]);
             insertOrUpdate(entity);
-            log.info("同步剩余车位数: {}", parkingNumber[1]);
         }
     }
 
@@ -250,7 +244,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
             ParkingCount entity = getOrCreateToday();
             entity.setAverageParkingDuration(value);
             insertOrUpdate(entity);
-            log.info("同步平均停车时长: {}", value);
         }
     }
 
@@ -375,7 +368,6 @@ public class ParkingStatisticsServiceImpl extends ServiceImpl<ParkingCountMapper
     private Long fetchTodayEntryFromCarTotalAmountApi() {
         try {
             String body = doGet(carTotalAmountUrl, "appKey", appKey, "appSecret", appSecret);
-            log.info("停车场车辆统计API请求成功");
             JSONObject json = JSONObject.parseObject(body);
             if (json == null) {
                 log.error("停车场车辆统计API响应解析失败");

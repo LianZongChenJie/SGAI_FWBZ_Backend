@@ -97,7 +97,6 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         for (DoorEvent event : newEvents) {
             baseMapper.insert(event);
         }
-        log.info("门禁点事件增量同步完成, 获取{}条, 新增{}条", allItems.size(), newEvents.size());
         return newEvents.size();
     }
 

@@ -118,7 +118,6 @@ public class MqttConsumer {
                 return;
             }
             mqttClient.subscribe(topic, qos);
-            log.info("MQTT消费者启动成功, broker={}, clientId={}, topic={}, qos={}", brokerUrl, clientId, topic, qos);
         } catch (MqttException e) {
             // e.getReasonCode()为0时多为TCP连接被服务端直接关闭，通常是对端端口不是MQTT端口或IP被限制
             log.error("MQTT消费者启动失败, broker={}, clientId={}, 原因码={}, 原因: {}", brokerUrl, clientId, e.getReasonCode(), e.getMessage(), e);
@@ -142,7 +141,7 @@ public class MqttConsumer {
                 log.warn("MQTT消息解析后无有效数据, topic={}", topicName);
                 return;
             }
-            log.info("MQTT消息消费完成, topic={}, 共{}条, 不落库直接更新设备属性", topicName, list.size());
+
 
             // 根据采集编码（uniqueKey）更新设备属性表中的采集值和采集时间
             try {

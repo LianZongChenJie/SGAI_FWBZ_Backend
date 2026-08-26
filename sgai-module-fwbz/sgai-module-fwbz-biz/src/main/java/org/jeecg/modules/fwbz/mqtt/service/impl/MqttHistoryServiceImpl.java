@@ -120,12 +120,9 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                 locked = redissonLockClient.tryLock(lockKey, 10, 60);
                 if (locked) {
                     BigDecimal value = new BigDecimal(history.getValue().trim());
-                    log.info("触发能耗计算, deviceCode={}, uniqueKey={}, value={}, timeStamp={}",
-                            deviceCode, history.getUniqueKey(), value, history.getTimeStamp());
                     // 接收正向有功电能表底值，更新 实时/分钟/小时/日/月/年 数据
                     calculateEnergy(device, history.getTimeStamp(), value);
                 } else {
-                    log.warn("获取分布式锁失败，跳过能耗计算, deviceCode={}", deviceCode);
                 }
             } catch (Exception e) {
                 log.error("MQTT电度数据能耗计算失败, deviceCode={}, uniqueKey={}, value={}",
@@ -161,8 +158,6 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         MinuteData lastMinute = minuteDataService.findLatest(deviceId);
         if (lastMinute != null && lastMinute.getEndValue() != null
                 && lastMinute.getEndValue().compareTo(value) > 0) {
-            log.warn("接收表底数小于上一条结束值，疑似换表/重置，仅更新实时数据, deviceCode={}, lastEndValue={}, value={}",
-                    device.getDeviceCode(), lastMinute.getEndValue(), value);
             return;
         }
 
