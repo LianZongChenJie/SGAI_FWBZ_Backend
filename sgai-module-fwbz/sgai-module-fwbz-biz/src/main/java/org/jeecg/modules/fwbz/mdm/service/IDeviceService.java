@@ -6,6 +6,7 @@ import org.jeecg.modules.fwbz.mdm.dto.DeviceDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceStatusDto;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.mdm.vo.SpaceDeviceTreeVo;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -48,6 +49,14 @@ public interface IDeviceService extends IService<Device> {
     Device getDetail(Long id);
 
     List<Device> findByType(String type);
+
+    /**
+     * 根据设备类别id查询空间树下所有设备的id和名称，返回空间树结构
+     * @param categoryIds 设备类别id集合
+     * @param spaceId 空间节点id，为空时返回整棵空间树
+     * @return 空间树，每个节点包含该空间下的设备列表及子空间节点
+     */
+    List<SpaceDeviceTreeVo> findNameAndIdByCategoryIds(Collection<Long> categoryIds, Long spaceId);
 
     /**
      * 计量仪表运行状态统计

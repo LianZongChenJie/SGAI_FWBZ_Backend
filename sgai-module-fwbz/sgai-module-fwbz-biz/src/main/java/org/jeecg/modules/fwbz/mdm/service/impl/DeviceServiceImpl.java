@@ -22,6 +22,7 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceModelAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.service.ISpaceService;
+import org.jeecg.modules.fwbz.mdm.vo.SpaceDeviceTreeVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -193,6 +194,82 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             return Collections.emptyList();
         }
         return list(new LambdaQueryWrapper<Device>().eq(Device::getDeviceType, type));
+    }
+
+    @Override
+    public List<SpaceDeviceTreeVo> findNameAndIdByCategoryIds(Collection<Long> categoryIds, Long spaceId) {
+        if (CollectionUtil.isEmpty(categoryIds)) {
+            return Collections.emptyList();
+        }
+        // 查询指定类别下的设备（仅需id、名称、空间id）
+        List<Device> devices = list(new LambdaQueryWrapper<Device>()
+                .select(Device::getId, Device::getDeviceName, Device::getSpaceId)
+                .in(Device::getCategoryId, categoryIds));
+        // 设备按空间id分组
+        Map<Long, List<Device>> deviceMap = devices.stream()
+                .filter(device -> device.getSpaceId() != null)
+                .collect(Collectors.groupingBy(Device::getSpaceId));
+
+        // 查询全部空间，按sort排序，构建父子映射
+        List<Space> allSpaces = spaceService.list().stream()
+                .sorted(Comparator.comparing(Space::getSort, Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+        Map<Long, List<Space>> childMap = allSpaces.stream()
+                .filter(space -> space.getPid() != null)
+                .collect(Collectors.groupingBy(Space::getPid));
+        Map<Long, Space> spaceMap = allSpaces.stream()
+                .collect(Collectors.toMap(Space::getId, space -> space));
+
+        List<Long> roots;
+        if (spaceId != null) {
+            // 指定空间节点：以该节点为根构建子树
+            if (!spaceMap.containsKey(spaceId)) {
+                return Collections.emptyList();
+            }
+            roots = Collections.singletonList(spaceId);
+        } else {
+            // 未指定：从根节点构建整棵树
+            roots = allSpaces.stream()
+                    .filter(space -> space.getPid() == null
+                            || ISpaceService.ROOT_PID_VALUE.equals(space.getPid()))
+                    .map(Space::getId)
+                    .collect(Collectors.toList());
+        }
+
+        List<SpaceDeviceTreeVo> tree = new ArrayList<>();
+        for (Long rootId : roots) {
+            tree.add(buildSpaceDeviceTree(rootId, spaceMap, childMap, deviceMap, new HashSet<>()));
+        }
+        return tree;
+    }
+
+    /**
+     * 递归构建空间节点：挂载该空间下的设备及子空间节点
+     */
+    private SpaceDeviceTreeVo buildSpaceDeviceTree(Long spaceId, Map<Long, Space> spaceMap,
+                                                   Map<Long, List<Space>> childMap,
+                                                   Map<Long, List<Device>> deviceMap,
+                                                   Set<Long> visited) {
+        // 防止数据异常导致死循环
+        if (!visited.add(spaceId)) {
+            return null;
+        }
+        Space space = spaceMap.get(spaceId);
+        SpaceDeviceTreeVo vo = new SpaceDeviceTreeVo();
+        vo.setSpaceId(spaceId);
+        vo.setSpaceName(space == null ? null : space.getSpaceName());
+        vo.setDevice(deviceMap.getOrDefault(spaceId, Collections.emptyList()));
+        List<SpaceDeviceTreeVo> children = new ArrayList<>();
+        List<Space> childSpaces = childMap.getOrDefault(spaceId, Collections.emptyList());
+        for (Space child : childSpaces) {
+            SpaceDeviceTreeVo childVo = buildSpaceDeviceTree(child.getId(), spaceMap, childMap, deviceMap, visited);
+            if (childVo != null) {
+                children.add(childVo);
+            }
+        }
+        visited.remove(spaceId);
+        vo.setChild(children);
+        return vo;
     }
 
     /**

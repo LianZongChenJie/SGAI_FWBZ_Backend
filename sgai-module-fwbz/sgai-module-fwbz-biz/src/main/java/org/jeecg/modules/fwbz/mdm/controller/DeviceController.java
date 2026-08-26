@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.mdm.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -15,6 +16,7 @@ import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.entity.Space;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mdm.vo.SpaceDeviceTreeVo;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.mdm.service.ISpaceService;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -163,6 +166,18 @@ public class DeviceController extends JeecgController<Device, IDeviceService> {
     @GetMapping("/find")
     public Result<List<Device>> find(DeviceDto params) {
         return Result.ok(service.list(params));
+    }
+
+    @ApiOperation(value = "设备基础信息-根据设备类别查询空间树下所有设备名称和id", notes = "根据设备类别查询空间树下所有设备名称和id，返回空间树结构")
+    @GetMapping("/findNameAndIdByCategory")
+    public Result<List<SpaceDeviceTreeVo>> findNameAndIdByCategory(@RequestParam("categoryIds") String categoryIds,
+                                                                   @RequestParam(value = "spaceId", required = false) Long spaceId) {
+        List<Long> ids = Arrays.stream(categoryIds.split(","))
+                .map(String::trim)
+                .filter(StrUtil::isNotBlank)
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+        return Result.ok(deviceService.findNameAndIdByCategoryIds(ids, spaceId));
     }
 
 
