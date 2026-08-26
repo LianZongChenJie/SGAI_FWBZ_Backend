@@ -310,23 +310,31 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         BigDecimal total = BigDecimal.ZERO;
         int count = 0;
-        for (int j = 0; j < i + 1; j++) {
+        for (int j = 0; j <= i; j++) {
             ArrayList<Long> deviceIds = new ArrayList<>();
             for (int k = 0; k < 1000; k++) {
-                Device device = list.get(j * k);
-                deviceIds.add(device.getId());
+                int index = j * 1000 + k;
+                if (index >= list.size()) {
+                    break;
+                }
+                deviceIds.add(list.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
             }
             List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
             for (DeviceAttribute byDeviceId : byDeviceIds) {
-                if (byDeviceId.getAttributeCode().equals("13Cs")) {
+                if ("13Cs".equals(byDeviceId.getAttributeCode()) && StringUtils.isNotEmpty(byDeviceId.getValue())) {
                     total = total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
                     count++;
                 }
             }
         }
 
-        BigDecimal average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
-        dto.setAvgPowerFactor(average);
+        if (count > 0) {
+            BigDecimal average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
+            dto.setAvgPowerFactor(average);
+        }
 
         return dto;
 
