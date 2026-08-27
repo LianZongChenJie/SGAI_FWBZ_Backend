@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -34,10 +33,10 @@ public class CameraListVO {
     private String regionName;
 
     @ApiModelProperty(value = "经度")
-    private BigDecimal longitude;
+    private String longitude;
 
     @ApiModelProperty(value = "纬度")
-    private BigDecimal latitude;
+    private String latitude;
 
     @ApiModelProperty(value = "通道子类型")
     private String channelType;

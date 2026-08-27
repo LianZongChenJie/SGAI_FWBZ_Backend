@@ -342,8 +342,8 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         entity.setName(truncate(video.getString("name"), 128));
         entity.setGroupId(groupId);
         entity.setGroupName(truncate(groupName, 128));
-        entity.setLongitude(parseBigDecimal(video.getString("longitude")));
-        entity.setLatitude(parseBigDecimal(video.getString("latitude")));
+        entity.setLongitude(parseCoordinateString(video.getString("longitude")));
+        entity.setLatitude(parseCoordinateString(video.getString("latitude")));
         Boolean online = video.getBoolean("online");
         entity.setOnline(Boolean.TRUE.equals(online) ? 1 : 0);
         return entity;
@@ -448,8 +448,8 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         }
 
         // 经纬度转换（过滤"null"字符串）
-        entity.setLongitude(parseBigDecimal(item.getLongitude()));
-        entity.setLatitude(parseBigDecimal(item.getLatitude()));
+        entity.setLongitude(parseCoordinateString(item.getLongitude()));
+        entity.setLatitude(parseCoordinateString(item.getLatitude()));
 
         // 海拔（过滤"null"字符串）
         String altitude = item.getAltitude();
@@ -474,18 +474,23 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     }
 
     /**
-     * 安全解析BigDecimal（过滤"null"字符串）
+     * 安全解析坐标字符串（过滤"null"字符串）
      */
-    private BigDecimal parseBigDecimal(String value) {
+    private String parseCoordinateString(String value) {
         if (value == null || value.isEmpty() || "null".equals(value)) {
             return null;
         }
-        try {
-            return new BigDecimal(value);
-        } catch (NumberFormatException e) {
-            log.warn("BigDecimal转换失败: {}", value);
+        return value;
+    }
+
+    /**
+     * BigDecimal转字符串（去除科学计数法，保留原样）
+     */
+    private String bigDecimalToStr(BigDecimal value) {
+        if (value == null) {
             return null;
         }
+        return value.toPlainString();
     }
 
     /**
@@ -718,11 +723,11 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
 
     @Override
     public List<CameraListVO> getCameraList() {
-        log.info("查询本地数据库中全部摄像头列表");
-        List<CameraResource> cameraList = list();
+        log.info("查询camera_info表中全部摄像头列表");
+        List<CameraInfo> cameraList = cameraInfoService.list();
         List<CameraListVO> result = new ArrayList<>(cameraList.size());
-        for (CameraResource camera : cameraList) {
-            result.add(cameraToVO(camera));
+        for (CameraInfo camera : cameraList) {
+            result.add(cameraInfoToVO(camera));
         }
         log.info("查询摄像头列表完成, 共{}条", result.size());
         return result;
@@ -809,13 +814,34 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         vo.setInstallLocation(camera.getInstallLocation());
         vo.setRegionIndexCode(camera.getRegionIndexCode());
         vo.setRegionName(camera.getRegionName());
-        vo.setLongitude(camera.getLongitude());
-        vo.setLatitude(camera.getLatitude());
+        vo.setLongitude(bigDecimalToStr(camera.getLongitude()));
+        vo.setLatitude(bigDecimalToStr(camera.getLatitude()));
         vo.setChannelType(camera.getChannelType());
         vo.setOnline(camera.getOnline());
         vo.setExternalIndexCode(camera.getExternalIndexCode());
         vo.setCreateTime(camera.getCreateTime());
         vo.setUpdateTime(camera.getUpdateTime());
+        return vo;
+    }
+
+    /**
+     * 将camera_info表实体转换为摄像头列表VO
+     * <p>映射关系：indexCode对应systemId（摄像头唯一标识），regionName对应分组名称groupName，
+     * installLocation对应点位路径pointPath，其余无对应字段的VO属性保持为空。</p>
+     *
+     * @param camera camera_info表实体
+     * @return 摄像头列表VO
+     */
+    private CameraListVO cameraInfoToVO(CameraInfo camera) {
+        CameraListVO vo = new CameraListVO();
+        vo.setIndexCode(camera.getSystemId());
+        vo.setName(camera.getName());
+        vo.setCameraType(camera.getCameraType());
+        vo.setInstallLocation(camera.getPointPath());
+        vo.setRegionName(camera.getGroupName());
+        vo.setLongitude(camera.getLongitude());
+        vo.setLatitude(camera.getLatitude());
+        vo.setOnline(camera.getOnline());
         return vo;
     }
 

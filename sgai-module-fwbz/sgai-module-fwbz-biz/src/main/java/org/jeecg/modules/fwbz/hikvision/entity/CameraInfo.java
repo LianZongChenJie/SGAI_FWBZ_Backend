@@ -10,7 +10,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 /**
  * 摄像头信息表
@@ -101,11 +100,11 @@ public class CameraInfo implements Serializable {
 
     /** 经度 */
     @ApiModelProperty(value = "经度")
-    private BigDecimal longitude;
+    private String longitude;
 
     /** 纬度 */
     @ApiModelProperty(value = "纬度")
-    private BigDecimal latitude;
+    private String latitude;
 
     /** 在线状态：1=在线，0=离线 */
     @ApiModelProperty(value = "在线状态：1=在线，0=离线")
