@@ -78,6 +78,11 @@ public class SmokeDetectorServiceImpl extends ServiceImpl<FireSmokeDetectorMappe
     public IPage<FireAlarmRecord> getAlarmRecordsByDeviceId(IPage<FireAlarmRecord> page, Long deviceId) {
         log.info("根据设备ID查询报警记录, deviceId={}", deviceId);
 
+        // deviceId 为空时返回空分页，避免前端漏传参数导致报错
+        if (deviceId == null) {
+            return page;
+        }
+
         LambdaQueryWrapper<FireAlarmRecord> qw = new LambdaQueryWrapper<FireAlarmRecord>()
                 .eq(FireAlarmRecord::getDeviceId, String.valueOf(deviceId))
                 .eq(FireAlarmRecord::getStatus, 1)

@@ -79,7 +79,7 @@ public class SmokeDetectorController {
     /**
      * 根据消防设备ID分页查询报警记录。
      *
-     * @param deviceId 消防设备ID（必填）
+     * @param deviceId 消防设备ID（选填，不传时返回空分页）
      * @param pageNo   当前页码，默认 1
      * @param pageSize 每页条数，默认 10
      * @return 报警记录分页结果
@@ -87,7 +87,7 @@ public class SmokeDetectorController {
     @ApiOperation("根据设备ID查询报警记录")
     @GetMapping("/alarmRecords")
     public Result<IPage<FireAlarmRecord>> alarmRecords(
-            @RequestParam Long deviceId,
+            @RequestParam(required = false) Long deviceId,
             @RequestParam(defaultValue = "1") Integer pageNo,
             @RequestParam(defaultValue = "10") Integer pageSize) {
 

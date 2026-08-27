@@ -11,17 +11,21 @@ import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
 import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.jeecg.modules.fwbz.venueVisitorFlow.service.IVenueFlowService;
 import org.jeecg.modules.fwbz.venueVisitorFlow.vo.VenueFlowVO;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.sql.Time;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +45,13 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
     /**
      * 各场馆客流统计 HTTP API 地址。
      */
-    private static final String VENUE_FLOW_API_URL = "http://api.example.com/api/visitorFlow/venueList";
+    private static final String VENUE_FLOW_API_URL = "http://10.168.47.26:9999/sgai-api/openApi/haikang/changguankeliu";
+
+    @Value("${parking.statistics.api.appKey:R6VOSNoijW3o4WA5eFjW5l2bO}")
+    private String appKey;
+
+    @Value("${parking.statistics.api.appSecret:GDg18aNuWaKsIX33euL0maXbSVqZSp}")
+    private String appSecret;
 
     private final RestTemplate restTemplate;
     private final IVenueInfoService venueInfoService;
@@ -126,24 +136,18 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
         log.info("开始从 HTTP API 同步各场馆客流数据(写入 table_venue_flow_hour)...");
         int successCount = 0;
 
-        JSONObject resp = fetchVenueFlowListFromApi();
-        if (resp == null) {
-            log.error("HTTP API 返回空数据，终止场馆客流同步");
-            return 0;
-        }
-
-        JSONArray list = resp.getJSONArray("list");
+        JSONArray list = fetchVenueFlowListFromApi();
         if (list == null || list.isEmpty()) {
-            log.warn("HTTP API 场馆列表为空");
+            log.error("HTTP API 返回空数据，终止场馆客流同步");
             return 0;
         }
 
         for (int i = 0; i < list.size(); i++) {
             JSONObject item = list.getJSONObject(i);
             try {
-                Long venueId = item.getLong("venueId");
+                Long venueId = resolveVenueId(item.getString("name"));
                 if (venueId == null) {
-                    log.warn("跳过无 venueId 的数据项: {}", item);
+                    log.warn("跳过无法识别场馆的数据项: {}", item);
                     continue;
                 }
 
@@ -152,7 +156,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
                 successCount++;
 
                 log.info("场馆客流入库(flow_hour)成功 venueId={}, venueName={}, nowCount={}, maxCount={}",
-                        venueId, item.getString("venueName"), flow.getTodayNowCount(), flow.getMaxCount());
+                        venueId, item.getString("name"), flow.getTodayNowCount(), flow.getMaxCount());
 
             } catch (Exception e) {
                 log.error("场馆客流入库异常, item={}", item, e);
@@ -165,19 +169,14 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
 
     @Override
     public boolean syncOneVenueFlowFromApi(Long venueId) {
-        JSONObject resp = fetchVenueFlowListFromApi();
-        if (resp == null) {
-            return false;
-        }
-
-        JSONArray list = resp.getJSONArray("list");
+        JSONArray list = fetchVenueFlowListFromApi();
         if (list == null || list.isEmpty()) {
             return false;
         }
 
         for (int i = 0; i < list.size(); i++) {
             JSONObject item = list.getJSONObject(i);
-            Long itemVenueId = item.getLong("venueId");
+            Long itemVenueId = resolveVenueId(item.getString("name"));
             if (venueId.equals(itemVenueId)) {
                 try {
                     VenueFlowHour flow = parseVenueFlowHourItem(item, venueId);
@@ -195,23 +194,32 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
 
     /**
      * 调用 HTTP API 获取各场馆客流列表。
+     * <p>
+     * 请求方式 GET，需携带 appKey/appSecret 请求头；
+     * 响应结构: {success, message, code, result: [...]}，result 为场馆列表。
+     * </p>
+     *
+     * @return 场馆客流列表，失败返回 null
      */
-    private JSONObject fetchVenueFlowListFromApi() {
+    private JSONArray fetchVenueFlowListFromApi() {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("appKey", appKey);
+            headers.set("appSecret", appSecret);
             HttpEntity<String> request = new HttpEntity<>(headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(VENUE_FLOW_API_URL, request, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(VENUE_FLOW_API_URL, HttpMethod.GET, request, String.class);
             String responseBody = response.getBody();
             log.debug("HTTP API 场馆客流响应: {}", responseBody);
 
             JSONObject json = JSONObject.parseObject(responseBody);
-            if (json == null || json.getInteger("code") == null || json.getInteger("code") != 200) {
+            if (json == null || !Boolean.TRUE.equals(json.getBoolean("success"))
+                    || json.getInteger("code") == null || json.getInteger("code") != 200) {
                 log.error("请求 HTTP API 场馆客流失败: {}", responseBody);
                 return null;
             }
-            return json.getJSONObject("data");
+            return json.getJSONArray("result");
         } catch (Exception e) {
             log.error("请求 HTTP API 场馆客流异常", e);
             return null;
@@ -220,41 +228,91 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
 
     /**
      * 将 API 返回的 JSON 解析为 VenueFlowHour 实体。
+     * <p>
+     * 新接口字段映射：enterSum(总进入人数) → todayInCount，holdValue(在馆人数) → todayNowCount；
+     * exitSum(总离开人数) 表无对应字段暂不存储；maxCount/maxTime 接口不再返回，
+     * 由 upsert 时根据在馆人数本地判断峰值。
+     * </p>
      */
     private VenueFlowHour parseVenueFlowHourItem(JSONObject item, Long venueId) {
         VenueFlowHour flow = new VenueFlowHour();
         flow.setDataDate(LocalDate.now());
+        flow.setDataHour(Time.valueOf(LocalTime.now().withMinute(0).withSecond(0).withNano(0)));
+        flow.setStatus(1);
         flow.setVenueId(venueId);
-        flow.setTodayInCount(item.getLong("todayInCount"));
-        flow.setTodayNowCount(item.getLong("nowCount"));
-        flow.setMaxCount(item.getLong("maxCount"));
-        // maxTime 解析为 java.sql.Time
-        String maxTimeStr = item.getString("maxTime");
-        if (maxTimeStr != null && !maxTimeStr.isEmpty()) {
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-                flow.setMaxTime(new Time(sdf.parse(maxTimeStr).getTime()));
-            } catch (Exception e) {
-                log.warn("maxTime 解析失败: {}", maxTimeStr, e);
-            }
-        }
-        flow.setAverageDuration(item.getDouble("averageDuration"));
+        flow.setTodayInCount(item.getLong("enterSum"));
+        flow.setTodayNowCount(item.getLong("holdValue"));
         return flow;
     }
 
     /**
-     * 按 (dataDate, venueId) 唯一键 upsert：存在则更新，否则插入。
+     * 按 (dataDate, venueId, dataHour) 唯一键 upsert：存在则更新，否则插入。
+     * <p>
+     * 表为分时结构，每天每馆每小时一条记录，dataHour 取当前整点小时。
+     * 峰值人数本地判断：接口不再返回 maxCount/maxTime，改为跨小时累计当天峰值——
+     * 取当天该馆所有小时记录中的最大峰值作为基准，当前在馆人数(holdValue)超过该峰值时，
+     * 更新峰值人数并记录峰值时间(当前时间)；否则保留当天历史峰值及对应峰值时间。
+     * </p>
      */
     private void upsertVenueFlowHour(VenueFlowHour flow) {
         VenueFlowHour exist = getOne(new LambdaQueryWrapper<VenueFlowHour>()
-                .eq(VenueFlowHour::getDataDate, LocalDate.now())
+                .eq(VenueFlowHour::getDataDate, flow.getDataDate())
+                .eq(VenueFlowHour::getVenueId, flow.getVenueId())
+                .eq(VenueFlowHour::getDataHour, flow.getDataHour()));
+
+        // 当天该馆历史峰值（跨小时累计）
+        long dayMax = 0L;
+        Time dayMaxTime = null;
+        List<VenueFlowHour> dayRecords = list(new LambdaQueryWrapper<VenueFlowHour>()
+                .eq(VenueFlowHour::getDataDate, flow.getDataDate())
                 .eq(VenueFlowHour::getVenueId, flow.getVenueId()));
+        for (VenueFlowHour r : dayRecords) {
+            if (r.getMaxCount() != null && r.getMaxCount() > dayMax) {
+                dayMax = r.getMaxCount();
+                dayMaxTime = r.getMaxTime();
+            }
+        }
+
+        // 峰值人数判断：当前在馆人数超过当天历史峰值时，更新峰值及峰值时间(当前时间)
+        long holdValue = flow.getTodayNowCount() == null ? 0L : flow.getTodayNowCount();
+        if (holdValue > dayMax) {
+            flow.setMaxCount(holdValue);
+            flow.setMaxTime(new Time(System.currentTimeMillis()));
+        } else {
+            flow.setMaxCount(dayMax);
+            flow.setMaxTime(dayMaxTime == null ? new Time(System.currentTimeMillis()) : dayMaxTime);
+        }
+
         if (exist != null) {
             flow.setId(exist.getId());
             updateById(flow);
         } else {
             save(flow);
         }
+    }
+
+    /**
+     * 根据场馆名称解析 venueId。
+     * <p>
+     * 新接口不再返回 venueId，改为返回场馆名称 name（如 "1号馆"）。
+     * 优先按名称匹配 table_venue_info.venue_name；匹配不到时从名称中提取数字兜底（如 "1号馆" → 1）。
+     * </p>
+     */
+    private Long resolveVenueId(String venueName) {
+        if (venueName == null || venueName.trim().isEmpty()) {
+            return null;
+        }
+        String name = venueName.trim();
+        List<VenueInfo> infos = venueInfoService.list(new LambdaQueryWrapper<VenueInfo>()
+                .eq(VenueInfo::getVenueName, name));
+        if (infos != null && !infos.isEmpty()) {
+            return infos.get(0).getId();
+        }
+        Matcher matcher = Pattern.compile("\\d+").matcher(name);
+        if (matcher.find()) {
+            return Long.parseLong(matcher.group());
+        }
+        return null;
     }
 
     // ==================== 工具方法 ====================
