@@ -93,6 +93,25 @@ public class CameraResourceController {
     }
 
     /**
+     * 同步IOC平台摄像头列表
+     * <p>与同步分组使用同一个IOC分组树接口（返回数据每个分组含 videoList 数组，即该分组下摄像头列表），
+     * 递归收集所有分组的摄像头列表，清空 camera_info 表后全量导入。</p>
+     *
+     * @return 同步结果（摄像头数）
+     */
+    @PostMapping("/syncIocCamera")
+    @ApiOperation(value = "同步IOC平台摄像头列表", notes = "复用IOC分组树接口，解析各分组videoList中的摄像头列表，清空camera_info表后全量导入")
+    public Result<Integer> syncIocCameraList() {
+        try {
+            int count = cameraResourceService.syncIocCameraList();
+            return Result.ok(count);
+        } catch (Exception e) {
+            log.error("同步IOC平台摄像头列表失败", e);
+            return Result.error("同步IOC平台摄像头列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 获取摄像头本地HLS播放地址
      * <p>流程：前端传入1个或多个摄像头唯一编码 -> 海康SDK获取RTSP地址 -> JavaCV转码为本地HLS ->
      * 返回 /hls/{编码}/index.m3u8 完整访问地址。同一摄像头正在拉流时直接复用已生成的HLS流，不做重复转码。</p>

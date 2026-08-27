@@ -12,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraGroup;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraInfo;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
+import org.jeecg.modules.fwbz.hikvision.service.ICameraInfoService;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
 import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.CameraHlsStream;
@@ -108,6 +110,11 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     private final CameraGroupMapper cameraGroupMapper;
 
     /**
+     * 摄像头信息 Service（camera_info 表）
+     */
+    private final ICameraInfoService cameraInfoService;
+
+    /**
      * HLS流管理器：负责RTSP拉流转码、流复用与无人观看自动停止
      */
     private final HlsStreamManager hlsStreamManager;
@@ -185,6 +192,38 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         return groupList.size();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int syncIocCameraList() {
+        log.info("开始从IOC平台同步摄像头列表...");
+
+        // 1. 与同步分组使用同一个IOC分组树接口（返回数据每个分组含 videoList 数组，即该分组下摄像头列表）
+        JSONArray groupTree = fetchIocPackageGroup();
+        if (groupTree == null || groupTree.isEmpty()) {
+            log.warn("IOC平台未返回任何分组数据，跳过同步，保留现有记录");
+            return 0;
+        }
+
+        // 2. 递归遍历分组树，收集各分组下的摄像头列表
+        List<CameraInfo> cameraList = new ArrayList<>();
+        for (int i = 0; i < groupTree.size(); i++) {
+            parseIocVideo(groupTree.getJSONObject(i), cameraList);
+        }
+        log.info("IOC平台摄像头数据拉取完成, 摄像头{}个", cameraList.size());
+
+        // 3. 清空摄像头信息表（全量同步策略）
+        boolean deletedCount = cameraInfoService.remove(null);
+        log.info("已清空摄像头信息表{}条", deletedCount);
+
+        // 4. 插入摄像头（达梦驱动对JDBC批量插入支持有缺陷，循环单条插入绕开该问题）
+        for (CameraInfo camera : cameraList) {
+            cameraInfoService.save(camera);
+        }
+
+        log.info("IOC平台摄像头列表同步完成, 共同步{}个", cameraList.size());
+        return cameraList.size();
+    }
+
     /**
      * 调用IOC平台接口获取摄像头分组树
      *
@@ -241,6 +280,73 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
                 parseIocGroup(children.getJSONObject(i), groupId, groupList);
             }
         }
+    }
+
+    /**
+     * 递归遍历IOC分组树，收集各分组下的摄像头列表（videoList）
+     * <p>与同步分组使用同一个IOC分组树接口，返回数据每个分组含 videoList 数组，
+     * 即该分组下的摄像头列表。分组ID与分组名一并写入摄像头记录。</p>
+     *
+     * @param node       当前分组节点
+     * @param cameraList 摄像头收集列表
+     */
+    private void parseIocVideo(JSONObject node, List<CameraInfo> cameraList) {
+        if (node == null) {
+            return;
+        }
+        Long groupId = node.getLong("id");
+        String groupName = node.getString("name");
+
+        // 收集当前分组下的摄像头列表
+        JSONArray videoList = node.getJSONArray("videoList");
+        if (videoList != null && !videoList.isEmpty()) {
+            for (int i = 0; i < videoList.size(); i++) {
+                CameraInfo camera = convertIocVideoToCameraInfo(videoList.getJSONObject(i), groupId, groupName);
+                if (camera != null) {
+                    cameraList.add(camera);
+                }
+            }
+        }
+
+        // 递归子分组
+        JSONArray children = node.getJSONArray("children");
+        if (children != null && !children.isEmpty()) {
+            for (int i = 0; i < children.size(); i++) {
+                parseIocVideo(children.getJSONObject(i), cameraList);
+            }
+        }
+    }
+
+    /**
+     * 将IOC平台摄像头节点转换为摄像头信息实体
+     * <p>映射关系：systemId 对应 system_id（摄像头唯一标识），longitude/latitude 对应经纬度，
+     * online 对应在线状态，所属分组ID/名称对应 group_id/group_name（各字段按表列长度截断，
+     * 避免达梦"字符串截断"报错）。</p>
+     *
+     * @param video     IOC平台摄像头节点
+     * @param groupId   所属分组ID
+     * @param groupName 所属分组名称
+     * @return 摄像头信息实体，systemId为空时返回null
+     */
+    private CameraInfo convertIocVideoToCameraInfo(JSONObject video, Long groupId, String groupName) {
+        if (video == null) {
+            return null;
+        }
+        String systemId = video.getString("systemId");
+        if (StringUtils.isBlank(systemId)) {
+            log.warn("IOC摄像头节点缺少systemId, 跳过该摄像头: {}", video.toJSONString());
+            return null;
+        }
+        CameraInfo entity = new CameraInfo();
+        entity.setSystemId(truncate(systemId, 64));
+        entity.setName(truncate(video.getString("name"), 128));
+        entity.setGroupId(groupId);
+        entity.setGroupName(truncate(groupName, 128));
+        entity.setLongitude(parseBigDecimal(video.getString("longitude")));
+        entity.setLatitude(parseBigDecimal(video.getString("latitude")));
+        Boolean online = video.getBoolean("online");
+        entity.setOnline(Boolean.TRUE.equals(online) ? 1 : 0);
+        return entity;
     }
 
     /**
