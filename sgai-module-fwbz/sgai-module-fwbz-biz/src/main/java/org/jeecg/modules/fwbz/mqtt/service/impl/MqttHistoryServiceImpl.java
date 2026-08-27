@@ -17,6 +17,9 @@ import org.jeecg.modules.fwbz.main.service.IMonthDataService;
 import org.jeecg.modules.fwbz.main.service.IRealDataService;
 import org.jeecg.modules.fwbz.main.service.IYearDataService;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
+import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mqtt.entity.MqttHistory;
 import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
@@ -26,9 +29,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * MQTT低压配电数据 Service 实现
@@ -46,6 +53,12 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
 
     private final IDeviceService deviceService;
 
+    /** 设备属性服务：用于回查属性 id、设备 id */
+    private final IDeviceAttributeService deviceAttributeService;
+
+    /** 设备属性历史服务：更新属性表的同时保存点位历史 */
+    private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
+
     private final IRealDataService realDataService;
 
     private final IMinuteDataService minuteDataService;
@@ -61,6 +74,8 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
     public MqttHistoryServiceImpl(MDeviceAttributeMapper deviceAttributeMapper,
                                   RedissonLockClient redissonLockClient,
                                   IDeviceService deviceService,
+                                  IDeviceAttributeService deviceAttributeService,
+                                  IDeviceAttributeHistoryService deviceAttributeHistoryService,
                                   IRealDataService realDataService,
                                   IMinuteDataService minuteDataService,
                                   IHourDataService hourDataService,
@@ -70,6 +85,8 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         this.deviceAttributeMapper = deviceAttributeMapper;
         this.redissonLockClient = redissonLockClient;
         this.deviceService = deviceService;
+        this.deviceAttributeService = deviceAttributeService;
+        this.deviceAttributeHistoryService = deviceAttributeHistoryService;
         this.realDataService = realDataService;
         this.minuteDataService = minuteDataService;
         this.hourDataService = hourDataService;
@@ -83,8 +100,77 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         if (list == null || list.isEmpty()) {
             return 0;
         }
+        // 更新设备属性表
         int rows = deviceAttributeMapper.updateValueByUniqueKeys(list);
+        // 更新设备属性表的同时，将点位值写入 device_attribute_history 历史表：
+        // 采集时间按数据自带 timeStamp 对齐到整十五分钟槽位（如 08:00:05 -> 08:00:00），
+        // 同一属性同一槽位已有历史数据则更新，否则新增
+        try {
+            saveAttributeHistory(list);
+        } catch (Exception e) {
+            log.error("MQTT设备属性历史保存失败", e);
+        }
         return rows;
+    }
+
+    /**
+     * 将 MQTT 数据写入设备属性历史表：回查 device_attribute 补充属性 id、设备 id，
+     * 采集时间按数据 timeStamp 对齐到整十五分钟槽位（如 08:00:05 -> 08:00:00），
+     * 同一属性(attributeId) 同一槽位(collectionTime) 已有历史数据则更新，否则新增。
+     *
+     * @param list MQTT数据列表
+     */
+    private void saveAttributeHistory(List<MqttHistory> list) {
+        // 收集需要回查的采集编码（uniqueKey 对应 device_attribute.acquisition_coding）
+        List<String> uniqueKeys = list.stream()
+                .map(MqttHistory::getUniqueKey)
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        if (uniqueKeys.isEmpty()) {
+            return;
+        }
+        // 回查 device_attribute 获取属性 id、设备 id（按采集编码索引）
+        Map<String, DeviceAttribute> attrMap = deviceAttributeService.list(
+                        new LambdaQueryWrapper<DeviceAttribute>()
+                                .in(DeviceAttribute::getAcquisitionCoding, uniqueKeys))
+                .stream()
+                .collect(Collectors.toMap(DeviceAttribute::getAcquisitionCoding, Function.identity(), (a, b) -> a));
+        // 按十五分钟槽位分组，同一槽位统一保存（有则更新，无则新增）
+        Map<LocalDateTime, List<DeviceAttribute>> slotGroup = new LinkedHashMap<>();
+        for (MqttHistory history : list) {
+            DeviceAttribute attr = attrMap.get(history.getUniqueKey());
+            if (attr == null || attr.getId() == null || attr.getDeviceId() == null
+                    || history.getTimeStamp() == null || StringUtils.isBlank(history.getValue())) {
+                continue;
+            }
+            attr.setValue(history.getValue());
+            slotGroup.computeIfAbsent(alignTo15MinuteSlot(history.getTimeStamp()), k -> new ArrayList<>()).add(attr);
+        }
+        if (slotGroup.isEmpty()) {
+            return;
+        }
+        int total = 0;
+        for (Map.Entry<LocalDateTime, List<DeviceAttribute>> entry : slotGroup.entrySet()) {
+            deviceAttributeHistoryService.saveAttributeHistory(entry.getValue(), entry.getKey());
+            total += entry.getValue().size();
+        }
+        log.info("MQTT设备属性历史保存完成: 槽位数={}, 点数={}", slotGroup.size(), total);
+    }
+
+    /**
+     * 将时间对齐到当前整十五分钟槽位：分钟向下取整到 15 的倍数，秒与纳秒清零
+     * 如 08:00:05 -> 08:00:00，08:16:59 -> 08:15:00（与楼控读点对齐逻辑一致）
+     *
+     * @param time 原始时间
+     * @return 对齐后的时间；入参为 null 时返回 null
+     */
+    private LocalDateTime alignTo15MinuteSlot(LocalDateTime time) {
+        if (time == null) {
+            return null;
+        }
+        int slotMinute = (time.getMinute() / 15) * 15;
+        return time.withMinute(slotMinute).withSecond(0).withNano(0);
     }
 
     @Override

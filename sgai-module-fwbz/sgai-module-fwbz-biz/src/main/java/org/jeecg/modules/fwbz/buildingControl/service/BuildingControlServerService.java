@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.buildingControl.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sunwayland.pspace.entity.Base;
 import com.sunwayland.pspace.entity.PsData;
 import com.sunwayland.pspace.entity.PsResult;
@@ -9,6 +10,8 @@ import com.sunwayland.pspace.enums.PsQualityEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 楼控系统(pSpace) Server API 服务
@@ -40,6 +47,14 @@ public class BuildingControlServerService {
 
     @Autowired
     private  MDeviceAttributeMapper mdeviceAttributeMapper;
+
+    /** 设备属性服务：用于回查属性 id、设备 id */
+    @Autowired
+    private IDeviceAttributeService deviceAttributeService;
+
+    /** 设备属性历史服务：更新属性表的同时保存点位历史 */
+    @Autowired
+    private IDeviceAttributeHistoryService deviceAttributeHistoryService;
 
 
     /**
@@ -75,8 +90,9 @@ public class BuildingControlServerService {
      * 读取点位信息数据（读点），按检测点ID(tagId)读取值
      * <p>
      * 读取成功后更新 device_attribute 表：采集编码(acquisition_coding) 为该检测点ID(tagId)
-     * 的记录，更新 value、gather_time（值按 dataType 处理：BOOL 类型统一转换成 0/1），
-     * 并触发 MQ 消息与历史保存（由 IDeviceAttributeService 内部处理）。
+     * 的记录，更新 value、gather_time（值按 dataType 处理：BOOL 类型统一转换成 0/1）；
+     * 同时将点位值写入 device_attribute_history 历史表（采集时间对齐到当前整十五分钟槽位，
+     * 同一属性同一槽位已有历史数据则更新）。
      * <p>
      * 全部点位读取完成后统一批量更新，避免逐点 UPDATE 造成大量数据库交互
      * （1029 个点由 2000+ 次 DB 往返降为 2~3 次）。
@@ -85,6 +101,26 @@ public class BuildingControlServerService {
      * @return true 表示读取流程完成（逐点读取，单个失败仅告警，不影响后续）
      */
     public boolean realReadList(List<Long> tagIds) {
+        return realReadList(tagIds, BuildingControlRealPushService.alignTo15MinuteSlot(LocalDateTime.now()));
+    }
+
+    /**
+     * 读取点位信息数据（读点），按检测点ID(tagId)读取值
+     * <p>
+     * 读取成功后更新 device_attribute 表：采集编码(acquisition_coding) 为该检测点ID(tagId)
+     * 的记录，更新 value、gather_time（值按 dataType 处理：BOOL 类型统一转换成 0/1）；
+     * 同时将点位值写入 device_attribute_history 历史表，采集时间使用传入的 dataTime
+     * （已对齐到整十五分钟槽位，如 08:00:05 执行 -> dataTime = 08:00:00，
+     * 同一属性同一槽位已有历史数据则更新）。
+     * <p>
+     * 全部点位读取完成后统一批量更新，避免逐点 UPDATE 造成大量数据库交互
+     * （1029 个点由 2000+ 次 DB 往返降为 2~3 次）。
+     *
+     * @param tagIds   检测点ID列表（对应 device_attribute.acquisition_coding）
+     * @param dataTime 采集时间（已对齐到当前整十五分钟槽位），用于写入历史表
+     * @return true 表示读取流程完成（逐点读取，单个失败仅告警，不影响后续）
+     */
+    public boolean realReadList(List<Long> tagIds, LocalDateTime dataTime) {
         // 收集读取成功的数据，读完统一批量更新
         List<DeviceAttribute> updateList = new ArrayList<>();
         int readSuccess = 0;
@@ -116,9 +152,54 @@ public class BuildingControlServerService {
             } catch (Exception e) {
                 log.error("楼控读点批量更新属性失败: 更新点数={}", updateList.size(), e);
             }
+            // 同步保存点位历史：按十五分钟槽位对齐的采集时间写入 device_attribute_history（有则更新）
+            try {
+                saveHistory(updateList, dataTime);
+            } catch (Exception e) {
+                log.error("楼控读点保存历史失败: 更新点数={}", updateList.size(), e);
+            }
         }
         log.info("楼控读点完成: 检测点数={}, 读取成功={}, 更新={}", tagIds.size(), readSuccess, updateList.size());
         return true;
+    }
+
+    /**
+     * 保存点位历史：读取返回的属性仅含采集编码/值/采集时间（无 id、deviceId），
+     * 需回查 device_attribute 补充属性 id、设备 id 后，写入 device_attribute_history
+     * （采集时间对齐到十五分钟槽位，同一属性同一槽位已有历史数据则更新）。
+     *
+     * @param updateList 读取成功待更新的属性列表（仅含采集编码、值、采集时间）
+     * @param dataTime   采集时间（已对齐到当前整十五分钟槽位）
+     */
+    private void saveHistory(List<DeviceAttribute> updateList, LocalDateTime dataTime) {
+        if (updateList == null || updateList.isEmpty() || dataTime == null) {
+            return;
+        }
+        Set<String> codings = updateList.stream()
+                .map(DeviceAttribute::getAcquisitionCoding)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (codings.isEmpty()) {
+            return;
+        }
+        // 回查 device_attribute 获取属性 id、设备 id（按采集编码索引）
+        Map<String, DeviceAttribute> attrMap = deviceAttributeService.list(
+                        new LambdaQueryWrapper<DeviceAttribute>()
+                                .in(DeviceAttribute::getAcquisitionCoding, codings))
+                .stream()
+                .collect(Collectors.toMap(DeviceAttribute::getAcquisitionCoding, Function.identity(), (a, b) -> a));
+        List<DeviceAttribute> historyAttrs = new ArrayList<>();
+        for (DeviceAttribute item : updateList) {
+            DeviceAttribute attr = attrMap.get(item.getAcquisitionCoding());
+            if (attr == null || attr.getId() == null || attr.getDeviceId() == null) {
+                continue;
+            }
+            attr.setValue(item.getValue());
+            historyAttrs.add(attr);
+        }
+        if (!historyAttrs.isEmpty()) {
+            deviceAttributeHistoryService.saveAttributeHistory(historyAttrs, dataTime);
+        }
     }
 
     /**
