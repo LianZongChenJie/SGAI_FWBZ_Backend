@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
+import org.jeecg.modules.fwbz.hikvision.entity.CameraGroup;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
 import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
@@ -21,9 +23,13 @@ import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.CameraHlsStream;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
 import org.jeecg.modules.fwbz.hikvision.util.HlsStreamManager;
+import org.jeecg.modules.fwbz.hikvision.mapper.CameraGroupMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraResourceMapper;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
@@ -73,6 +79,11 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     private static final String CAMERA_ONLINE_API = "/api/nms/v1/online/camera/get";
 
     /**
+     * IOC平台摄像头分组数据API（返回分组树，含分组信息、下级摄像头列表与子分组）
+     */
+    private static final String IOC_PACKAGE_GROUP_API = "http://10.168.47.26:9999/sgai-ioc-data/admin/video/packageGroup";
+
+    /**
      * 固定分页大小（最大1000）
      */
     private static final int PAGE_SIZE = 1000;
@@ -90,6 +101,11 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     private final HikvisionUtil hikvisionUtil;
 
     private final IRegionResourceService regionResourceService;
+
+    /**
+     * 摄像头分组信息 Mapper（table_camera_group 表）
+     */
+    private final CameraGroupMapper cameraGroupMapper;
 
     /**
      * HLS流管理器：负责RTSP拉流转码、流复用与无人观看自动停止
@@ -135,6 +151,149 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         }
         log.info("海康摄像头数据全量同步完成, 共同步{}条", entityList.size());
         return entityList.size();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int syncFromIoc() {
+        log.info("开始从IOC平台同步摄像头分组及摄像头列表...");
+
+        // 1. 调用IOC平台接口拉取分组树
+        JSONArray groupTree = fetchIocPackageGroup();
+        if (groupTree == null || groupTree.isEmpty()) {
+            log.warn("IOC平台未返回任何分组数据，跳过同步，保留现有记录");
+            return 0;
+        }
+
+        // 2. 递归解析分组树：先收集分组信息，再收集各分组下的摄像头列表
+        List<CameraGroup> groupList = new ArrayList<>();
+        List<CameraResource> cameraList = new ArrayList<>();
+        for (int i = 0; i < groupTree.size(); i++) {
+            parseIocGroup(groupTree.getJSONObject(i), 0L, groupList, cameraList);
+        }
+        log.info("IOC平台数据拉取完成, 分组{}个, 摄像头{}个", groupList.size(), cameraList.size());
+
+        // 3. 清空两张表（全量同步策略）
+        int deletedGroupCount = cameraGroupMapper.delete(null);
+        int deletedCameraCount = baseMapper.delete(null);
+        log.info("已清空摄像头分组表{}条, 摄像头资源表{}条", deletedGroupCount, deletedCameraCount);
+
+        // 4. 先插入分组，再插入摄像头（达梦驱动对JDBC批量插入支持有缺陷，循环单条插入绕开该问题）
+        Date now = new Date();
+        for (CameraGroup group : groupList) {
+            cameraGroupMapper.insert(group);
+        }
+        for (CameraResource camera : cameraList) {
+            camera.setGmtCreate(now);
+            camera.setGmtModified(now);
+            baseMapper.insert(camera);
+        }
+
+        log.info("IOC平台数据同步完成, 共同步分组{}个, 摄像头{}个", groupList.size(), cameraList.size());
+        return groupList.size() + cameraList.size();
+    }
+
+    /**
+     * 调用IOC平台接口获取摄像头分组树
+     *
+     * @return 一级分组节点列表
+     */
+    private JSONArray fetchIocPackageGroup() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);
+        factory.setReadTimeout(10000);
+        RestTemplate restTemplate = new RestTemplate(factory);
+
+        String body = restTemplate.exchange(IOC_PACKAGE_GROUP_API, HttpMethod.GET, null, String.class).getBody();
+        JSONObject json = JSONObject.parseObject(body);
+        Boolean success = json.getBoolean("success");
+        if (success == null || !success) {
+            throw new RuntimeException("IOC平台接口返回失败: " + body);
+        }
+        return json.getJSONArray("result");
+    }
+
+    /**
+     * 递归解析IOC分组节点
+     * <p>节点包含分组信息（id/name/description/sortNum/dimension）、下级摄像头列表（videoList）和子分组（children）。</p>
+     *
+     * @param node       当前分组节点
+     * @param parentId   父分组ID，根节点为0
+     * @param groupList  分组收集列表
+     * @param cameraList 摄像头收集列表
+     */
+    private void parseIocGroup(JSONObject node, Long parentId,
+                               List<CameraGroup> groupList, List<CameraResource> cameraList) {
+        if (node == null) {
+            return;
+        }
+        Long groupId = node.getLong("id");
+        if (groupId == null) {
+            log.warn("IOC分组节点缺少id字段, 跳过该分组: {}", node.toJSONString());
+            return;
+        }
+
+        // 收集分组信息（各字段按表列长度截断，避免达梦"字符串截断"报错）
+        CameraGroup group = new CameraGroup();
+        group.setId(groupId);
+        group.setName(truncate(node.getString("name"), 255));
+        group.setDescription(truncate(node.getString("description"), 255));
+        group.setSortNum(node.getInteger("sortNum"));
+        group.setDimension(truncate(node.getString("dimension"), 255));
+        group.setParentId(parentId);
+        groupList.add(group);
+
+        // 收集该分组下的摄像头列表
+        JSONArray videoList = node.getJSONArray("videoList");
+        if (videoList != null && !videoList.isEmpty()) {
+            for (int i = 0; i < videoList.size(); i++) {
+                CameraResource camera = convertIocVideoToEntity(videoList.getJSONObject(i), group);
+                if (camera != null) {
+                    cameraList.add(camera);
+                }
+            }
+        }
+
+        // 递归子分组
+        JSONArray children = node.getJSONArray("children");
+        if (children != null && !children.isEmpty()) {
+            for (int i = 0; i < children.size(); i++) {
+                parseIocGroup(children.getJSONObject(i), groupId, groupList, cameraList);
+            }
+        }
+    }
+
+    /**
+     * 将IOC平台摄像头节点转换为摄像头实体
+     * <p>映射关系：systemId 对应 index_code（摄像头编码），所属分组ID 对应 region_index_code（所属区域）。</p>
+     *
+     * @param video IOC平台摄像头节点
+     * @param group 所属分组
+     * @return 摄像头实体，systemId为空时返回null
+     */
+    private CameraResource convertIocVideoToEntity(JSONObject video, CameraGroup group) {
+        if (video == null) {
+            return null;
+        }
+        String systemId = video.getString("systemId");
+        if (StringUtils.isBlank(systemId)) {
+            log.warn("IOC摄像头节点缺少systemId, 跳过该摄像头: {}", video.toJSONString());
+            return null;
+        }
+        CameraResource entity = new CameraResource();
+        // systemId 对应摄像头唯一编码
+        entity.setIndexCode(truncate(systemId, 64));
+        entity.setName(truncate(video.getString("name"), 128));
+        // 所属分组ID 对应所属区域
+        entity.setRegionIndexCode(String.valueOf(group.getId()));
+        entity.setRegionName(truncate(group.getName(), 512));
+        // 经纬度
+        entity.setLongitude(parseBigDecimal(video.getString("longitude")));
+        entity.setLatitude(parseBigDecimal(video.getString("latitude")));
+        // 在线状态
+        Boolean online = video.getBoolean("online");
+        entity.setOnline(Boolean.TRUE.equals(online) ? 1 : 0);
+        return entity;
     }
 
     /**

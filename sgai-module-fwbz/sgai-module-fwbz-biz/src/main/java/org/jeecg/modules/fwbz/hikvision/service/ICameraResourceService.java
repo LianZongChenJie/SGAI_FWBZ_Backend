@@ -26,6 +26,16 @@ public interface ICameraResourceService extends IService<CameraResource> {
     int syncFromHikvision();
 
     /**
+     * 从IOC平台同步摄像头分组信息及摄像头列表
+     * <p>先清空 table_camera_group 与 table_camera_resource 两张表，再调用IOC平台接口拉取分组树：
+     * 先同步分组信息到 table_camera_group 表，再根据分组ID同步摄像头列表到 table_camera_resource 表
+     * （IOC返回的 systemId 对应表 index_code 摄像头编码，分组ID 对应 region_index_code 所属区域）。</p>
+     *
+     * @return 同步成功的记录数（分组数 + 摄像头数）
+     */
+    int syncFromIoc();
+
+    /**
      * 根据摄像头唯一编码列表，获取本地HLS播放地址
      * <p>流程：海康SDK获取RTSP地址 -> JavaCV转码为本地HLS -> 返回 /hls/{编码}/index.m3u8 相对地址。
      * 同一摄像头正在拉流时直接复用已生成的HLS流，不做重复转码。</p>
