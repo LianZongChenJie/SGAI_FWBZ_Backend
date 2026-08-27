@@ -19,9 +19,11 @@ public class DeviceAttributeDataVo {
 
     private String valueType;
 
+    private String acquisitionCoding;
 
-    public static DeviceAttributeDataVo build(Long deviceId,Long configId,String label,String code,String value){
-        return new DeviceAttributeDataVo(deviceId,configId,label,code,value,"show");
+
+    public static DeviceAttributeDataVo build(Long deviceId,Long configId,String label,String code,String value,String acquisitionCoding){
+        return new DeviceAttributeDataVo(deviceId,configId,label,code,value,"show",acquisitionCoding);
     }
 
 }

@@ -11,9 +11,15 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.main.service.IBusinessConfigService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -62,6 +68,54 @@ public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttribu
             history.setCollectionTime(attribute.getGatherTime());
             history.setValue(attribute.getValue());
             save(history);
+        }
+    }
+
+    @Override
+    public void saveAttributeHistory(Collection<DeviceAttribute> attributes, LocalDateTime dataTime) {
+        if (attributes == null || attributes.isEmpty() || dataTime == null) {
+            return;
+        }
+        List<Long> attributeIds = attributes.stream()
+                .map(DeviceAttribute::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (attributeIds.isEmpty()) {
+            return;
+        }
+        // 查询同一时间槽位已存在的历史记录（有则更新，无则新增）
+        Map<Long, DeviceAttributeHistory> existMap = list(new LambdaQueryWrapper<DeviceAttributeHistory>()
+                        .eq(DeviceAttributeHistory::getCollectionTime, dataTime)
+                        .in(DeviceAttributeHistory::getAttributeId, attributeIds))
+                .stream()
+                .collect(Collectors.toMap(DeviceAttributeHistory::getAttributeId, Function.identity(), (a, b) -> a));
+
+        List<DeviceAttributeHistory> updateList = new ArrayList<>();
+        List<DeviceAttributeHistory> insertList = new ArrayList<>();
+        for (DeviceAttribute attribute : attributes) {
+            if (attribute.getId() == null || attribute.getDeviceId() == null) {
+                continue;
+            }
+            DeviceAttributeHistory exist = existMap.get(attribute.getId());
+            if (exist != null) {
+                exist.setDeviceId(attribute.getDeviceId());
+                exist.setValue(attribute.getValue());
+                updateList.add(exist);
+            } else {
+                DeviceAttributeHistory history = new DeviceAttributeHistory();
+                history.setAttributeId(attribute.getId());
+                history.setDeviceId(attribute.getDeviceId());
+                history.setCollectionTime(dataTime);
+                history.setValue(attribute.getValue());
+                insertList.add(history);
+            }
+        }
+        if (!updateList.isEmpty()) {
+            updateBatchById(updateList);
+        }
+        if (!insertList.isEmpty()) {
+            saveBatch(insertList);
         }
     }
 }

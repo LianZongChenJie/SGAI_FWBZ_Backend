@@ -85,7 +85,7 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
             return Collections.emptyList();
         }
         List<DeviceAttribute> list = list(new LambdaQueryWrapper<DeviceAttribute>().eq(DeviceAttribute::getDeviceId, deviceId).orderByAsc(DeviceAttribute::getSort));
-        return list.stream().map(item -> DeviceAttributeDataVo.build(deviceId, item.getId(), item.getAttributeName(), item.getAttributeCode(), item.getValue())).collect(Collectors.toList());
+        return list.stream().map(item -> DeviceAttributeDataVo.build(deviceId, item.getId(), item.getAttributeName(), item.getAttributeCode(), item.getValue(),item.getAcquisitionCoding())).collect(Collectors.toList());
     }
 
     @Override
