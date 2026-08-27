@@ -74,22 +74,21 @@ public class CameraResourceController {
     }
 
     /**
-     * 同步IOC平台摄像头分组及摄像头列表
-     * <p>先清空 table_camera_group 与 table_camera_resource 两张表，再调用IOC平台接口拉取分组树：
-     * 先同步分组信息到 table_camera_group 表，再根据分组ID同步摄像头列表到 table_camera_resource 表
-     * （IOC返回的 systemId 对应 index_code 摄像头编码，分组ID 对应 region_index_code 所属区域）。</p>
+     * 同步IOC平台摄像头分组
+     * <p>先清空 table_camera_group 表，再调用IOC平台接口拉取分组树，
+     * 仅同步分组信息到 table_camera_group 表（不处理摄像头列表）。</p>
      *
-     * @return 同步结果（分组数 + 摄像头数）
+     * @return 同步结果（分组数）
      */
     @PostMapping("/syncIoc")
-    @ApiOperation(value = "同步IOC平台摄像头分组及摄像头列表", notes = "先清空摄像头分组表与摄像头资源表，再从IOC平台拉取分组及摄像头数据导入")
+    @ApiOperation(value = "同步IOC平台摄像头分组", notes = "先清空摄像头分组表，再从IOC平台拉取分组数据导入")
     public Result<Integer> syncIocCameras() {
         try {
             int count = cameraResourceService.syncFromIoc();
             return Result.ok(count);
         } catch (Exception e) {
-            log.error("同步IOC平台摄像头数据失败", e);
-            return Result.error("同步IOC平台摄像头数据失败: " + e.getMessage());
+            log.error("同步IOC平台摄像头分组失败", e);
+            return Result.error("同步IOC平台摄像头分组失败: " + e.getMessage());
         }
     }
 

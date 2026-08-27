@@ -86,6 +86,10 @@ public class DeviceDataVo {
      * 电池电压
      */
     private String colVoltage;
+    /**
+     * 备注
+     */
+    private String remark;
 
     /**
      * 今日用量
@@ -127,6 +131,7 @@ public class DeviceDataVo {
         res.setVenueId(device.getVenueId());
         res.setRunState(device.getRunState());
         res.setLastGatherTime(device.getLastGatherTime());
+        res.setRemark(device.getRemark());
         return res;
     }
 

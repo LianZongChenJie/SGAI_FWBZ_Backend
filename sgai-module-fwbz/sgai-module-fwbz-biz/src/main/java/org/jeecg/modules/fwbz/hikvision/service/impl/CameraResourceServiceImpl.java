@@ -156,7 +156,7 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int syncFromIoc() {
-        log.info("开始从IOC平台同步摄像头分组及摄像头列表...");
+        log.info("开始从IOC平台同步摄像头分组...");
 
         // 1. 调用IOC平台接口拉取分组树
         JSONArray groupTree = fetchIocPackageGroup();
@@ -165,32 +165,24 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
             return 0;
         }
 
-        // 2. 递归解析分组树：先收集分组信息，再收集各分组下的摄像头列表
+        // 2. 递归解析分组树，仅收集分组信息（不处理摄像头列表）
         List<CameraGroup> groupList = new ArrayList<>();
-        List<CameraResource> cameraList = new ArrayList<>();
         for (int i = 0; i < groupTree.size(); i++) {
-            parseIocGroup(groupTree.getJSONObject(i), 0L, groupList, cameraList);
+            parseIocGroup(groupTree.getJSONObject(i), 0L, groupList);
         }
-        log.info("IOC平台数据拉取完成, 分组{}个, 摄像头{}个", groupList.size(), cameraList.size());
+        log.info("IOC平台数据拉取完成, 分组{}个", groupList.size());
 
-        // 3. 清空两张表（全量同步策略）
+        // 3. 清空分组表（全量同步策略）
         int deletedGroupCount = cameraGroupMapper.delete(null);
-        int deletedCameraCount = baseMapper.delete(null);
-        log.info("已清空摄像头分组表{}条, 摄像头资源表{}条", deletedGroupCount, deletedCameraCount);
+        log.info("已清空摄像头分组表{}条", deletedGroupCount);
 
-        // 4. 先插入分组，再插入摄像头（达梦驱动对JDBC批量插入支持有缺陷，循环单条插入绕开该问题）
-        Date now = new Date();
+        // 4. 插入分组（达梦驱动对JDBC批量插入支持有缺陷，循环单条插入绕开该问题）
         for (CameraGroup group : groupList) {
             cameraGroupMapper.insert(group);
         }
-        for (CameraResource camera : cameraList) {
-            camera.setGmtCreate(now);
-            camera.setGmtModified(now);
-            baseMapper.insert(camera);
-        }
 
-        log.info("IOC平台数据同步完成, 共同步分组{}个, 摄像头{}个", groupList.size(), cameraList.size());
-        return groupList.size() + cameraList.size();
+        log.info("IOC平台分组同步完成, 共同步分组{}个", groupList.size());
+        return groupList.size();
     }
 
     /**
@@ -214,16 +206,15 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     }
 
     /**
-     * 递归解析IOC分组节点
-     * <p>节点包含分组信息（id/name/description/sortNum/dimension）、下级摄像头列表（videoList）和子分组（children）。</p>
+     * 递归解析IOC分组节点，仅收集分组信息
+     * <p>节点包含分组信息（id/name/description/sortNum/dimension）、下级摄像头列表（videoList）和子分组（children），
+     * 此处只处理分组信息与递归子分组，忽略摄像头列表。</p>
      *
-     * @param node       当前分组节点
-     * @param parentId   父分组ID，根节点为0
-     * @param groupList  分组收集列表
-     * @param cameraList 摄像头收集列表
+     * @param node      当前分组节点
+     * @param parentId  父分组ID，根节点为0
+     * @param groupList 分组收集列表
      */
-    private void parseIocGroup(JSONObject node, Long parentId,
-                               List<CameraGroup> groupList, List<CameraResource> cameraList) {
+    private void parseIocGroup(JSONObject node, Long parentId, List<CameraGroup> groupList) {
         if (node == null) {
             return;
         }
@@ -243,57 +234,13 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         group.setParentId(parentId);
         groupList.add(group);
 
-        // 收集该分组下的摄像头列表
-        JSONArray videoList = node.getJSONArray("videoList");
-        if (videoList != null && !videoList.isEmpty()) {
-            for (int i = 0; i < videoList.size(); i++) {
-                CameraResource camera = convertIocVideoToEntity(videoList.getJSONObject(i), group);
-                if (camera != null) {
-                    cameraList.add(camera);
-                }
-            }
-        }
-
         // 递归子分组
         JSONArray children = node.getJSONArray("children");
         if (children != null && !children.isEmpty()) {
             for (int i = 0; i < children.size(); i++) {
-                parseIocGroup(children.getJSONObject(i), groupId, groupList, cameraList);
+                parseIocGroup(children.getJSONObject(i), groupId, groupList);
             }
         }
-    }
-
-    /**
-     * 将IOC平台摄像头节点转换为摄像头实体
-     * <p>映射关系：systemId 对应 index_code（摄像头编码），所属分组ID 对应 region_index_code（所属区域）。</p>
-     *
-     * @param video IOC平台摄像头节点
-     * @param group 所属分组
-     * @return 摄像头实体，systemId为空时返回null
-     */
-    private CameraResource convertIocVideoToEntity(JSONObject video, CameraGroup group) {
-        if (video == null) {
-            return null;
-        }
-        String systemId = video.getString("systemId");
-        if (StringUtils.isBlank(systemId)) {
-            log.warn("IOC摄像头节点缺少systemId, 跳过该摄像头: {}", video.toJSONString());
-            return null;
-        }
-        CameraResource entity = new CameraResource();
-        // systemId 对应摄像头唯一编码
-        entity.setIndexCode(truncate(systemId, 64));
-        entity.setName(truncate(video.getString("name"), 128));
-        // 所属分组ID 对应所属区域
-        entity.setRegionIndexCode(String.valueOf(group.getId()));
-        entity.setRegionName(truncate(group.getName(), 512));
-        // 经纬度
-        entity.setLongitude(parseBigDecimal(video.getString("longitude")));
-        entity.setLatitude(parseBigDecimal(video.getString("latitude")));
-        // 在线状态
-        Boolean online = video.getBoolean("online");
-        entity.setOnline(Boolean.TRUE.equals(online) ? 1 : 0);
-        return entity;
     }
 
     /**
