@@ -13,6 +13,8 @@ import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointSendHistoryService
 import org.jeecg.modules.fwbz.main.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.constant.BusinessConfigConstant;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.ExhaustFanStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.FanCoilStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
@@ -270,6 +272,80 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
             average = total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
         }
         dto.setAvgPm25(average);
+
+        return dto;
+
+    }
+
+    @Override
+    public ExhaustFanStatisticsDto exhaustFanStatistics() {
+
+        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_PF_POINT_ID);
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(longByKey)));
+
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String longByKey2 = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_PF_POINT_ID);
+
+        MeteringPoint byId = meteringPointService.getById(Long.valueOf(longByKey2));
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if (byId != null) {
+            MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+            if (byDateAndPointId != null) {
+                if (byDateAndPointId.getValue() != null) {
+                    energyConsumption = byDateAndPointId.getValue();
+                }
+            }
+        }
+        ExhaustFanStatisticsDto dto = new ExhaustFanStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
+
+        return dto;
+
+    }
+
+    @Override
+    public FanCoilStatisticsDto fanCoilStatistics() {
+
+        String categoryId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_PG_POINT_ID);
+
+        if (StringUtils.isBlank(categoryId)) {
+            log.warn("风机盘管统计配置缺失, key={}", BusinessConfigConstant.OPERATIONSUPPORT_PG_POINT_ID);
+            return new FanCoilStatisticsDto();
+        }
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(categoryId.trim())));
+
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String pointId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_PG_POINT_ID);
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if (StringUtils.isNotBlank(pointId)) {
+            MeteringPoint byId = meteringPointService.getById(Long.valueOf(pointId.trim()));
+            if (byId != null) {
+                MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+                if (byDateAndPointId != null) {
+                    if (byDateAndPointId.getValue() != null) {
+                        energyConsumption = byDateAndPointId.getValue();
+                    }
+                }
+            }
+        }
+        FanCoilStatisticsDto dto = new FanCoilStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
 
         return dto;
 

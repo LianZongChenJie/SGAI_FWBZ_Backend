@@ -3,6 +3,8 @@ package org.jeecg.modules.fwbz.operationSupport.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.jeecg.modules.fwbz.main.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.ExhaustFanStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.FanCoilStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
@@ -26,6 +28,8 @@ public interface IOperationSupportService {
 
     AirConditioningUnitStatisticsDto airConditioningUnitStatistics() ;
     FreshAirStatisticsDto freshAirStatistics() ;
+    ExhaustFanStatisticsDto exhaustFanStatistics() ;
+    FanCoilStatisticsDto fanCoilStatistics() ;
     PowerStatisticsDto powerStatistics() ;
     OverViewStatisticsDto overviewStatistics() ;
 

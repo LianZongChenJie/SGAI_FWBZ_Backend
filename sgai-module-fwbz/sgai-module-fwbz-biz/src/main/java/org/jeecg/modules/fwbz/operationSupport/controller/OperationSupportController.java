@@ -84,6 +84,24 @@ public class OperationSupportController {
         return Result.ok(service.freshAirStatistics());
     }
     /**
+     * 排风机-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/exhaustFanStatistics")
+    public Result<ExhaustFanStatisticsDto> exhaustFanStatistics() {
+        return Result.ok(service.exhaustFanStatistics());
+    }
+    /**
+     * 风机盘管-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/fanCoilStatistics")
+    public Result<FanCoilStatisticsDto> fanCoilStatistics() {
+        return Result.ok(service.fanCoilStatistics());
+    }
+    /**
      * 配电系统-数据统计
      * @param
      * @return

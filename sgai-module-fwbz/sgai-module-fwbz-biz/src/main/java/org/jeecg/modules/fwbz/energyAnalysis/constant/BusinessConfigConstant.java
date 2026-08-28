@@ -155,5 +155,17 @@ public class BusinessConfigConstant {
      *运行保障-概览-设备总览
      */
     public static final String OPERATIONSUPPORT_OVERVIEW_CATEGORYIDS = "operationSupport:overview:categoryIds";
+    /**
+     *运行保障-排风机-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_PF_POINT_ID = "operationSupport:pf:pointId";
+
+
+
+    /**
+     *运行保障-风机盘管-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_PG_POINT_ID = "operationSupport:pg:pointId";
+
 
 }
