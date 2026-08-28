@@ -102,7 +102,9 @@ public class BuildingControlRealPushService {
      * @return 去重后的检测点ID列表（保持查询顺序）
      */
     public List<Long> getTagIds() {
+        // 仅查询采集编码一列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
         List<DeviceAttribute> list = deviceAttributeService.list(new LambdaQueryWrapper<DeviceAttribute>()
+                .select(DeviceAttribute::getAcquisitionCoding)
                 .isNotNull(DeviceAttribute::getAcquisitionCoding)
                 .ne(DeviceAttribute::getAcquisitionCoding, ""));
         Set<Long> tagIds = new LinkedHashSet<>();

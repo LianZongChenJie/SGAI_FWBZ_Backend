@@ -28,8 +28,9 @@ import java.util.UUID;
 
 /**
  * MQTT消费者
- * <p>连接MQTT服务，订阅低压配电遥测/遥信/电度数据，解析后直接更新device_attribute设备属性表，
- * 其中电度数据uniqueKey包含"01Wp"的为正向有功电能表底值，触发设备能耗计算（分钟、小时、日、月、年）。</p>
+ * <p>连接MQTT服务，订阅低压配电遥测/遥信/电度数据，解析后更新device_attribute设备属性表（实时值），
+ * 原始点位数据写入table_mqtt_history表，其中电度数据uniqueKey包含"01Wp"的为正向有功电能表底值，
+ * 触发设备能耗计算（分钟、小时、日、月、年）。</p>
  *
  * <p>接收数据格式（8000主站全量推送，JSON对象）：</p>
  * <pre>
@@ -143,7 +144,8 @@ public class MqttConsumer {
             }
 
 
-            // 根据采集编码（uniqueKey）更新设备属性表中的采集值和采集时间
+            // 根据采集编码（uniqueKey）更新设备属性表中的采集值和采集时间，
+            // 并将原始点位数据写入 table_mqtt_history 表
             try {
                 mqttHistoryService.updateDeviceAttributeByUniqueKey(list);
             } catch (Exception e) {

@@ -18,7 +18,6 @@ import org.jeecg.modules.fwbz.main.service.IRealDataService;
 import org.jeecg.modules.fwbz.main.service.IYearDataService;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
-import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mqtt.entity.MqttHistory;
@@ -31,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -49,15 +47,14 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
 
     private final MDeviceAttributeMapper deviceAttributeMapper;
 
+    private final MqttHistoryMapper mqttHistoryMapper;
+
     private final RedissonLockClient redissonLockClient;
 
     private final IDeviceService deviceService;
 
     /** 设备属性服务：用于回查属性 id、设备 id */
     private final IDeviceAttributeService deviceAttributeService;
-
-    /** 设备属性历史服务：更新属性表的同时保存点位历史 */
-    private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
 
     private final IRealDataService realDataService;
 
@@ -72,10 +69,10 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
     private final IYearDataService yearDataService;
 
     public MqttHistoryServiceImpl(MDeviceAttributeMapper deviceAttributeMapper,
+                                  MqttHistoryMapper mqttHistoryMapper,
                                   RedissonLockClient redissonLockClient,
                                   IDeviceService deviceService,
                                   IDeviceAttributeService deviceAttributeService,
-                                  IDeviceAttributeHistoryService deviceAttributeHistoryService,
                                   IRealDataService realDataService,
                                   IMinuteDataService minuteDataService,
                                   IHourDataService hourDataService,
@@ -83,10 +80,10 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                                   IMonthDataService monthDataService,
                                   IYearDataService yearDataService) {
         this.deviceAttributeMapper = deviceAttributeMapper;
+        this.mqttHistoryMapper = mqttHistoryMapper;
         this.redissonLockClient = redissonLockClient;
         this.deviceService = deviceService;
         this.deviceAttributeService = deviceAttributeService;
-        this.deviceAttributeHistoryService = deviceAttributeHistoryService;
         this.realDataService = realDataService;
         this.minuteDataService = minuteDataService;
         this.hourDataService = hourDataService;
@@ -100,27 +97,26 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         if (list == null || list.isEmpty()) {
             return 0;
         }
-        // 更新设备属性表
+        // 更新设备属性表（实时采集值、采集时间）
         int rows = deviceAttributeMapper.updateValueByUniqueKeys(list);
-        // 更新设备属性表的同时，将点位值写入 device_attribute_history 历史表：
-        // 采集时间按数据自带 timeStamp 对齐到整十五分钟槽位（如 08:00:05 -> 08:00:00），
-        // 同一属性同一槽位已有历史数据则更新，否则新增
+        // MQTT 接收的点位数据不再写入 device_attribute_history 设备属性历史表，
+        // 改为写入 table_mqtt_history（MQTT低压配电数据表），时间对齐15分钟槽位，有则更新无则新增
         try {
-            saveAttributeHistory(list);
+            saveMqttHistory(list);
         } catch (Exception e) {
-            log.error("MQTT设备属性历史保存失败", e);
+            log.error("MQTT历史数据写入 table_mqtt_history 失败", e);
         }
         return rows;
     }
 
     /**
-     * 将 MQTT 数据写入设备属性历史表：回查 device_attribute 补充属性 id、设备 id，
-     * 采集时间按数据 timeStamp 对齐到整十五分钟槽位（如 08:00:05 -> 08:00:00），
-     * 同一属性(attributeId) 同一槽位(collectionTime) 已有历史数据则更新，否则新增。
+     * 将 MQTT 数据写入 table_mqtt_history 表：回查 device_attribute 补充属性 id、设备 id，
+     * 采集时间按数据自带 timeStamp 对齐到整十五分钟槽位（如 08:00:05 -> 08:00:00），
+     * 同一设备(deviceId) 同一属性(attributeId) 同一槽位(timeStamp) 已有历史数据则更新，否则新增。
      *
      * @param list MQTT数据列表
      */
-    private void saveAttributeHistory(List<MqttHistory> list) {
+    private void saveMqttHistory(List<MqttHistory> list) {
         // 收集需要回查的采集编码（uniqueKey 对应 device_attribute.acquisition_coding）
         List<String> uniqueKeys = list.stream()
                 .map(MqttHistory::getUniqueKey)
@@ -136,31 +132,65 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                                 .in(DeviceAttribute::getAcquisitionCoding, uniqueKeys))
                 .stream()
                 .collect(Collectors.toMap(DeviceAttribute::getAcquisitionCoding, Function.identity(), (a, b) -> a));
-        // 按十五分钟槽位分组，同一槽位统一保存（有则更新，无则新增）
-        Map<LocalDateTime, List<DeviceAttribute>> slotGroup = new LinkedHashMap<>();
+        // 补充 deviceId、attributeId，时间对齐到整十五分钟槽位
+        List<MqttHistory> saveList = new ArrayList<>(list.size());
         for (MqttHistory history : list) {
             DeviceAttribute attr = attrMap.get(history.getUniqueKey());
             if (attr == null || attr.getId() == null || attr.getDeviceId() == null
                     || history.getTimeStamp() == null || StringUtils.isBlank(history.getValue())) {
                 continue;
             }
-            attr.setValue(history.getValue());
-            slotGroup.computeIfAbsent(alignTo15MinuteSlot(history.getTimeStamp()), k -> new ArrayList<>()).add(attr);
+            history.setDeviceId(attr.getDeviceId());
+            history.setAttributeId(attr.getId());
+            history.setTimeStamp(alignTo15MinuteSlot(history.getTimeStamp()));
+            // 槽位结束时间 = 槽位起始 + 15分钟，用于时间段查询（左闭右开）
+            history.setSlotEnd(history.getTimeStamp().plusMinutes(15));
+            saveList.add(history);
         }
-        if (slotGroup.isEmpty()) {
+        if (saveList.isEmpty()) {
             return;
         }
-        int total = 0;
-        for (Map.Entry<LocalDateTime, List<DeviceAttribute>> entry : slotGroup.entrySet()) {
-            deviceAttributeHistoryService.saveAttributeHistory(entry.getValue(), entry.getKey());
-            total += entry.getValue().size();
+        // 到 table_mqtt_history 查询这批数据在对应15分钟时间段 [槽位, 槽位+15min) 内是否已有记录
+        List<MqttHistory> existList = mqttHistoryMapper.selectBySlotList(saveList);
+        // 已存在记录的时间戳可能是旧的非对齐值，统一对齐后再构建唯一键匹配
+        Map<String, MqttHistory> existMap = existList.stream()
+                .collect(Collectors.toMap(this::historyKey, Function.identity(), (a, b) -> a));
+        // 同槽位已有则更新（覆盖测点描述与遥测值），否则新增
+        List<MqttHistory> updateList = new ArrayList<>();
+        List<MqttHistory> insertList = new ArrayList<>();
+        for (MqttHistory history : saveList) {
+            MqttHistory exist = existMap.get(historyKey(history));
+            if (exist != null) {
+                exist.setDesc(history.getDesc());
+                exist.setValue(history.getValue());
+                updateList.add(exist);
+            } else {
+                insertList.add(history);
+            }
         }
-        log.info("MQTT设备属性历史保存完成: 槽位数={}, 点数={}", slotGroup.size(), total);
+        int updateCount = 0;
+        int insertCount = 0;
+        if (!updateList.isEmpty()) {
+            updateCount = mqttHistoryMapper.updateBatch(updateList);
+        }
+        if (!insertList.isEmpty()) {
+            insertCount = mqttHistoryMapper.insertBatch(insertList);
+        }
+        log.info("MQTT历史数据写入 table_mqtt_history 完成: 新增={}, 更新={}", insertCount, updateCount);
+    }
+
+    /**
+     * 构建历史记录唯一键：设备id + 属性id + 对齐后槽位时间
+     * 查询返回的记录时间戳可能是旧的非对齐值，先对齐到15分钟槽位再匹配
+     */
+    private String historyKey(MqttHistory history) {
+        return history.getDeviceId() + "_" + history.getAttributeId()
+                + "_" + alignTo15MinuteSlot(history.getTimeStamp());
     }
 
     /**
      * 将时间对齐到当前整十五分钟槽位：分钟向下取整到 15 的倍数，秒与纳秒清零
-     * 如 08:00:05 -> 08:00:00，08:16:59 -> 08:15:00（与楼控读点对齐逻辑一致）
+     * 如 08:00:05 -> 08:00:00，08:16:59 -> 08:15:00
      *
      * @param time 原始时间
      * @return 对齐后的时间；入参为 null 时返回 null
