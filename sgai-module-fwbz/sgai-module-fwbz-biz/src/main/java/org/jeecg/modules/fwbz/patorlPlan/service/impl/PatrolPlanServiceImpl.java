@@ -37,9 +37,7 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
     private static final DateTimeFormatter NEXT_EXECUTION_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /** 演示流地址池 */
-    private static final String[] STREAM_URLS = {
-            "http://10.168.47.23:4000/index.html?id=0096142642007010010193b98d3214a64af5b516d49cfbb97160",
-    };
+    private static final String STREAM_URLS = "http://10.168.47.23:4000/index.html?id=";
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -135,7 +133,7 @@ public class PatrolPlanServiceImpl extends ServiceImpl<PatrolPlanMapper, PatrolP
         List<PlanCamera> cameras = planCameraService.selectByPlanId(plan.getId());
         // 为每个摄像头随机分配演示流地址
         for (PlanCamera camera : cameras) {
-            camera.setUrl(STREAM_URLS[ThreadLocalRandom.current().nextInt(STREAM_URLS.length)]);
+            camera.setUrl(STREAM_URLS + camera.getIndexCode().replace("#", "") );
         }
         vo.setCameras(cameras);
         return vo;
