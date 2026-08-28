@@ -1,6 +1,7 @@
 package org.jeecg.modules.fwbz.hikvision.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
@@ -43,6 +44,7 @@ public class CameraGroup implements Serializable {
     private Integer sortNum;
 
     /** 分组维度 */
+    @TableField("\"dimension\"")
     @ApiModelProperty(value = "分组维度")
     private String dimension;
 

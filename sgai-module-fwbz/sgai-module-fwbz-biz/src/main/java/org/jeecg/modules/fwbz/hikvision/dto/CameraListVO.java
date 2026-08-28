@@ -15,7 +15,7 @@ import java.util.Date;
 public class CameraListVO {
 
     @ApiModelProperty(value = "唯一编码")
-    private String indexCode;
+    private String systemId;
 
     @ApiModelProperty(value = "资源名称")
     private String name;

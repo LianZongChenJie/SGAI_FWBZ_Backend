@@ -39,12 +39,12 @@ import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.PlayUrlResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.RegionCameraTreeVO;
-import org.jeecg.modules.fwbz.hikvision.dto.RegionTreeVO;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -84,6 +84,11 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
      * IOC平台摄像头分组数据API（返回分组树，含分组信息、下级摄像头列表与子分组）
      */
     private static final String IOC_PACKAGE_GROUP_API = "http://10.168.47.26:9999/sgai-ioc-data/admin/video/packageGroup";
+
+    /**
+     * 摄像头分组过滤关键字：仅保留一级分组名称包含该关键字的子树（服贸会、园区高点）
+     */
+    private static final List<String> PACKAGE_KEYWORD = Arrays.asList("服贸会", "园区高点");
 
     /**
      * 固定分页大小（最大1000）
@@ -448,8 +453,8 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         }
 
         // 经纬度转换（过滤"null"字符串）
-        entity.setLongitude(parseCoordinateString(item.getLongitude()));
-        entity.setLatitude(parseCoordinateString(item.getLatitude()));
+        entity.setLongitude(parseBigDecimal(item.getLongitude()));
+        entity.setLatitude(parseBigDecimal(item.getLatitude()));
 
         // 海拔（过滤"null"字符串）
         String altitude = item.getAltitude();
@@ -481,6 +486,21 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
             return null;
         }
         return value;
+    }
+
+    /**
+     * 安全解析BigDecimal（过滤"null"字符串）
+     */
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isEmpty() || "null".equals(value)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException e) {
+            log.warn("BigDecimal转换失败: {}", value);
+            return null;
+        }
     }
 
     /**
@@ -808,7 +828,7 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
      */
     private CameraListVO cameraToVO(CameraResource camera) {
         CameraListVO vo = new CameraListVO();
-        vo.setIndexCode(camera.getIndexCode());
+        vo.setSystemId(camera.getIndexCode());
         vo.setName(camera.getName());
         vo.setCameraType(camera.getCameraType());
         vo.setInstallLocation(camera.getInstallLocation());
@@ -834,7 +854,7 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
      */
     private CameraListVO cameraInfoToVO(CameraInfo camera) {
         CameraListVO vo = new CameraListVO();
-        vo.setIndexCode(camera.getSystemId());
+        vo.setSystemId(camera.getSystemId());
         vo.setName(camera.getName());
         vo.setCameraType(camera.getCameraType());
         vo.setInstallLocation(camera.getPointPath());
@@ -866,58 +886,65 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     @Override
     public List<RegionCameraTreeVO> getRegionCameraGroup() {
         log.info("开始构建区域摄像头分组信息");
-        // 1. 先获取区域树
-        List<RegionTreeVO> regionTree = regionResourceService.buildRegionTree();
-        if (regionTree == null || regionTree.isEmpty()) {
-            log.warn("区域树为空, 返回空分组");
+        // 1. 查询摄像头分组表
+        List<CameraGroup> allGroups = cameraGroupMapper.selectList(null);
+        if (allGroups == null || allGroups.isEmpty()) {
+            log.warn("摄像头分组表为空, 返回空分组");
             return Collections.emptyList();
         }
 
-        // 2. 查询全部摄像头并按区域分组（regionIndexCode -> 摄像头列表）
-        Map<String, List<CameraListVO>> regionCameraMap = getCameraList().stream()
-                .filter(vo -> vo.getRegionIndexCode() != null && !vo.getRegionIndexCode().isEmpty())
-                .collect(Collectors.groupingBy(CameraListVO::getRegionIndexCode));
+        // 2. 查询全部摄像头并按分组ID聚合（groupId -> 摄像头列表）
+        Map<Long, List<CameraListVO>> groupCameraMap = cameraInfoService.list().stream()
+                .filter(camera -> camera.getGroupId() != null)
+                .collect(Collectors.groupingBy(CameraInfo::getGroupId,
+                        Collectors.mapping(this::cameraInfoToVO, Collectors.toList())));
 
-        // 3. 递归转换区域树并填充每个节点的videoList
-        List<RegionCameraTreeVO> result = new ArrayList<>(regionTree.size());
-        for (RegionTreeVO node : regionTree) {
-            result.add(convertRegionTree(node, regionCameraMap));
+        // 3. 仅保留一级分组（根节点）中包含关键字的子树，递归构建分组树
+        List<RegionCameraTreeVO> result = new ArrayList<>();
+        for (CameraGroup group : allGroups) {
+            if (group.getParentId() == null || group.getParentId() == 0L) {
+                if (isPackageGroup(group.getName())) {
+                    result.add(convertGroupTree(group, allGroups, groupCameraMap));
+                }
+            }
         }
-        log.info("区域摄像头分组构建完成, 根节点{}个, 摄像头分组{}个", result.size(), regionCameraMap.size());
+        log.info("区域摄像头分组构建完成, 根节点{}个, 摄像头分组{}个", result.size(), groupCameraMap.size());
         return result;
     }
 
     /**
-     * 将区域树节点转换为区域摄像头分组节点，并递归填充子节点及videoList
+     * 判断分组名称是否属于需要展示的一级分组（服贸会、园区高点）
      *
-     * @param node            区域树节点
-     * @param regionCameraMap 区域 -> 摄像头列表映射
+     * @param name 分组名称
+     * @return 是否保留该分组
+     */
+    private boolean isPackageGroup(String name) {
+        return StringUtils.isNotBlank(name)
+                && PACKAGE_KEYWORD.stream().anyMatch(kw -> StringUtils.contains(name, kw));
+    }
+
+    /**
+     * 将分组实体转换为区域摄像头分组节点，并递归填充子分组及videoList
+     *
+     * @param group          分组实体
+     * @param allGroups      全部分组列表
+     * @param groupCameraMap 分组ID -> 摄像头列表映射
      * @return 区域摄像头分组节点
      */
-    private RegionCameraTreeVO convertRegionTree(RegionTreeVO node, Map<String, List<CameraListVO>> regionCameraMap) {
+    private RegionCameraTreeVO convertGroupTree(CameraGroup group, List<CameraGroup> allGroups,
+                                                Map<Long, List<CameraListVO>> groupCameraMap) {
         RegionCameraTreeVO vo = new RegionCameraTreeVO();
-        vo.setIndexCode(node.getIndexCode());
-        vo.setName(node.getName());
-        vo.setRegionPath(node.getRegionPath());
-        vo.setParentIndexCode(node.getParentIndexCode());
-        vo.setAvailable(node.getAvailable());
-        vo.setLeaf(node.getLeaf());
-        vo.setCascadeCode(node.getCascadeCode());
-        vo.setCascadeType(node.getCascadeType());
-        vo.setCatalogType(node.getCatalogType());
-        vo.setExternalIndexCode(node.getExternalIndexCode());
-        vo.setSort(node.getSort());
-        vo.setLocalQuantity(node.getLocalQuantity());
-        vo.setTotalQuantity(node.getTotalQuantity());
-        // 填充该区域直属摄像头列表
-        vo.setVideoList(regionCameraMap.getOrDefault(node.getIndexCode(), Collections.emptyList()));
-        // 递归子节点
-        if (node.getChildren() != null && !node.getChildren().isEmpty()) {
-            List<RegionCameraTreeVO> children = new ArrayList<>(node.getChildren().size());
-            for (RegionTreeVO child : node.getChildren()) {
-                children.add(convertRegionTree(child, regionCameraMap));
+        vo.setIndexCode(String.valueOf(group.getId()));
+        vo.setName(group.getName());
+        vo.setParentIndexCode(group.getParentId() == null ? null : String.valueOf(group.getParentId()));
+        vo.setSort(group.getSortNum());
+        // 填充该分组下直属摄像头列表
+        vo.setVideoList(groupCameraMap.getOrDefault(group.getId(), Collections.emptyList()));
+        // 递归子分组
+        for (CameraGroup child : allGroups) {
+            if (group.getId().equals(child.getParentId())) {
+                vo.getChildren().add(convertGroupTree(child, allGroups, groupCameraMap));
             }
-            vo.setChildren(children);
         }
         return vo;
     }

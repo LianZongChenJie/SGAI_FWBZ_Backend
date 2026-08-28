@@ -284,7 +284,7 @@ public class CameraResourceController {
      *packageGroup
      * @return 区域摄像头分组树根节点列表
      */
-    @GetMapping("/regionCameraGroup")
+    @GetMapping("/packageGroup")
     @ApiOperation(value = "获取区域摄像头分组信息", notes = "先获取区域树，每个区域节点下挂载该区域直属的摄像头列表（videoList）")
     public Result<List<RegionCameraTreeVO>> getRegionCameraGroup() {
         try {
@@ -329,7 +329,7 @@ public class CameraResourceController {
      *
      * @return 摄像头分组数据
      */
-    @GetMapping("/packageGroup")
+    @GetMapping("/regionCameraGroup")
     @ApiOperation(value = "获取摄像头分组数据", notes = "代理转发到外部IOC数据平台，获取摄像头分组数据")
     public Result<JSONArray> getPackageGroup() {
         try {

@@ -63,7 +63,7 @@ public class SaveHisttoryService {
      * 单个采集点读取失败仅记录告警，不影响其他采集点；整体异常由方法内兜底，
      * 不抛出到 Spring 调度器（避免影响后续周期）。
      */
-    @Scheduled(cron = "0 0/10 * * * ?")
+    @Scheduled(cron = "0 0/15 * * * ?")
     public void saveHistory() {
         // 对齐到当前整十分钟槽位（如 08:00:05 执行 -> data_time = 08:00:00）
         LocalDateTime now = LocalDateTime.now();
