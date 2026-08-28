@@ -29,7 +29,7 @@ import java.util.Objects;
  * 通过 {@link ColdSourceServerService#connect()} 的 pSpace 客户端按测点ID(tagId) 调用
  * {@code realRead} 读取点位实时值（返回 PsResult&lt;PsData&gt;，成功判断 code 为 PSRET_OK）。
  * <p>
- * 定时规则：每 10 分钟整点执行一次（如 08:00:00、08:10:00、08:20:00），
+ * 定时规则：每 15 分钟整点执行一次（如 08:00:00、08:15:00、08:30:00），
  * 由 Spring 调度器按 cron 触发（项目已启用 @EnableScheduling）：
  * 1. 从 table_tagid_info 表查询 is_save='1' 的采集点ID(tagId)；
  * 2. 逐个调用 realRead 读取实时值；
@@ -58,17 +58,17 @@ public class SaveHisttoryService {
     private ColdSourceProperties coldSourceProperties;
 
     /**
-     * 定时保存冷源历史数据（每 10 分钟整点执行，cron 秒=0 分钟=0/10）。
+     * 定时保存冷源历史数据（每 15 分钟整点执行，cron 秒=0 分钟=0/15）。
      * 从 table_tagid_info 取 is_save='1' 的采集点，逐个读取最新值后批量写入 table_cold_source_history。
      * 单个采集点读取失败仅记录告警，不影响其他采集点；整体异常由方法内兜底，
      * 不抛出到 Spring 调度器（避免影响后续周期）。
      */
     @Scheduled(cron = "0 0/15 * * * ?")
     public void saveHistory() {
-        // 对齐到当前整十分钟槽位（如 08:00:05 执行 -> data_time = 08:00:00）
+        // 对齐到当前整十五分钟槽位（如 08:00:05 执行 -> data_time = 08:00:00，08:16:59 -> 08:15:00）
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime dataTime = now.withMinute((now.getMinute() / 10) * 10).withSecond(0).withNano(0);
-
+        LocalDateTime dataTime = now.withMinute((now.getMinute() / 15) * 15).withSecond(0).withNano(0);
+        log.info("冷源历史数据保存开始:记录时间={}", dataTime);
         // 1. 判断该槽位是否已有历史数据，已有则跳过本次存储（避免重复入库）
         try {
             Long exists = tableColdSourceHistoryMapper.selectCount(

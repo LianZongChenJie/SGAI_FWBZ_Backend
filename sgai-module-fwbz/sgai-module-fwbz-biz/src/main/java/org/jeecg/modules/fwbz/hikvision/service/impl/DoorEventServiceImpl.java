@@ -122,7 +122,8 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
 
     /**
      * 将时间字符串统一转换为海康要求的格式（yyyy-MM-dd'T'HH:mm:ssXXX）。
-     * 兼容格式：yyyy-MM-dd'T'HH:mm:ss(.SSS)(+08:00)、yyyy-MM-dd HH:mm:ss(.SSS) 等。
+     * 兼容格式：yyyy-MM-dd'T'HH:mm:ss(.SSS...)(+08:00)、yyyy-MM-dd HH:mm:ss(.SSS...) 等，
+     * 小数位支持 0~9 位（达梦 DATETIME 可能返回微秒精度的 6 位小数，如 2026-08-28 14:39:13.000000）。
      * 解析失败返回null。
      */
     private String normalizeTime(String time) {
@@ -133,19 +134,24 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
         if (trimmed.isEmpty()) {
             return null;
         }
-        // 已是海康要求的带时区格式则直接返回
-        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?[+-]\\d{2}:\\d{2}")) {
+        // 已是海康要求的带时区格式则直接返回（小数位 0~9 位）
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?[+-]\\d{2}:\\d{2}")) {
             return trimmed;
         }
         try {
             LocalDateTime dateTime;
+            // 按固定前缀解析日期时间部分（兼容任意小数位），再补上时区
+            String dateTimePart = trimmed;
+            String pattern = "yyyy-MM-dd HH:mm:ss";
             if (trimmed.contains("T")) {
-                dateTime = LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            } else {
-                // 兼容 yyyy-MM-dd HH:mm:ss 和 yyyy-MM-dd HH:mm:ss.SSS
-                String pattern = trimmed.contains(".") ? "yyyy-MM-dd HH:mm:ss.SSS" : "yyyy-MM-dd HH:mm:ss";
-                dateTime = LocalDateTime.parse(trimmed, DateTimeFormatter.ofPattern(pattern));
+                dateTimePart = trimmed.replace("T", " ");
             }
+            int dotIndex = dateTimePart.indexOf('.');
+            if (dotIndex >= 0) {
+                // 截掉小数部分，仅解析到秒（精度不影响海康入参格式）
+                dateTimePart = dateTimePart.substring(0, dotIndex);
+            }
+            dateTime = LocalDateTime.parse(dateTimePart, DateTimeFormatter.ofPattern(pattern));
             return dateTime.atZone(ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
         } catch (Exception e) {
@@ -320,17 +326,21 @@ public class DoorEventServiceImpl extends ServiceImpl<DoorEventMapper, DoorEvent
             return null;
         }
         String trimmed = isoTime.trim();
+        // 统一将分隔符归一化为 'T' 形式，再按固定前缀截断解析（兼容任意小数位与有无时区）
+        String candidate = trimmed.contains("T") ? trimmed : trimmed.replace(" ", "T");
         try {
-            // 兼容 2026-08-17T17:30:08.000+08:00 与 2026-08-17T17:30:08+08:00
-            OffsetDateTime odt = OffsetDateTime.parse(trimmed, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            // 先按带时区格式解析（兼容 2026-08-17T17:30:08.000+08:00 等）
+            OffsetDateTime odt = OffsetDateTime.parse(candidate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             return odt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         } catch (Exception e) {
             try {
-                // 兼容无时区格式：2026-08-17T17:30:08 或 2026-08-17 17:30:08
-                String candidate = trimmed.contains("T")
-                        ? trimmed
-                        : trimmed.replace(" ", "T");
-                LocalDateTime ldt = LocalDateTime.parse(candidate, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                // 无时区格式：截断任意小数位（如 .000000），仅解析到秒
+                String dateTimePart = candidate;
+                int dotIndex = candidate.indexOf('.');
+                if (dotIndex >= 0) {
+                    dateTimePart = candidate.substring(0, dotIndex);
+                }
+                LocalDateTime ldt = LocalDateTime.parse(dateTimePart, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                 return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             } catch (Exception ex) {
                 log.warn("event_time格式解析失败: {}, 该事件将不记录事件时间", isoTime);
