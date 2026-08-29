@@ -102,6 +102,15 @@ public class OperationSupportController {
         return Result.ok(service.fanCoilStatistics());
     }
     /**
+     * 热回收-数据统计
+     * @param
+     * @return
+     */
+    @GetMapping("/heatRecoveryStatistics")
+    public Result<HeatRecoveryStatisticsDto> heatRecoveryStatistics() {
+        return Result.ok(service.heatRecoveryStatistics());
+    }
+    /**
      * 配电系统-数据统计
      * @param
      * @return

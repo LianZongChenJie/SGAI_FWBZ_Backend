@@ -6,6 +6,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDt
 import org.jeecg.modules.fwbz.energyAnalysis.dto.ExhaustFanStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FanCoilStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.HeatRecoveryStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
@@ -30,6 +31,7 @@ public interface IOperationSupportService {
     FreshAirStatisticsDto freshAirStatistics() ;
     ExhaustFanStatisticsDto exhaustFanStatistics() ;
     FanCoilStatisticsDto fanCoilStatistics() ;
+    HeatRecoveryStatisticsDto heatRecoveryStatistics() ;
     PowerStatisticsDto powerStatistics() ;
     OverViewStatisticsDto overviewStatistics() ;
 

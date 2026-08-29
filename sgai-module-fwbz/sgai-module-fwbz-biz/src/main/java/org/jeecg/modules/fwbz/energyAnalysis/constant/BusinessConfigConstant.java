@@ -160,12 +160,15 @@ public class BusinessConfigConstant {
      */
     public static final String OPERATIONSUPPORT_PF_POINT_ID = "operationSupport:pf:pointId";
 
-
-
     /**
      *运行保障-风机盘管-计量规则Id
      */
     public static final String OPERATIONSUPPORT_PG_POINT_ID = "operationSupport:pg:pointId";
+
+    /**
+     *运行保障-热回收-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_RHS_POINT_ID = "operationSupport:rhs:pointId";
 
 
 }

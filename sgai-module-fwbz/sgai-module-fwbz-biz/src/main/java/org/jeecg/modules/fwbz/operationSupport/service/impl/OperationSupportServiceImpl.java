@@ -16,6 +16,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.dto.AirConditioningUnitStatisticsDt
 import org.jeecg.modules.fwbz.energyAnalysis.dto.ExhaustFanStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FanCoilStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.FreshAirStatisticsDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.HeatRecoveryStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.OverViewStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.PowerStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
@@ -342,6 +343,46 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
             }
         }
         FanCoilStatisticsDto dto = new FanCoilStatisticsDto();
+
+        dto.setCount((long) list.size());
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setEnergyConsumption(energyConsumption);
+
+        return dto;
+
+    }
+
+    @Override
+    public HeatRecoveryStatisticsDto heatRecoveryStatistics() {
+
+        String categoryId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_RHS_POINT_ID);
+
+        if (StringUtils.isBlank(categoryId)) {
+            log.warn("热回收统计配置缺失, key={}", BusinessConfigConstant.OPERATIONSUPPORT_RHS_POINT_ID);
+            return new HeatRecoveryStatisticsDto();
+        }
+
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .eq(Device::getCategoryId, Long.valueOf(categoryId.trim())));
+
+
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+        String pointId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_RHS_POINT_ID);
+        BigDecimal energyConsumption = BigDecimal.ZERO;
+
+        if (StringUtils.isNotBlank(pointId)) {
+            MeteringPoint byId = meteringPointService.getById(Long.valueOf(pointId.trim()));
+            if (byId != null) {
+                MeteringPointDataDay byDateAndPointId = meteringPointDataDayService.findByDateAndPointId(LocalDate.now(), byId.getId());
+                if (byDateAndPointId != null) {
+                    if (byDateAndPointId.getValue() != null) {
+                        energyConsumption = byDateAndPointId.getValue();
+                    }
+                }
+            }
+        }
+        HeatRecoveryStatisticsDto dto = new HeatRecoveryStatisticsDto();
 
         dto.setCount((long) list.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
