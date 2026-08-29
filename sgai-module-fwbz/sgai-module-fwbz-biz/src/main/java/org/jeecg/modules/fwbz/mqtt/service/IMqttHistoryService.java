@@ -27,4 +27,13 @@ public interface IMqttHistoryService extends IService<MqttHistory> {
      * @param list MQTT数据列表
      */
     void calculateEnergyData(List<MqttHistory> list);
+
+    /**
+     * 更新设备信息表（device）的在线状态与最后采集时间
+     * <p>以 devKeys（设备编号）去重后对应 device.device_code 更新：
+     * 在线状态置为"在线"，最后采集时间取数据时间戳对齐到15分钟槽位后的时间。</p>
+     *
+     * @param list MQTT数据列表
+     */
+    void updateDeviceOnlineStatus(List<MqttHistory> list);
 }

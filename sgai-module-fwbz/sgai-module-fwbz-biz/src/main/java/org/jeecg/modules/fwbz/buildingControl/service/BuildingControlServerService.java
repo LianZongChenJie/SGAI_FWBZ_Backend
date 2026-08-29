@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.buildingControl.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sunwayland.pspace.entity.Base;
 import com.sunwayland.pspace.entity.PsData;
 import com.sunwayland.pspace.entity.PsResult;
@@ -7,8 +8,12 @@ import com.sunwayland.pspace.enums.PsDataTypeEnum;
 import com.sunwayland.pspace.enums.PsErrorCodeEnum;
 import com.sunwayland.pspace.enums.PsQualityEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
+import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
+import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +24,8 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 楼控系统(pSpace) Server API 服务
@@ -40,6 +47,9 @@ public class BuildingControlServerService {
 
     @Autowired
     private  MDeviceAttributeMapper mdeviceAttributeMapper;
+
+    @Autowired
+    private IDeviceService deviceService;
 
 
     /**
@@ -128,9 +138,63 @@ public class BuildingControlServerService {
         // 全部读取完成后统一批量更新（仅更新，不保存历史）
         if (!updateList.isEmpty()) {
             flushUpdate(updateList);
+            // 读点成功后，根据 device_id 更新对应设备运行状态为在线，并更新最后采集时间
+            updateDevicesOnline(updateList, dataTime);
         }
         log.info("楼控读点完成: 检测点数={}, 读取成功={}, 更新={}", tagIds.size(), readSuccess, updateList.size());
         return true;
+    }
+
+    /**
+     * 读点成功后，根据设备属性关联的 device_id 更新对应设备的运行状态为在线，并同步更新最后采集时间
+     * 链路：采集编码 -> device_attribute.device_id（去重）-> device 表 device_code -> 更新 run_state=在线、last_gather_time=采集时间
+     *
+     * @param updateList 读取成功待更新的属性列表
+     * @param dataTime   采集时间（15分钟对齐槽位后的时间）
+     */
+    private void updateDevicesOnline(List<DeviceAttribute> updateList, LocalDateTime dataTime) {
+        try {
+            // 1. 取读取成功的采集编码（去重）
+            List<String> codings = updateList.stream()
+                    .map(DeviceAttribute::getAcquisitionCoding)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (codings.isEmpty()) {
+                return;
+            }
+            // 2. 根据采集编码查询关联的 device_id（去重）
+            // 注意：MDeviceAttributeMapper 泛型为 mqtt.entity.DeviceAttribute，与 mdm.entity.DeviceAttribute 同名
+            List<org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute> attrs = mdeviceAttributeMapper.selectList(
+                    new LambdaQueryWrapper<org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute>()
+                            .select(org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute::getDeviceId)
+                            .in(org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute::getAcquisitionCoding, codings)
+                            .isNotNull(org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute::getDeviceId));
+            Set<Long> deviceIds = attrs.stream()
+                    .map(org.jeecg.modules.fwbz.mqtt.entity.DeviceAttribute::getDeviceId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (deviceIds.isEmpty()) {
+                return;
+            }
+            // 3. 根据 device_id 查设备编码
+            List<Device> devices = deviceService.list(
+                    new LambdaQueryWrapper<Device>()
+                            .select(Device::getDeviceCode)
+                            .in(Device::getId, deviceIds));
+            // 4. 更新运行状态为在线，并同步更新最后采集时间
+            for (Device device : devices) {
+                if (StringUtils.isNotBlank(device.getDeviceCode())) {
+                    deviceService.updateStatus(device.getDeviceCode(), DeviceConstant.DEVICE_RUN_STATA_ONLINE);
+                    if (dataTime != null) {
+                        deviceService.updateLastGatherTime(device.getDeviceCode(), dataTime);
+                    }
+                }
+            }
+            log.info("楼控读点成功，设备在线状态与最后采集时间更新完成: 设备数={}", devices.size());
+        } catch (Exception e) {
+            log.error("楼控读点成功，设备在线状态更新失败", e);
+        }
     }
 
     /**

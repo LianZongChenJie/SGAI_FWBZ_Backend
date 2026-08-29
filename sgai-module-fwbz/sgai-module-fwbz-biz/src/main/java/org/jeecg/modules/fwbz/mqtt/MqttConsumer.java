@@ -152,6 +152,14 @@ public class MqttConsumer {
                 log.error("设备属性采集值更新失败, topic={}", topicName, e);
             }
 
+            // 更新设备信息表（device）：以 devKeys 去重对应 device_code，
+            // 在线状态置为"在线"，最后采集时间为对齐15分钟时间槽后的时间
+            try {
+                mqttHistoryService.updateDeviceOnlineStatus(list);
+            } catch (Exception e) {
+                log.error("设备在线状态更新失败, topic={}", topicName, e);
+            }
+
             // 电度数据uniqueKey包含"01Wp"的为正向有功电能表底值，触发设备能耗计算（分钟、小时、日、月、年）
             try {
                 mqttHistoryService.calculateEnergyData(list);

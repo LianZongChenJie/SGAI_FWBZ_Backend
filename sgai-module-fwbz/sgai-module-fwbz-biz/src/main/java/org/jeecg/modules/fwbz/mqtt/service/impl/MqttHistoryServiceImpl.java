@@ -16,6 +16,7 @@ import org.jeecg.modules.fwbz.main.service.IMinuteDataService;
 import org.jeecg.modules.fwbz.main.service.IMonthDataService;
 import org.jeecg.modules.fwbz.main.service.IRealDataService;
 import org.jeecg.modules.fwbz.main.service.IYearDataService;
+import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
@@ -201,6 +202,30 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         }
         int slotMinute = (time.getMinute() / 15) * 15;
         return time.withMinute(slotMinute).withSecond(0).withNano(0);
+    }
+
+    @Override
+    public void updateDeviceOnlineStatus(List<MqttHistory> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        // 以 devKeys 去重，同一设备多条数据取时间戳最大的那条
+        list.stream()
+                .filter(h -> StringUtils.isNotBlank(h.getDevKeys()) && h.getTimeStamp() != null)
+                .collect(Collectors.toMap(MqttHistory::getDevKeys, Function.identity(), (a, b) ->
+                        a.getTimeStamp().isAfter(b.getTimeStamp()) ? a : b))
+                .values()
+                .forEach(h -> {
+                    String deviceCode = h.getDevKeys();
+                    // 最后采集时间 = 数据时间戳对齐到15分钟槽位后的时间
+                    LocalDateTime gatherTime = alignTo15MinuteSlot(h.getTimeStamp());
+                    try {
+                        deviceService.updateLastGatherTime(deviceCode, gatherTime);
+                        deviceService.updateStatus(deviceCode, DeviceConstant.DEVICE_RUN_STATA_ONLINE);
+                    } catch (Exception e) {
+                        log.error("设备在线状态更新失败, deviceCode={}", deviceCode, e);
+                    }
+                });
     }
 
     @Override
