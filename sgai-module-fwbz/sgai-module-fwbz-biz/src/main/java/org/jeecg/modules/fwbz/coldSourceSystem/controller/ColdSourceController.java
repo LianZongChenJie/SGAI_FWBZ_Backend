@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.coldSourceSystem.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sunwayland.pspace.entity.Base;
 import com.sunwayland.pspace.entity.PsConnectInfo;
 import com.sunwayland.pspace.entity.PsResult;
@@ -9,16 +10,30 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceHistoryPageDto;
+import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceHistoryPageQueryDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceWriteDto;
+import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceHistoryService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceOverviewService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.SaveHisttoryService;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.jeecgframework.poi.excel.ExcelExportUtil;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.enmus.ExcelType;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +56,8 @@ public class ColdSourceController {
 
     private final SaveHisttoryService saveHisttoryService;
 
+    private final ColdSourceHistoryService coldSourceHistoryService;
+
     /**
      * 手动触发一次冷源历史数据保存
      * （等价于整十分钟定时任务执行一次：取 is_save=1 的 tagid -> 读值 -> 写 table_cold_source_history）
@@ -55,6 +72,74 @@ public class ColdSourceController {
             log.error("冷源历史数据保存异常", e);
             return Result.error("冷源历史数据保存异常: " + e.getMessage());
         }
+    }
+
+    /**
+     * 查询冷源历史记录（分页）
+     * 条件: tagId(采集点id, 精确) / desc(描述, 模糊) / startTime(开始, 仅日期默认00:00:00) / endTime(结束, 仅日期默认23:59:59)
+     * 只传开始时间查此时间之后，只传结束时间查此时间之前；返回: tagId, desc, dataTime(采集时间), value(值)
+     */
+    @GetMapping("/history/page")
+    @ApiOperation(value = "查询冷源历史记录(分页)", notes = "条件: tagId(精确)/desc(描述模糊)/startTime(开始,仅日期默认00:00:00)/endTime(结束,仅日期默认23:59:59); 返回: tagId, desc, dataTime(采集时间), value(值)")
+    public Result<IPage<ColdSourceHistoryPageDto>> queryHistoryPage(ColdSourceHistoryPageQueryDto params) {
+        try {
+            LocalDateTime startTime = resolveStartTime(params.getStartTime());
+            LocalDateTime endTime = resolveEndTime(params.getEndTime());
+            return Result.ok(coldSourceHistoryService.pageHistory(params, startTime, endTime));
+        } catch (Exception e) {
+            log.error("查询冷源历史记录异常", e);
+            return Result.error("查询冷源历史记录异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出冷源历史记录（Excel xlsx）
+     * 条件与分页接口一致，导出全部匹配数据
+     */
+    @GetMapping("/history/export")
+    @ApiOperation(value = "导出冷源历史记录(Excel)", notes = "条件: tagId(精确)/desc(描述模糊)/startTime(开始,仅日期默认00:00:00)/endTime(结束,仅日期默认23:59:59); 导出全部匹配数据")
+    public void exportHistory(HttpServletResponse response, ColdSourceHistoryPageQueryDto params) throws Exception {
+        LocalDateTime startTime = resolveStartTime(params.getStartTime());
+        LocalDateTime endTime = resolveEndTime(params.getEndTime());
+        List<ColdSourceHistoryPageDto> list = coldSourceHistoryService.exportHistory(params, startTime, endTime);
+        log.info("导出冷源历史记录: {}", list.size());
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename="
+                + URLEncoder.encode("冷源历史记录.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("冷源历史记录", "冷源历史记录", ExcelType.XSSF),
+                ColdSourceHistoryPageDto.class, list)) {
+            workbook.write(response.getOutputStream());
+        }
+    }
+
+    /**
+     * 开始时间解析：支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss，仅日期默认 00:00:00，空值返回 null
+     */
+    private LocalDateTime resolveStartTime(String time) {
+        if (StringUtils.isBlank(time)) {
+            return null;
+        }
+        String t = time.trim();
+        if (t.length() <= 10) {
+            return LocalDate.parse(t).atStartOfDay();
+        }
+        return LocalDateTime.parse(t, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    /**
+     * 结束时间解析：支持 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss，仅日期默认 23:59:59，空值返回 null
+     */
+    private LocalDateTime resolveEndTime(String time) {
+        if (StringUtils.isBlank(time)) {
+            return null;
+        }
+        String t = time.trim();
+        if (t.length() <= 10) {
+            return LocalDate.parse(t).atTime(23, 59, 59);
+        }
+        return LocalDateTime.parse(t, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     /**
