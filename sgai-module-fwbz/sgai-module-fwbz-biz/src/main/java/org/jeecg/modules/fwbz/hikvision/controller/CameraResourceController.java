@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
@@ -22,9 +23,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.jeecgframework.poi.excel.ExcelExportUtil;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.enmus.ExcelType;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -240,15 +246,33 @@ public class CameraResourceController {
     }
 
     /**
+     * 导出摄像头信息
+     * <p>导出 camera_info 表摄像头数据（仅含"服贸会"、"园区高点"分组，含子分组），
+     * 分组名称联动 table_camera_group 表。</p>
+     */
+    @GetMapping("/export")
+    @ApiOperation(value = "导出摄像头信息", notes = "导出camera_info表摄像头数据(仅含服贸会/园区高点分组)，分组名称联动table_camera_group表")
+    public void exportCameras(HttpServletResponse response) throws Exception {
+        List<CameraListVO> list = cameraResourceService.getCameraListForExport();
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename=" + URLEncoder.encode("摄像头信息.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("摄像头信息", "摄像头信息", ExcelType.XSSF),
+                CameraListVO.class, list)) {
+            workbook.write(response.getOutputStream());
+        }
+    }
+
+    /**
      * 分页获取摄像头列表
-     * <p>从本地数据库分页查询摄像头数据，支持按名称、唯一编码、区域名称、接入协议、
-     * 安装位置、在线状态、监控点类型检索，条件为空查全部。</p>
+     * <p>从本地数据库 camera_info 表分页查询摄像头数据，支持按名称、唯一编码、区域名称、接入协议、
+     * 安装位置、在线状态、监控点类型检索，条件为空查全部。区域名称联动 table_camera_group 表。</p>
      *
      * @param dto 分页查询参数
      * @return 分页摄像头列表
      */
     @GetMapping("/page")
-    @ApiOperation(value = "分页获取摄像头列表", notes = "分页查询摄像头数据，支持按名称、唯一编码、区域名称、接入协议、安装位置、在线状态、监控点类型检索，条件为空查全部")
+    @ApiOperation(value = "分页获取摄像头列表", notes = "分页查询camera_info表摄像头数据，支持按名称、唯一编码、区域名称、接入协议、安装位置、在线状态、监控点类型检索，区域名称联动table_camera_group表，条件为空查全部")
     public Result<IPage<CameraListVO>> getCameraPage(CameraResourcePageDto dto) {
         try {
             IPage<CameraListVO> page = cameraResourceService.getCameraPage(dto);

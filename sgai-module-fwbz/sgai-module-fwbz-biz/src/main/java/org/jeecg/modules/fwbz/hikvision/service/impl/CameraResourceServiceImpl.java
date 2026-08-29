@@ -14,14 +14,12 @@ import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraGroup;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraInfo;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
-import org.jeecg.modules.fwbz.hikvision.entity.RegionResource;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraOnlineResponse;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraSearchResponse;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraInfoService;
 import org.jeecg.modules.fwbz.hikvision.service.ICameraResourceService;
-import org.jeecg.modules.fwbz.hikvision.service.IRegionResourceService;
 import org.jeecg.modules.fwbz.hikvision.util.CameraHlsStream;
 import org.jeecg.modules.fwbz.hikvision.util.HikvisionUtil;
 import org.jeecg.modules.fwbz.hikvision.util.HlsStreamManager;
@@ -48,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,8 +105,6 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     };
 
     private final HikvisionUtil hikvisionUtil;
-
-    private final IRegionResourceService regionResourceService;
 
     /**
      * 摄像头分组信息 Mapper（table_camera_group 表）
@@ -744,7 +741,15 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     @Override
     public List<CameraListVO> getCameraList() {
         log.info("查询camera_info表中全部摄像头列表");
-        List<CameraInfo> cameraList = cameraInfoService.list();
+        // 分组锁定为包含"服贸会"、"园区高点"关键字的（含其子分组）
+        List<Long> packageGroupIds = collectPackageGroupIds();
+        List<CameraInfo> cameraList;
+        if (packageGroupIds.isEmpty()) {
+            cameraList = Collections.emptyList();
+        } else {
+            cameraList = cameraInfoService.list(new LambdaQueryWrapper<CameraInfo>()
+                    .in(CameraInfo::getGroupId, packageGroupIds));
+        }
         List<CameraListVO> result = new ArrayList<>(cameraList.size());
         for (CameraInfo camera : cameraList) {
             result.add(cameraInfoToVO(camera));
@@ -754,62 +759,108 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     }
 
     @Override
+    public List<CameraListVO> getCameraListForExport() {
+        log.info("查询导出用摄像头列表");
+        // 分组锁定为包含"服贸会"、"园区高点"关键字的（含其子分组）
+        List<Long> packageGroupIds = collectPackageGroupIds();
+        if (packageGroupIds.isEmpty()) {
+            log.info("查询导出用摄像头列表完成, 未匹配到[服贸会/园区高点]分组, 返回空");
+            return Collections.emptyList();
+        }
+        List<CameraInfo> cameraList = cameraInfoService.list(new LambdaQueryWrapper<CameraInfo>()
+                .in(CameraInfo::getGroupId, packageGroupIds));
+
+        // 收集所有groupId，联动table_camera_group表获取分组名称
+        Set<Long> groupIds = cameraList.stream()
+                .map(CameraInfo::getGroupId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        Map<Long, String> groupNameMap = Collections.emptyMap();
+        if (!groupIds.isEmpty()) {
+            groupNameMap = cameraGroupMapper.selectList(
+                            new LambdaQueryWrapper<CameraGroup>()
+                                    .in(CameraGroup::getId, groupIds))
+                    .stream()
+                    .collect(Collectors.toMap(CameraGroup::getId, CameraGroup::getName, (v1, v2) -> v1));
+        }
+
+        List<CameraListVO> result = new ArrayList<>(cameraList.size());
+        for (CameraInfo camera : cameraList) {
+            CameraListVO vo = cameraInfoToVO(camera);
+            // 优先使用分组表的名称，取不到时兜底camera_info冗余的groupName
+            vo.setRegionName(groupNameMap.getOrDefault(camera.getGroupId(), camera.getGroupName()));
+            result.add(vo);
+        }
+        log.info("查询导出用摄像头列表完成, 共{}条", result.size());
+        return result;
+    }
+
+    @Override
     public IPage<CameraListVO> getCameraPage(CameraResourcePageDto dto) {
         log.info("分页查询摄像头列表, pageNo={}, pageSize={}, indexCode={}, name={}, regionName={}, treatyType={}, installLocation={}, online={}, cameraType={}",
                 dto.getPageNo(), dto.getPageSize(), dto.getIndexCode(), dto.getName(), dto.getRegionName(),
                 dto.getTreatyType(), dto.getInstallLocation(), dto.getOnline(), dto.getCameraType());
 
-        LambdaQueryWrapper<CameraResource> wrapper = new LambdaQueryWrapper<CameraResource>()
-                .eq(StringUtils.isNotBlank(dto.getIndexCode()), CameraResource::getIndexCode, dto.getIndexCode())
-                .like(StringUtils.isNotBlank(dto.getName()), CameraResource::getName, dto.getName())
-                .eq(StringUtils.isNotBlank(dto.getTreatyType()), CameraResource::getTreatyType, dto.getTreatyType())
-                .like(StringUtils.isNotBlank(dto.getInstallLocation()), CameraResource::getInstallLocation, dto.getInstallLocation())
-                .eq(dto.getOnline() != null, CameraResource::getOnline, dto.getOnline())
-                .eq(dto.getCameraType() != null, CameraResource::getCameraType, dto.getCameraType())
-                .orderByAsc(CameraResource::getDisOrder)
-                .orderByAsc(CameraResource::getId);
+        // 分组锁定为包含"服贸会"、"园区高点"关键字的（含其子分组）
+        List<Long> packageGroupIds = collectPackageGroupIds();
+        if (packageGroupIds.isEmpty()) {
+            IPage<CameraListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
+            emptyPage.setRecords(Collections.emptyList());
+            emptyPage.setTotal(0);
+            log.info("分页查询摄像头列表完成, 未匹配到[服贸会/园区高点]分组, 返回空");
+            return emptyPage;
+        }
 
-        // 区域名称过滤 —— 联动table_region_resource表
+        LambdaQueryWrapper<CameraInfo> wrapper = new LambdaQueryWrapper<CameraInfo>()
+                .in(CameraInfo::getGroupId, packageGroupIds)
+                .eq(StringUtils.isNotBlank(dto.getIndexCode()), CameraInfo::getSystemId, dto.getIndexCode())
+                .like(StringUtils.isNotBlank(dto.getName()), CameraInfo::getName, dto.getName())
+                .like(StringUtils.isNotBlank(dto.getInstallLocation()), CameraInfo::getPointPath, dto.getInstallLocation())
+                .eq(dto.getOnline() != null, CameraInfo::getOnline, dto.getOnline())
+                .eq(dto.getCameraType() != null, CameraInfo::getCameraType, dto.getCameraType())
+                .orderByAsc(CameraInfo::getId);
+
+        // 区域名称(分组名称)过滤 —— 联动table_camera_group表
         if (StringUtils.isNotBlank(dto.getRegionName())) {
-            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
-                    .like(RegionResource::getName, dto.getRegionName())
-                    .select(RegionResource::getIndexCode)
-                    .list()
+            List<Long> matchedGroupIds = cameraGroupMapper.selectList(
+                            new LambdaQueryWrapper<CameraGroup>()
+                                    .like(CameraGroup::getName, dto.getRegionName())
+                                    .select(CameraGroup::getId))
                     .stream()
-                    .map(RegionResource::getIndexCode)
+                    .map(CameraGroup::getId)
                     .collect(Collectors.toList());
-            if (matchedRegionCodes.isEmpty()) {
+            if (matchedGroupIds.isEmpty()) {
                 IPage<CameraListVO> emptyPage = new Page<>(dto.getPageNo(), dto.getPageSize());
                 emptyPage.setRecords(Collections.emptyList());
                 emptyPage.setTotal(0);
-                log.info("分页查询摄像头列表完成, 未匹配到区域名称[{}], 返回空", dto.getRegionName());
+                log.info("分页查询摄像头列表完成, 未匹配到分组名称[{}], 返回空", dto.getRegionName());
                 return emptyPage;
             }
-            wrapper.in(CameraResource::getRegionIndexCode, matchedRegionCodes);
+            wrapper.in(CameraInfo::getGroupId, matchedGroupIds);
         }
 
-        IPage<CameraResource> cameraPage = page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
+        IPage<CameraInfo> cameraPage = cameraInfoService.page(new Page<>(dto.getPageNo(), dto.getPageSize()), wrapper);
 
-        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
-        Set<String> regionIndexCodes = cameraPage.getRecords().stream()
-                .map(CameraResource::getRegionIndexCode)
-                .filter(StringUtils::isNotBlank)
+        // 收集所有groupId，联动table_camera_group表获取分组名称
+        Set<Long> groupIds = cameraPage.getRecords().stream()
+                .map(CameraInfo::getGroupId)
+                .filter(id -> id != null)
                 .collect(Collectors.toSet());
-        Map<String, String> regionNameMap = Collections.emptyMap();
-        if (!regionIndexCodes.isEmpty()) {
-            regionNameMap = regionResourceService.lambdaQuery()
-                    .in(RegionResource::getIndexCode, regionIndexCodes)
-                    .list()
+        Map<Long, String> groupNameMap = Collections.emptyMap();
+        if (!groupIds.isEmpty()) {
+            groupNameMap = cameraGroupMapper.selectList(
+                            new LambdaQueryWrapper<CameraGroup>()
+                                    .in(CameraGroup::getId, groupIds))
                     .stream()
-                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+                    .collect(Collectors.toMap(CameraGroup::getId, CameraGroup::getName, (v1, v2) -> v1));
         }
 
         List<CameraListVO> voList = new ArrayList<>(cameraPage.getRecords().size());
-        for (CameraResource camera : cameraPage.getRecords()) {
-            CameraListVO vo = cameraToVO(camera);
-            // 优先使用区域资源表的区域名称，取不到时兜底摄像头表冗余的regionName
-            String resolvedRegionName = regionNameMap.getOrDefault(camera.getRegionIndexCode(), camera.getRegionName());
-            vo.setRegionName(resolvedRegionName);
+        for (CameraInfo camera : cameraPage.getRecords()) {
+            CameraListVO vo = cameraInfoToVO(camera);
+            // 优先使用分组表的名称，取不到时兜底camera_info冗余的groupName
+            String resolvedGroupName = groupNameMap.getOrDefault(camera.getGroupId(), camera.getGroupName());
+            vo.setRegionName(resolvedGroupName);
             voList.add(vo);
         }
 
@@ -921,6 +972,43 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
     private boolean isPackageGroup(String name) {
         return StringUtils.isNotBlank(name)
                 && PACKAGE_KEYWORD.stream().anyMatch(kw -> StringUtils.contains(name, kw));
+    }
+
+    /**
+     * 收集分组名称包含"服贸会"、"园区高点"关键字的全部分组 id（含其子孙分组），
+     * 用于将摄像头列表/分页查询锁定在指定分组范围内。
+     */
+    private List<Long> collectPackageGroupIds() {
+        List<CameraGroup> allGroups = cameraGroupMapper.selectList(null);
+        if (allGroups == null || allGroups.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Long, List<CameraGroup>> childrenMap = allGroups.stream()
+                .filter(g -> g.getParentId() != null)
+                .collect(Collectors.groupingBy(CameraGroup::getParentId));
+        Set<Long> matchedIds = new HashSet<>();
+        for (CameraGroup group : allGroups) {
+            if (isPackageGroup(group.getName())) {
+                matchedIds.add(group.getId());
+                collectPackageChildren(group.getId(), childrenMap, matchedIds);
+            }
+        }
+        return new ArrayList<>(matchedIds);
+    }
+
+    /**
+     * 递归收集指定分组的全部子孙分组 id
+     */
+    private void collectPackageChildren(Long parentId, Map<Long, List<CameraGroup>> childrenMap, Set<Long> matchedIds) {
+        List<CameraGroup> children = childrenMap.get(parentId);
+        if (children == null) {
+            return;
+        }
+        for (CameraGroup child : children) {
+            if (matchedIds.add(child.getId())) {
+                collectPackageChildren(child.getId(), childrenMap, matchedIds);
+            }
+        }
     }
 
     /**

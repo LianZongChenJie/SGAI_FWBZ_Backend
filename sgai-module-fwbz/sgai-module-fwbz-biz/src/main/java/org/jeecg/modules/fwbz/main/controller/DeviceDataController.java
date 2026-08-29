@@ -23,12 +23,17 @@ import org.jeecg.modules.fwbz.mdm.entity.Space;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.mdm.service.ISpaceService;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.jeecgframework.poi.excel.ExcelExportUtil;
 import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.enmus.ExcelType;
 import org.jeecgframework.poi.excel.view.JeecgEntityExcelView;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -184,6 +189,34 @@ public class DeviceDataController {
         mv.addObject("params", exportParams);
         mv.addObject("data", records);
         return mv;
+    }
+
+    /**
+     * 设备导出（xlsx，直出）
+     * 按设备类别(categoryId)过滤，联动 equipment_category/space 表将 id 转为中文名称
+     */
+    @GetMapping("/deviceExport")
+    public void deviceExport(HttpServletResponse response, @RequestParam(required = false) Long categoryId) throws Exception {
+        DeviceDataFindDto params = new DeviceDataFindDto();
+        params.setCategoryId(categoryId);
+        List<DeviceDataVo> records = service.findListNoPage(params);
+        Map<Long, String> spaceMap = spaceService.list()
+                .stream()
+                .collect(Collectors.toMap(Space::getId, Space::getFullName));
+        Map<Long, String> categoryMap = equipmentCategoryService.list()
+                .stream()
+                .collect(Collectors.toMap(EquipmentCategory::getId, EquipmentCategory::getFullName));
+        for (DeviceDataVo item : records) {
+            item.setCategoryName(categoryMap.get(item.getCategoryId()));
+            item.setSpaceName(spaceMap.get(item.getSpaceId()));
+        }
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename=" + URLEncoder.encode("设备数据.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("设备数据", "设备数据", ExcelType.XSSF),
+                DeviceDataVo.class, records)) {
+            workbook.write(response.getOutputStream());
+        }
     }
 
     /**

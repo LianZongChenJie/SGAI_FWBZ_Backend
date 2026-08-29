@@ -69,6 +69,12 @@ public class DeviceDataServiceImpl implements IDeviceDataService {
         return listPage;
     }
 
+    @Override
+    public List<DeviceDataVo> findListNoPage(DeviceDataFindDto params) {
+        return deviceService.findAll(params.convertToDevice())
+                .stream().map(DeviceDataVo::convert).collect(toList());
+    }
+
 
     public List<DeviceDataVo> findListWithDay(DeviceDataFindDto params) {
         List<DeviceDataVo> listPage = deviceService.findAll(params.convertToDevice())

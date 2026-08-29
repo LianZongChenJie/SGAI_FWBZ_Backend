@@ -84,6 +84,14 @@ public interface ICameraResourceService extends IService<CameraResource> {
     List<CameraListVO> getCameraList();
 
     /**
+     * 查询导出用摄像头列表：仅含"服贸会"、"园区高点"分组（含子分组）的摄像头，
+     * 分组名称联动 table_camera_group 表
+     *
+     * @return 摄像头列表
+     */
+    List<CameraListVO> getCameraListForExport();
+
+    /**
      * 分页查询摄像头列表
      * <p>支持按名称、唯一编码、区域名称、接入协议、安装位置、在线状态、监控点类型检索，条件为空查全部。</p>
      *

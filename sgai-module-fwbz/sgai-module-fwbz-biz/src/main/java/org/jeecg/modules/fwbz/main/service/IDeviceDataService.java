@@ -12,6 +12,12 @@ import java.util.List;
 public interface IDeviceDataService {
 
     IPage<DeviceDataVo> findList(DeviceDataFindDto params);
+
+    /**
+     * 设备导出用：不分页查询设备列表（按 categoryId 等条件过滤），返回全部设备
+     */
+    List<DeviceDataVo> findListNoPage(DeviceDataFindDto params);
+
     List<DeviceDataVo> findListWithDay(DeviceDataFindDto params);
 
     IPage<DeviceDataVo> measuringListWithDayMonth(DeviceDataFindDto params);
