@@ -133,7 +133,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
 
     @Override
     public int syncAllVenueFlowFromApi() {
-        log.info("开始从 HTTP API 同步各场馆客流数据(写入 table_venue_flow_hour)...");
+
         int successCount = 0;
 
         JSONArray list = fetchVenueFlowListFromApi();
@@ -155,15 +155,14 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
                 upsertVenueFlowHour(flow);
                 successCount++;
 
-                log.info("场馆客流入库(flow_hour)成功 venueId={}, venueName={}, nowCount={}, maxCount={}",
-                        venueId, item.getString("name"), flow.getTodayNowCount(), flow.getMaxCount());
+
 
             } catch (Exception e) {
                 log.error("场馆客流入库异常, item={}", item, e);
             }
         }
 
-        log.info("HTTP API 场馆客流同步完成，共同步 {} 个场馆", successCount);
+
         return successCount;
     }
 

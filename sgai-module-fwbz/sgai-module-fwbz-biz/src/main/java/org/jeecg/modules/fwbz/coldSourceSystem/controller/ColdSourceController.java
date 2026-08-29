@@ -1,5 +1,6 @@
 package org.jeecg.modules.fwbz.coldSourceSystem.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sunwayland.pspace.entity.Base;
 import com.sunwayland.pspace.entity.PsConnectInfo;
@@ -13,6 +14,8 @@ import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceHistoryPageDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceHistoryPageQueryDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceWriteDto;
+import org.jeecg.modules.fwbz.coldSourceSystem.entity.TableTagidInfo;
+import org.jeecg.modules.fwbz.coldSourceSystem.mapper.TableTagidInfoMapper;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceHistoryService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceOverviewService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
@@ -34,8 +37,10 @@ import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 冷源系统(pSpace) —— 字段映射查询 + 服务器信息查询
@@ -57,6 +62,8 @@ public class ColdSourceController {
     private final SaveHisttoryService saveHisttoryService;
 
     private final ColdSourceHistoryService coldSourceHistoryService;
+
+    private final TableTagidInfoMapper tableTagidInfoMapper;
 
     /**
      * 手动触发一次冷源历史数据保存
@@ -111,6 +118,29 @@ public class ColdSourceController {
                 new ExportParams("冷源历史记录", "冷源历史记录", ExcelType.XSSF),
                 ColdSourceHistoryPageDto.class, list)) {
             workbook.write(response.getOutputStream());
+        }
+    }
+
+    /**
+     * 查询需要存储的采集点（table_tagid_info 中 is_save=1 的数据）
+     * 返回: tagId(采集点id), desc(描述)
+     */
+    @GetMapping("/saveTagIds")
+    @ApiOperation(value = "查询可存储采集点", notes = "从 table_tagid_info 查询 is_save=1 的数据, 返回 tagId 和 desc")
+    public Result<List<Map<String, Object>>> listSaveTagIds() {
+        try {
+            List<TableTagidInfo> list = tableTagidInfoMapper.selectList(
+                    new LambdaQueryWrapper<TableTagidInfo>().eq(TableTagidInfo::getIsSave, "1"));
+            List<Map<String, Object>> result = list.stream().map(info -> {
+                Map<String, Object> m = new HashMap<>(2);
+                m.put("tagId", info.getTagId());
+                m.put("desc", info.getDesc());
+                return m;
+            }).collect(Collectors.toList());
+            return Result.ok(result);
+        } catch (Exception e) {
+            log.error("查询可存储采集点异常", e);
+            return Result.error("查询可存储采集点异常: " + e.getMessage());
         }
     }
 
