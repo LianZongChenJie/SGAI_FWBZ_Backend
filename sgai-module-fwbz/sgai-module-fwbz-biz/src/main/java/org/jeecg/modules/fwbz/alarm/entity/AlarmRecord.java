@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 设备名称
      */
+    @Excel(name = "设备名称", width = 25)
     private String deviceName;
 
     /**
@@ -63,6 +65,7 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 空间名称
      */
+    @Excel(name = "空间名称", width = 25)
     private String spaceName;
 
     /**
@@ -73,6 +76,7 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 告警内容
      */
+    @Excel(name = "告警内容", width = 40)
     private String alarmContent;
 
     /**
@@ -80,6 +84,7 @@ public class AlarmRecord extends BaseEntity {
      */
     @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "告警时间", width = 22, format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime alarmTime;
 
     /**
@@ -104,6 +109,7 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 告警类别名称
      */
+    @Excel(name = "告警类别", width = 20)
     private String alarmCategoryName;
     /**
      * 告警级别id
@@ -112,6 +118,7 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 告警级别名称
      */
+    @Excel(name = "告警级别", width = 20)
     private String alarmLevelName;
 
     /**
@@ -119,26 +126,31 @@ public class AlarmRecord extends BaseEntity {
      */
     private Long pointId;
 
+    @Excel(name = "点位名称", width = 25)
     private String pointName;
 
     /**
      * 时间粒度
      */
+    @Excel(name = "时间粒度", width = 15)
     private String timeGranularity;
 
     /**
      * 点位值（告警值）
      */
+    @Excel(name = "告警值", width = 15)
     private String value;
 
     /**
      * 条件值（阈值）
      */
+    @Excel(name = "阈值", width = 15)
     private String conditionValue;
 
     /**
      * 条件
      */
+    @Excel(name = "条件", width = 10)
     private String operator;
 
     /**
@@ -149,11 +161,13 @@ public class AlarmRecord extends BaseEntity {
     /**
      * 负责人
      */
+    @Excel(name = "负责人", width = 15)
     private String chargePersonName;
 
     /**
      * 状态。未处理：1；已消除：2
      */
+    @Excel(name = "告警状态", width = 12, replace = {"未处理_1", "已消除_2", "已转工单_3", "已完成_4"})
     private String alarmStatus;
 
     /**

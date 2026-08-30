@@ -81,6 +81,39 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         );
     }
 
+    @Override
+    public List<AlarmRecord> listForExport(AlarmRecordDto params) {
+        // 不分页，导出全部符合条件的数据
+        List<AlarmRecord> list = list(getQueryWrapper(params).orderByDesc(AlarmRecord::getAlarmTime));
+
+        // 联动告警类别表补全类别名称
+        Map<Long, String> categoryNameMap = alarmCategoryService.list().stream()
+                .collect(Collectors.toMap(AlarmCategory::getId, AlarmCategory::getAlarmCategoryName, (v1, v2) -> v1));
+        // 联动告警级别表补全级别名称与颜色
+        Map<Long, AlarmLevel> levelMap = alarmLevelService.list().stream()
+                .collect(Collectors.toMap(AlarmLevel::getId, level -> level, (v1, v2) -> v1));
+        for (AlarmRecord record : list) {
+            if (record.getAlarmCategoryId() != null) {
+                String categoryName = categoryNameMap.get(record.getAlarmCategoryId());
+                if (StringUtils.isNotBlank(categoryName)) {
+                    record.setAlarmCategoryName(categoryName);
+                }
+            }
+            if (record.getAlarmLevelId() != null) {
+                AlarmLevel level = levelMap.get(record.getAlarmLevelId());
+                if (level != null) {
+                    if (StringUtils.isNotBlank(level.getAlarmLevelName())) {
+                        record.setAlarmLevelName(level.getAlarmLevelName());
+                    }
+                    if (StringUtils.isNotBlank(level.getAlarmLevelColor())) {
+                        record.setAlarmLevelColor(level.getAlarmLevelColor());
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
     /**
      * 报警消除
      *

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+import org.jeecgframework.poi.excel.annotation.Excel;
 
 /**
  * 告警等级
@@ -26,25 +27,30 @@ public class AlarmLevel extends BaseEntity {
     /**
      * 等级名称
      */
+    @Excel(name = "等级名称", width = 20)
     private String alarmLevelName;
 
     /**
      * 等级编号
      */
+    @Excel(name = "等级编号", width = 20)
     private String alarmLevelCode;
 
     /**
      * 颜色
      */
+    @Excel(name = "颜色", width = 15)
     private String alarmLevelColor;
 
     /**
      * 排序
      */
+    @Excel(name = "排序", width = 10)
     private Integer sort;
 
     /**
      * 状态。启用：1；禁用：0
      */
+    @Excel(name = "状态", width = 12, replace = {"启用_1", "禁用_0"})
     private String status;
 }

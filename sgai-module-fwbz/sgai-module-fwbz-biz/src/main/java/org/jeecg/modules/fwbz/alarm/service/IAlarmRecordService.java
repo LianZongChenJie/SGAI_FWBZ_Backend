@@ -17,6 +17,14 @@ import java.util.List;
 public interface IAlarmRecordService extends IService<AlarmRecord> {
     IPage<AlarmRecord> listPage(AlarmRecordDto params);
 
+    /**
+     * 查询导出用告警记录列表：按查询条件过滤，不分页返回全部数据，联动告警类别/告警级别表补全名称
+     *
+     * @param params 查询条件
+     * @return 告警记录列表
+     */
+    List<AlarmRecord> listForExport(AlarmRecordDto params);
+
     void elimination(Long id);
 
     void confirm(Long id);

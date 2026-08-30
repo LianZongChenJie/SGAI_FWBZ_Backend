@@ -1,14 +1,21 @@
 package org.jeecg.modules.fwbz.alarm.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.alarm.entity.AlarmLevel;
 import org.jeecg.modules.fwbz.alarm.service.IAlarmLevelService;
+import org.jeecgframework.poi.excel.ExcelExportUtil;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.enmus.ExcelType;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.List;
 
 @RestController
@@ -66,6 +73,23 @@ public class AlarmLevelController {
     public Result<String> stopLevel(@RequestParam(name = "id") Long id){
         service.stopLevel(id);
         return Result.ok();
+    }
+
+    /**
+     * 导出告警等级
+     * <p>导出全部告警等级，不分页。</p>
+     */
+    @GetMapping("/export")
+    @ApiOperation(value = "导出告警等级", notes = "导出全部告警等级，不分页")
+    public void export(HttpServletResponse response) throws Exception {
+        List<AlarmLevel> list = service.list();
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename=" + URLEncoder.encode("告警等级.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("告警等级", "告警等级", ExcelType.XSSF),
+                AlarmLevel.class, list)) {
+            workbook.write(response.getOutputStream());
+        }
     }
 
 }
