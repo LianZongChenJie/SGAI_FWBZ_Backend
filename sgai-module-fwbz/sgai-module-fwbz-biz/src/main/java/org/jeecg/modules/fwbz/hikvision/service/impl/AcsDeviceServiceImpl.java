@@ -314,6 +314,70 @@ public class AcsDeviceServiceImpl extends ServiceImpl<AcsDeviceMapper, AcsDevice
         return resultPage;
     }
 
+    @Override
+    public List<AcsDeviceListVO> getDeviceListForExport(AcsDevicePageDto dto) {
+        LambdaQueryWrapper<AcsDevice> wrapper = new LambdaQueryWrapper<AcsDevice>()
+                .like(StringUtils.isNotBlank(dto.getName()), AcsDevice::getName, dto.getName())
+                .eq(StringUtils.isNotBlank(dto.getDevTypeCode()), AcsDevice::getDevTypeCode, dto.getDevTypeCode())
+                .eq(StringUtils.isNotBlank(dto.getOnline()), AcsDevice::getOnline, dto.getOnline())
+                .like(StringUtils.isNotBlank(dto.getIp()), AcsDevice::getIp, dto.getIp());
+
+        // 区域名称过滤 —— 联动table_region_resource表
+        if (StringUtils.isNotBlank(dto.getRegionName())) {
+            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
+                    .like(RegionResource::getName, dto.getRegionName())
+                    .select(RegionResource::getIndexCode)
+                    .list()
+                    .stream()
+                    .map(RegionResource::getIndexCode)
+                    .collect(Collectors.toList());
+            if (matchedRegionCodes.isEmpty()) {
+                return Collections.emptyList();
+            }
+            wrapper.in(AcsDevice::getRegionIndexCode, matchedRegionCodes);
+        }
+
+        // 不分页，导出全部符合条件的数据
+        List<AcsDevice> deviceList = list(wrapper);
+
+        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
+        Set<String> regionIndexCodes = deviceList.stream()
+                .map(AcsDevice::getRegionIndexCode)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, String> regionNameMap = Collections.emptyMap();
+        if (!regionIndexCodes.isEmpty()) {
+            regionNameMap = regionResourceService.lambdaQuery()
+                    .in(RegionResource::getIndexCode, regionIndexCodes)
+                    .list()
+                    .stream()
+                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+        }
+
+        List<AcsDeviceListVO> voList = new ArrayList<>(deviceList.size());
+        for (AcsDevice device : deviceList) {
+            AcsDeviceListVO vo = new AcsDeviceListVO();
+            vo.setIndexCode(device.getIndexCode());
+            vo.setName(device.getName());
+            vo.setDevTypeCode(device.getDevTypeCode());
+            vo.setDevTypeDesc(device.getDevTypeDesc());
+            vo.setDeviceCode(device.getDeviceCode());
+            vo.setManufacturer(device.getManufacturer());
+            vo.setRegionIndexCode(device.getRegionIndexCode());
+            // 优先从地域资源表获取区域名称，兜底使用设备表中冗余存储的名称
+            vo.setRegionName(regionNameMap.getOrDefault(device.getRegionIndexCode(), device.getRegionName()));
+            vo.setTreatyType(device.getTreatyType());
+            vo.setIp(device.getIp());
+            vo.setPort(device.getPort());
+            vo.setOnline(device.getOnline());
+            vo.setCreateTime(device.getCreateTime());
+            vo.setUpdateTime(device.getDevUpdateTime());
+            voList.add(vo);
+        }
+
+        return voList;
+    }
+
     private AcsDevice convertToEntity(AcsDeviceSearchResponse.AcsDeviceItem item) {
         AcsDevice entity = new AcsDevice();
         entity.setIndexCode(item.getIndexCode());

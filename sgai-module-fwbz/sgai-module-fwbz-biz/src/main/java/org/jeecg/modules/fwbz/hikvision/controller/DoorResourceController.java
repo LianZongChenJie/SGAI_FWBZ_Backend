@@ -5,18 +5,24 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorControlRequest;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorControlResultVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.DoorResourcePageDto;
 import org.jeecg.modules.fwbz.hikvision.service.IDoorResourceService;
+import org.jeecgframework.poi.excel.ExcelExportUtil;
+import org.jeecgframework.poi.excel.entity.ExportParams;
+import org.jeecgframework.poi.excel.entity.enmus.ExcelType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.List;
 
 /**
@@ -88,6 +94,26 @@ public class DoorResourceController {
         } catch (Exception e) {
             log.error("获取门禁点列表失败", e);
             return Result.error("获取门禁点列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出门禁点信息
+     * <p>前端可传名称、安装位置等条件，不传则导出全部；导出不分页，返回全部符合条件的门禁点。</p>
+     *
+     * @param dto  查询条件（name、installLocation 等，可为空）
+     * @param response HTTP 响应
+     */
+    @GetMapping("/export")
+    @ApiOperation(value = "导出门禁点信息", notes = "导出门禁点数据，支持按名称、门禁点编号、区域名称、门状态、接入协议、安装位置过滤，不传条件导出全部，不分页")
+    public void exportDoors(DoorResourcePageDto dto, HttpServletResponse response) throws Exception {
+        List<DoorListVO> list = doorResourceService.getDoorListForExport(dto);
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename=" + URLEncoder.encode("门禁点信息.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("门禁点信息", "门禁点信息", ExcelType.XSSF),
+                DoorListVO.class, list)) {
+            workbook.write(response.getOutputStream());
         }
     }
 

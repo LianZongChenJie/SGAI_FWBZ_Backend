@@ -42,6 +42,14 @@ public interface IDoorResourceService extends IService<DoorResource> {
     IPage<DoorListVO> getDoorList(DoorResourcePageDto dto);
 
     /**
+     * 查询导出用门禁点列表：按名称、安装位置等条件过滤，不分页返回全部数据
+     *
+     * @param dto 查询条件
+     * @return 门禁点列表
+     */
+    List<DoorListVO> getDoorListForExport(DoorResourcePageDto dto);
+
+    /**
      * 海康反向控制门禁点
      * <p>调用海康 /api/acs/v1/door/doControl 接口，对指定门禁点下发控制指令
      * （0-常开、1-门闭、2-门开、3-常闭），最大支持10个门禁点。</p>

@@ -406,6 +406,68 @@ public class DoorResourceServiceImpl extends ServiceImpl<DoorResourceMapper, Doo
     }
 
     @Override
+    public List<DoorListVO> getDoorListForExport(DoorResourcePageDto dto) {
+        LambdaQueryWrapper<DoorResource> wrapper = new LambdaQueryWrapper<DoorResource>()
+                .like(StringUtils.isNotBlank(dto.getName()), DoorResource::getName, dto.getName())
+                .eq(StringUtils.isNotBlank(dto.getDoorNo()), DoorResource::getDoorNo, dto.getDoorNo())
+                .eq(StringUtils.isNotBlank(dto.getDoorState()), DoorResource::getDoorState, dto.getDoorState())
+                .eq(StringUtils.isNotBlank(dto.getTreatyType()), DoorResource::getTreatyType, dto.getTreatyType())
+                .like(StringUtils.isNotBlank(dto.getInstallLocation()), DoorResource::getInstallLocation, dto.getInstallLocation());
+
+        // 区域名称过滤 —— 联动table_region_resource表
+        if (StringUtils.isNotBlank(dto.getRegionName())) {
+            List<String> matchedRegionCodes = regionResourceService.lambdaQuery()
+                    .like(RegionResource::getName, dto.getRegionName())
+                    .select(RegionResource::getIndexCode)
+                    .list()
+                    .stream()
+                    .map(RegionResource::getIndexCode)
+                    .collect(Collectors.toList());
+            if (matchedRegionCodes.isEmpty()) {
+                return Collections.emptyList();
+            }
+            wrapper.in(DoorResource::getRegionIndexCode, matchedRegionCodes);
+        }
+
+        // 不分页，导出全部符合条件的数据
+        List<DoorResource> doorList = list(wrapper);
+
+        // 收集所有regionIndexCode，联动table_region_resource表获取区域名称
+        Set<String> regionIndexCodes = doorList.stream()
+                .map(DoorResource::getRegionIndexCode)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
+        Map<String, String> regionNameMap = Collections.emptyMap();
+        if (!regionIndexCodes.isEmpty()) {
+            regionNameMap = regionResourceService.lambdaQuery()
+                    .in(RegionResource::getIndexCode, regionIndexCodes)
+                    .list()
+                    .stream()
+                    .collect(Collectors.toMap(RegionResource::getIndexCode, RegionResource::getName, (v1, v2) -> v1));
+        }
+
+        List<DoorListVO> voList = new ArrayList<>(doorList.size());
+        for (DoorResource door : doorList) {
+            DoorListVO vo = new DoorListVO();
+            vo.setIndexCode(door.getIndexCode());
+            vo.setName(door.getName());
+            vo.setDoorNo(door.getDoorNo());
+            vo.setChannelNo(door.getChannelNo());
+            vo.setRegionIndexCode(door.getRegionIndexCode());
+            // 优先从地域资源表获取区域名称，兜底使用门禁表中冗余存储的名称
+            vo.setRegionName(regionNameMap.getOrDefault(door.getRegionIndexCode(), door.getRegionName()));
+            vo.setInstallLocation(door.getInstallLocation());
+            vo.setDoorState(door.getDoorState());
+            vo.setTreatyType(door.getTreatyType());
+            vo.setCreateTime(door.getCreateTime());
+            vo.setUpdateTime(door.getDevUpdateTime());
+            voList.add(vo);
+        }
+
+        return voList;
+    }
+
+    @Override
     public List<DoorControlResultVO> controlDoor(DoorControlRequest request) {
         List<String> doorIndexCodes = request.getDoorIndexCodes();
         Integer controlType = request.getControlType();

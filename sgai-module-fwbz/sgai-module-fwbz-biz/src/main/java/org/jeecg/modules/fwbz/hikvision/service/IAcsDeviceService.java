@@ -6,6 +6,8 @@ import org.jeecg.modules.fwbz.hikvision.dto.AcsDeviceListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.AcsDevicePageDto;
 import org.jeecg.modules.fwbz.hikvision.entity.AcsDevice;
 
+import java.util.List;
+
 /**
  * 门禁设备同步服务接口
  *
@@ -37,4 +39,12 @@ public interface IAcsDeviceService extends IService<AcsDevice> {
      * @return 门禁设备分页列表
      */
     IPage<AcsDeviceListVO> getDeviceList(AcsDevicePageDto dto);
+
+    /**
+     * 查询导出用门禁设备列表：按名称、设备类型、区域名称、在线状态、IP等条件过滤，不分页返回全部数据
+     *
+     * @param dto 查询条件
+     * @return 门禁设备列表
+     */
+    List<AcsDeviceListVO> getDeviceListForExport(AcsDevicePageDto dto);
 }
