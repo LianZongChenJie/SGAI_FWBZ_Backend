@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.hikvision.config.HlsProperties;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraCoordinateGroupVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
@@ -341,6 +342,25 @@ public class CameraResourceController {
             JSONObject json = JSONObject.parseObject(body);
             log.info("获取摄像头坐标分组分布成功");
             return Result.ok(json);
+        } catch (Exception e) {
+            log.error("获取摄像头坐标分组分布失败", e);
+            return Result.error("获取摄像头坐标分组分布失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取本地摄像头坐标分组分布
+     * <p>仅统计"服贸会"、"园区高点"分组（含子分组）下的摄像头，
+     * 按经度、纬度聚合本地 camera_info 表数据，返回每个坐标下的摄像头数量与摄像头列表。</p>
+     *
+     * @return 摄像头坐标分组列表
+     */
+    @GetMapping("/coordinateGroupList")
+    @ApiOperation(value = "获取本地摄像头坐标分组分布", notes = "按经度纬度聚合camera_info表摄像头数据(仅含服贸会/园区高点分组)，返回每个坐标下的摄像头数量与列表")
+    public Result<List<CameraCoordinateGroupVO>> getCameraCoordinateGroupList() {
+        try {
+            List<CameraCoordinateGroupVO> list = cameraResourceService.getCameraCoordinateGroup();
+            return Result.ok(list);
         } catch (Exception e) {
             log.error("获取摄像头坐标分组分布失败", e);
             return Result.error("获取摄像头坐标分组分布失败: " + e.getMessage());

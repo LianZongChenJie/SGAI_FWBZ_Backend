@@ -3,6 +3,7 @@ package org.jeecg.modules.fwbz.hikvision.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.hikvision.entity.CameraResource;
+import org.jeecg.modules.fwbz.hikvision.dto.CameraCoordinateGroupVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
@@ -108,6 +109,15 @@ public interface ICameraResourceService extends IService<CameraResource> {
      * @return 区域摄像头分组树根节点列表
      */
     List<RegionCameraTreeVO> getRegionCameraGroup();
+
+    /**
+     * 获取摄像头坐标分组分布
+     * <p>仅统计"服贸会"、"园区高点"分组（含子分组）下的摄像头，
+     * 按经度、纬度聚合，返回每个坐标下的摄像头数量与摄像头列表。</p>
+     *
+     * @return 坐标分组列表
+     */
+    List<CameraCoordinateGroupVO> getCameraCoordinateGroup();
 
     /**
      * 根据摄像头所属区域编码查询摄像头列表

@@ -76,17 +76,17 @@ public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
         EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
         dto.setCount((long) list.size());
         if(addCount==0){
-            dto.setAddCount("0");
+            dto.setAddCount("0个");
         }else{
-            dto.setAddCount("↑"+addCount);
+            dto.setAddCount("↑"+addCount+"个");
         }
         dto.setOnlineRate(CalculationUtil.calculatePercentageToString(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L), (long) list.size()));
 
 
-        dto.setElectricCount(todayElectricValue);
+        dto.setElectricCount(todayElectricValue +"kWh");
         dto.setWaterCount(todayWaterValue);
-        dto.setElectricCountDoD(CalculationUtil.calculateMomToString(todayElectricValue, yestodayElectricValue));
-        dto.setWaterCountDoD(CalculationUtil.calculateMomToString(todayWaterValue, yestodayWaterValue));
+        dto.setElectricCountDoD(CalculationUtil.calculateMomToString(todayElectricValue, yestodayElectricValue)+"%");
+        dto.setWaterCountDoD(CalculationUtil.calculateMomToString(todayWaterValue, yestodayWaterValue)+"%");
 
 
         return dto;

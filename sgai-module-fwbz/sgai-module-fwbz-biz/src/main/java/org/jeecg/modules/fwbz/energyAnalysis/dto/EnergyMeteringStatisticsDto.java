@@ -28,7 +28,7 @@ public class EnergyMeteringStatisticsDto {
     /**
      * 今日用电量
      */
-    private BigDecimal electricCount;
+    private String electricCount;
     /**
      * 用电量环比
      */

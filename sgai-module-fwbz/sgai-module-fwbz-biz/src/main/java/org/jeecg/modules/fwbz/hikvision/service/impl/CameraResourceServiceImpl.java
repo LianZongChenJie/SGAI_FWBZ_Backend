@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import org.jeecg.modules.fwbz.hikvision.dto.CameraCoordinateGroupVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraListVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraPlayUrlVO;
 import org.jeecg.modules.fwbz.hikvision.dto.CameraResourcePageDto;
@@ -47,6 +48,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -932,6 +934,100 @@ public class CameraResourceServiceImpl extends ServiceImpl<CameraResourceMapper,
         }
         log.info("查询区域[{}]摄像头列表完成, 共{}条", regionIndexCode, result.size());
         return result;
+    }
+
+    @Override
+    public List<CameraCoordinateGroupVO> getCameraCoordinateGroup() {
+        log.info("开始构建摄像头坐标分组分布");
+        // 1. 收集"服贸会"、"园区高点"分组（含子孙分组）id
+        List<Long> packageGroupIds = collectPackageGroupIds();
+        if (packageGroupIds.isEmpty()) {
+            log.warn("未匹配到[服贸会/园区高点]分组, 返回空");
+            return Collections.emptyList();
+        }
+
+        // 2. 查询分组范围内摄像头，并按坐标（经度+纬度）聚合
+        Map<String, List<CameraListVO>> coordinateMap = new LinkedHashMap<>();
+        cameraInfoService.list(new LambdaQueryWrapper<CameraInfo>()
+                        .in(CameraInfo::getGroupId, packageGroupIds))
+                .forEach(camera -> {
+                    String longitude = formatCoordinate(camera.getLongitude());
+                    String latitude = formatCoordinate(camera.getLatitude());
+                    if (longitude == null || latitude == null) {
+                        return;
+                    }
+                    String key = longitude + "," + latitude;
+                    CameraListVO vo = cameraInfoToVO(camera);
+                    vo.setLongitude(longitude);
+                    vo.setLatitude(latitude);
+                    coordinateMap.computeIfAbsent(key, k -> new ArrayList<>())
+                            .add(vo);
+                });
+
+        // 3. 组装返回VO并按经度、纬度排序
+        List<CameraCoordinateGroupVO> result = new ArrayList<>(coordinateMap.size());
+        for (Map.Entry<String, List<CameraListVO>> entry : coordinateMap.entrySet()) {
+            String[] lonLat = entry.getKey().split(",", 2);
+            CameraCoordinateGroupVO vo = new CameraCoordinateGroupVO();
+            vo.setLongitude(lonLat[0]);
+            vo.setLatitude(lonLat[1]);
+            vo.setCameraList(entry.getValue());
+            vo.setCameraCount(entry.getValue().size());
+            result.add(vo);
+        }
+        result.sort((o1, o2) -> {
+            int cmp = compareCoordinate(o1.getLongitude(), o2.getLongitude());
+            if (cmp != 0) {
+                return cmp;
+            }
+            return compareCoordinate(o1.getLatitude(), o2.getLatitude());
+        });
+        log.info("摄像头坐标分组构建完成, 共{}组", result.size());
+        return result;
+    }
+
+    /**
+     * 比较两个坐标字符串（按数值大小，解析失败时视为0）
+     *
+     * @param c1 坐标1
+     * @param c2 坐标2
+     * @return 比较结果
+     */
+    private int compareCoordinate(String c1, String c2) {
+        return parseCoordinate(c1).compareTo(parseCoordinate(c2));
+    }
+
+    /**
+     * 将坐标字符串解析为BigDecimal，解析失败时返回0
+     *
+     * @param coordinate 坐标字符串
+     * @return 解析结果
+     */
+    private BigDecimal parseCoordinate(String coordinate) {
+        try {
+            return new BigDecimal(StringUtils.trimToEmpty(coordinate));
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * 格式化坐标字符串
+     * <p>数据库中的坐标可能以科学计数法存储（如"1.16155425E2"），
+     * 这里统一转为普通十进制字符串（如"116.155425"），避免返回给前端时出现科学计数法。</p>
+     *
+     * @param coordinate 坐标字符串
+     * @return 格式化后的普通十进制字符串；空值返回null，无法解析时原样返回
+     */
+    private String formatCoordinate(String coordinate) {
+        if (StringUtils.isBlank(coordinate)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(coordinate.trim()).toPlainString();
+        } catch (NumberFormatException e) {
+            return coordinate.trim();
+        }
     }
 
     @Override
