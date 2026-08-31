@@ -111,6 +111,8 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
             vo.setMaxCount(today.getMaxCount());
             vo.setMaxTime(today.getMaxTime());
             vo.setAverageDuration(round(today.getAverageDuration(), 1));
+            // 状态直接取 IOC 同步入库的 state（如 宽松/适中/拥挤），存于 status 字段
+            vo.setStatusLabel(today.getStatus());
 
             VenueFlowHour yesterdayRow = yesterdayLatestMap.get(today.getVenueId());
             vo.setYesterdayInCount(yesterdayRow == null ? 0L : nvl(yesterdayRow.getTodayInCount()));
@@ -229,6 +231,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
      * 将 API 返回的 JSON 解析为 VenueFlowHour 实体。
      * <p>
      * 新接口字段映射：enterSum(总进入人数) → todayInCount，holdValue(在馆人数) → todayNowCount；
+     * state(客流状态，如 宽松/拥挤) 直接存入 status 字段；
      * exitSum(总离开人数) 表无对应字段暂不存储；maxCount/maxTime 接口不再返回，
      * 由 upsert 时根据在馆人数本地判断峰值。
      * </p>
@@ -237,7 +240,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
         VenueFlowHour flow = new VenueFlowHour();
         flow.setDataDate(LocalDate.now());
         flow.setDataHour(Time.valueOf(LocalTime.now().withMinute(0).withSecond(0).withNano(0)));
-        flow.setStatus(1);
+        flow.setStatus(item.getString("state"));
         flow.setVenueId(venueId);
         flow.setTodayInCount(item.getLong("enterSum"));
         flow.setTodayNowCount(item.getLong("holdValue"));

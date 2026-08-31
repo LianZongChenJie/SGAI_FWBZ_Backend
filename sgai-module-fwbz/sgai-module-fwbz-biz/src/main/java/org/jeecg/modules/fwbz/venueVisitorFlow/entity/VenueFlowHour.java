@@ -52,7 +52,7 @@ public class VenueFlowHour implements Serializable {
     private Double averageDuration;
 
     /** 状态 */
-    private Integer status;
+    private String status;
 
     /** 时间（小时） */
     @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
