@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.sql.Time;
@@ -22,6 +23,7 @@ public class ActiveMeetInfo extends BaseEntity {
     /**
      * 活动名称
      */
+    @Excel(name = "活动名称", width = 25)
     private String activeName;
 
     /**
@@ -32,6 +34,7 @@ public class ActiveMeetInfo extends BaseEntity {
     /**
      * 活动层数
      */
+    @Excel(name = "活动层数", width = 15)
     private String venueFloors;
 
     /**
@@ -39,6 +42,7 @@ public class ActiveMeetInfo extends BaseEntity {
      */
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
+    @Excel(name = "开始日期", width = 15, format = "yyyy-MM-dd")
     private Date startDate;
 
     /**
@@ -46,6 +50,7 @@ public class ActiveMeetInfo extends BaseEntity {
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
     @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
+    @Excel(name = "开始时间", width = 15, format = "HH:mm:ss")
     private Time startTime;
 
     /**
@@ -53,16 +58,19 @@ public class ActiveMeetInfo extends BaseEntity {
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
     @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
+    @Excel(name = "结束时间", width = 15, format = "HH:mm:ss")
     private Time endTime;
 
     /**
      * 预计人数
      */
+    @Excel(name = "预计人数", width = 15)
     private Long peopleQuantity;
 
     /**
      * 活动进展
      */
+    @Excel(name = "活动进展", width = 15)
     private Double activeProgress;
 
     /**
@@ -76,6 +84,7 @@ public class ActiveMeetInfo extends BaseEntity {
     /**
      * 场馆名称（非数据库字段）
      */
+    @Excel(name = "场馆名称", width = 20)
     @TableField(exist = false)
     private String venueName;
 }

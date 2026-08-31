@@ -77,6 +77,27 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     }
 
     @Override
+    public List<ActiveMeetInfo> listByDateRange(Date startDate, Date endDate) {
+        LambdaQueryWrapper<ActiveMeetInfo> wrapper = new LambdaQueryWrapper<>();
+        // 日期范围过滤：都为空查全部；startDate有值→开始日期之后；endDate有值→开始日期之前；都有→之间
+        boolean hasStart = startDate != null;
+        boolean hasEnd = endDate != null;
+        if (hasStart && hasEnd) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, startDate)
+                    .le(ActiveMeetInfo::getStartDate, endDate);
+        } else if (hasStart) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, startDate);
+        } else if (hasEnd) {
+            wrapper.le(ActiveMeetInfo::getStartDate, endDate);
+        }
+        List<ActiveMeetInfo> result = list(wrapper
+                .orderByAsc(ActiveMeetInfo::getStartDate)
+                .orderByAsc(ActiveMeetInfo::getStartTime));
+        fillVenueName(result);
+        return result;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean save(ActiveMeetInfo entity) {
         entity.setId(null);
