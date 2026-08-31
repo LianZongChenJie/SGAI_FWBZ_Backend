@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.api.SgaiTpApi;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +21,7 @@ public class SgaiTpFallback implements FallbackFactory<SgaiTpApi> {
     public SgaiTpApi create(Throwable cause) {
         log.error("sgai-tp微服务接口调用失败", cause);
         return new SgaiTpApi() {
+            @GetMapping("/fwbz/meterPointData/findHourElectricityByDateRange")
             @Override
             public String findHourElectricityByDateRange(LocalDateTime startTime, LocalDateTime endTime) {
                 log.warn("sgai-tp降级处理, startTime={}, endTime={}", startTime, endTime);

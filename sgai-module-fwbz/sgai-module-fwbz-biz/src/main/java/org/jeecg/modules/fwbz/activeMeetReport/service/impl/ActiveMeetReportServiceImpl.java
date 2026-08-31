@@ -1,10 +1,8 @@
 package org.jeecg.modules.fwbz.activeMeetReport.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
@@ -18,12 +16,15 @@ import org.jeecg.modules.fwbz.complaint.entity.ComplaintInfo;
 import org.jeecg.modules.fwbz.complaint.entity.ComplaintType;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
+import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
 import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
 import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -57,6 +58,12 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
     private AlarmRecordMapper alarmRecordMapper;
     @Resource
     private SgaiTpApi sgaiTpApi;
+
+    private final IMeteringPointDataService service;
+
+    public ActiveMeetReportServiceImpl(IMeteringPointDataService service) {
+        this.service = service;
+    }
 
     @Override
     public boolean save(ActiveMeetReport entity) {
@@ -195,7 +202,7 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
         report.setDeviceFailuresTotal(deviceFailuresTotal);
 
         // 总用电量：空方法返回0
-        double consumptionElectricity = calcConsumptionElectricity(activities);
+        Double consumptionElectricity = calcConsumptionElectricity(activities);
         report.setConsumptionElectricity(consumptionElectricity);
 
         // 单人次能耗 = 总用电量 / 总服务人次，人次为0时即为总用电量
@@ -282,7 +289,7 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
      * 计算总用电量（空方法，待后续实现，当前返回0）
      */
     private double calcConsumptionElectricity(List<ActiveMeetInfo> activities) {
-        double totalElectricity = 0.0;
+        BigDecimal totalElectricity = new BigDecimal(0);
         for (ActiveMeetInfo activity : activities) {
             LocalDateTime startTime = activity.getStartDate().toInstant()
                     .atZone(ZoneId.systemDefault())
@@ -293,26 +300,15 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
                     .toLocalDate()
                     .atTime(activity.getEndTime().toLocalTime());
             try {
-                String response = sgaiTpApi.findHourElectricityByDateRange(startTime, endTime);
-                log.info("sgai-tp响应: {}", response);
-
-                if (response == null) {
-                    log.error("sgai-tp服务不可用，已触发降级");
-                    continue;
-                }
-
-                Result<?> result = JSONObject.parseObject(response).toJavaObject(Result.class);
-                Object value = result.getResult();
-                if (value instanceof Number) {
-                    totalElectricity += ((Number) value).doubleValue();
-                } else if (value instanceof String) {
-                    totalElectricity += Double.parseDouble((String) value);
-                }
+                MeterPointDataQueryDto dto = new MeterPointDataQueryDto();
+                dto.setStartTime(startTime);
+                dto.setEndTime(endTime);
+                totalElectricity = service.findHourElectricityByDateRange(dto);
             } catch (Exception e) {
                 log.error("调用sgai-tp用电量接口异常, startTime={}, endTime={}",startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), e);
             }
         }
-        return totalElectricity;
+        return Double.parseDouble(totalElectricity.toString());
     }
 
     /**
