@@ -68,7 +68,7 @@ public class BuildingControlRealPushService {
      * 更新设备属性表的同时写入 device_attribute_history 历史表（有则更新）。
      */
     public void readRealDataOnce() {
-        List<Long> tagIds = getTagIds();
+        List<DeviceAttribute>tagIds = getTagIds();
         if (tagIds.isEmpty()) {
             log.warn("device_attribute 中没有配置数字采集编码(检测点ID)的属性，跳过楼控读点");
             return;
@@ -101,26 +101,29 @@ public class BuildingControlRealPushService {
      *
      * @return 去重后的检测点ID列表（保持查询顺序）
      */
-    public List<Long> getTagIds() {
-        // 仅查询采集编码一列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
+    public List<DeviceAttribute> getTagIds() {
+        // 仅查询采集编码、设备id、属性id三列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
+        // 说明：属性id与设备id供后续告警检测(alarmDetection)使用，必须一并查出
         List<DeviceAttribute> list = deviceAttributeService.list(new LambdaQueryWrapper<DeviceAttribute>()
-                .select(DeviceAttribute::getAcquisitionCoding)
+                .select(DeviceAttribute::getAcquisitionCoding, DeviceAttribute::getId, DeviceAttribute::getDeviceId)
                 .isNotNull(DeviceAttribute::getAcquisitionCoding)
                 .ne(DeviceAttribute::getAcquisitionCoding, ""));
-        Set<Long> tagIds = new LinkedHashSet<>();
+        List<DeviceAttribute> tagIds = new ArrayList<>();
         for (DeviceAttribute attr : list) {
             String coding = attr.getAcquisitionCoding();
             if (coding == null || coding.trim().isEmpty()) {
                 continue;
             }
+            // 仅保留采集编码为数字的记录（该值即楼控检测点ID）
             try {
-                tagIds.add(Long.valueOf(coding.trim()));
+                Long.parseLong(coding.trim());
+                tagIds.add(attr);
             } catch (NumberFormatException e) {
                 // 非数字采集编码（如 gatewayAdr-bacnetAdr 格式）不参与楼控实时订阅
                 log.debug("采集编码非数字，跳过楼控订阅: id={}, acquisitionCoding={}", attr.getId(), coding);
             }
         }
-        return new ArrayList<>(tagIds);
+        return tagIds;
     }
 
 

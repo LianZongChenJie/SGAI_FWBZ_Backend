@@ -9,11 +9,13 @@ import com.sunwayland.pspace.enums.PsErrorCodeEnum;
 import com.sunwayland.pspace.enums.PsQualityEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -50,7 +49,15 @@ public class BuildingControlServerService {
 
     @Autowired
     private IDeviceService deviceService;
+    @Autowired
+    private final MqSendService mqSendService;
 
+    private final IAlarmRecordService alarmRecordService;
+
+    public BuildingControlServerService(MqSendService mqSendService, IAlarmRecordService alarmRecordService) {
+        this.mqSendService = mqSendService;
+        this.alarmRecordService = alarmRecordService;
+    }
 
     /**
      * 更新点位信息数据（写点/控制），按检测点ID(tagId)写入值
@@ -81,22 +88,7 @@ public class BuildingControlServerService {
         return result;
     }
 
-    /**
-     * 读取点位信息数据（读点），按检测点ID(tagId)读取值
-     * <p>
-     * 读取成功后更新 device_attribute 表：采集编码(acquisition_coding) 为该检测点ID(tagId)
-     * 的记录，更新 value、gather_time（值按 dataType 处理：BOOL 类型统一转换成 0/1）。
-     * 楼控数据仅更新设备属性表，不保存历史数据。
-     * <p>
-     * 全部点位读取完成后统一批量更新，避免逐点 UPDATE 造成大量数据库交互
-     * （1029 个点由 2000+ 次 DB 往返降为 2~3 次）。
-     *
-     * @param tagIds 检测点ID列表（对应 device_attribute.acquisition_coding）
-     * @return true 表示读取流程完成（逐点读取，单个失败仅告警，不影响后续）
-     */
-    public boolean realReadList(List<Long> tagIds) {
-        return realReadList(tagIds, BuildingControlRealPushService.alignTo15MinuteSlot(LocalDateTime.now()));
-    }
+
 
     /**
      * 读取点位信息数据（读点），按检测点ID(tagId)读取值
@@ -108,40 +100,50 @@ public class BuildingControlServerService {
      * 全部点位读取完成后统一批量更新，避免逐点 UPDATE 造成大量数据库交互
      * （1029 个点由 2000+ 次 DB 往返降为 2~3 次）。
      *
-     * @param tagIds   检测点ID列表（对应 device_attribute.acquisition_coding）
+     * @param updateList   检测点ID列表（对应 device_attribute.acquisition_coding）
      * @param dataTime 采集时间（保留参数，兼容调用方；仅用于更新时间语义）
      * @return true 表示读取流程完成（逐点读取，单个失败仅告警，不影响后续）
      */
-    public boolean realReadList(List<Long> tagIds, LocalDateTime dataTime) {
+    public boolean realReadList(List<DeviceAttribute> updateList, LocalDateTime dataTime) {
         // 全部点位读取完成后统一批量更新，不再分批
-        List<DeviceAttribute> updateList = new ArrayList<>();
+        List<DeviceAttribute> newUpdateList = new ArrayList<>();
         int readSuccess = 0;
-        for (Long tagId : tagIds) {
+        for (DeviceAttribute item : updateList)  {
             try {
-                PsResult<PsData> result = coldSourceServerService.connect().realRead(tagId);
+                PsResult<PsData> result = coldSourceServerService.connect().realRead(Long.valueOf(item.getAcquisitionCoding().trim()));
                 // 成功则返回状态码 PSRET_OK
                 if (Objects.equals(result.getCode(), PsErrorCodeEnum.PSRET_OK)) {
                     readSuccess++;
                     List<PsData> dataList = result.getData();
                     if (dataList != null && !dataList.isEmpty()) {
                         // 解析值与采集时间，加入更新列表
-                        DeviceAttribute attr = buildAttributeValue(tagId, dataList.get(0));
-                        if (attr != null) {
-                            updateList.add(attr);
-                        }
+                        // BOOL 类型统一转换为 0/1，避免 "true"/"false" 字符串参与告警检测 BigDecimal 解析时抛异常
+                        PsData psData = dataList.get(0);
+                        String value = PsDataTypeEnum.BOOL.equals(psData.getDataType())
+                                ? BuildingControlRealPushService.convertBoolValue(psData.getValue())
+                                : BuildingControlRealPushService.convertValue(psData.getValue());
+                        item.setValue(value);
+                        newUpdateList.add(item);
                     }
                 }
             } catch (Exception e) {
-                log.warn("楼控读点异常: tagId={}", tagId, e);
+                log.warn("楼控读点异常: tagId={}", item.getAcquisitionCoding(), e);
             }
         }
         // 全部读取完成后统一批量更新（仅更新，不保存历史）
-        if (!updateList.isEmpty()) {
-            flushUpdate(updateList);
+        if (!newUpdateList.isEmpty()) {
+            flushUpdate(newUpdateList);
             // 读点成功后，根据 device_id 更新对应设备运行状态为在线，并更新最后采集时间
-            updateDevicesOnline(updateList, dataTime);
+            updateDevicesOnline(newUpdateList, dataTime);
         }
-        log.info("楼控读点完成: 检测点数={}, 读取成功={}, 更新={}", tagIds.size(), readSuccess, updateList.size());
+        try{
+            for(DeviceAttribute item : newUpdateList){
+                alarmRecordService.alarmDetection(item.getDeviceId(),item.getId(),item.getValue());
+            }
+        }catch (Exception e){
+            log.error("点位值变化消息发送失败",e);
+        }
+        log.info("楼控读点完成: 检测点数={}, 读取成功={}, 更新={}", newUpdateList.size(), readSuccess, updateList.size());
         return true;
     }
 
