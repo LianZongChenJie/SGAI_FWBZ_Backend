@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.boot.starter.lock.client.RedissonLockClient;
+import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
 import org.jeecg.modules.fwbz.main.entity.DayData;
 import org.jeecg.modules.fwbz.main.entity.HourData;
 import org.jeecg.modules.fwbz.main.entity.MinuteData;
@@ -29,10 +30,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,6 +49,22 @@ import java.util.stream.Collectors;
 public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttHistory>
         implements IMqttHistoryService {
 
+    /**
+     * 累计值告警检测线程池
+     * <p>告警检测含多次DB查询（规则、点位、能耗数据），若在MQTT消费线程同步执行，
+     * 会阻塞Paho心跳PINGREQ发送，超过keepalive时间被broker断开连接(EOFException)。
+     * 故移出消费主线程异步执行，队列满时丢弃并告警，避免内存堆积。</p>
+     */
+    private static final ExecutorService ALARM_DETECT_EXECUTOR = new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(10000),
+            r -> {
+                Thread t = new Thread(r, "alarm-detect");
+                t.setDaemon(true);
+                return t;
+            },
+            new ThreadPoolExecutor.DiscardPolicy());
+
     private final MDeviceAttributeMapper deviceAttributeMapper;
 
     private final MqttHistoryMapper mqttHistoryMapper;
@@ -54,7 +73,9 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
 
     private final IDeviceService deviceService;
 
-    /** 设备属性服务：用于回查属性 id、设备 id */
+    /**
+     * 设备属性服务：用于回查属性 id、设备 id
+     */
     private final IDeviceAttributeService deviceAttributeService;
 
     private final IRealDataService realDataService;
@@ -69,6 +90,8 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
 
     private final IYearDataService yearDataService;
 
+    private final IAlarmRecordService alarmRecordService;
+
     public MqttHistoryServiceImpl(MDeviceAttributeMapper deviceAttributeMapper,
                                   MqttHistoryMapper mqttHistoryMapper,
                                   RedissonLockClient redissonLockClient,
@@ -79,7 +102,7 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                                   IHourDataService hourDataService,
                                   IDayDataService dayDataService,
                                   IMonthDataService monthDataService,
-                                  IYearDataService yearDataService) {
+                                  IYearDataService yearDataService, IAlarmRecordService alarmRecordService) {
         this.deviceAttributeMapper = deviceAttributeMapper;
         this.mqttHistoryMapper = mqttHistoryMapper;
         this.redissonLockClient = redissonLockClient;
@@ -91,6 +114,7 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         this.dayDataService = dayDataService;
         this.monthDataService = monthDataService;
         this.yearDataService = yearDataService;
+        this.alarmRecordService = alarmRecordService;
     }
 
     @Override
@@ -177,7 +201,6 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
         if (!insertList.isEmpty()) {
             insertCount = mqttHistoryMapper.insertBatch(insertList);
         }
-        log.info("MQTT历史数据写入 table_mqtt_history 完成: 新增={}, 更新={}", insertCount, updateCount);
     }
 
     /**
@@ -256,12 +279,17 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
             }
             String lockKey = getLockKey(deviceCode);
             boolean locked = false;
+            boolean needAlarmDetect = false;
+            LocalDateTime alarmHourTime = null;
             try {
                 locked = redissonLockClient.tryLock(lockKey, 10, 60);
                 if (locked) {
                     BigDecimal value = new BigDecimal(history.getValue().trim());
                     // 接收正向有功电能表底值，更新 实时/分钟/小时/日/月/年 数据
                     calculateEnergy(device, history.getTimeStamp(), value);
+                    // 锁内仅做能耗计算，告警检测放到解锁后异步执行，避免占用锁时间与阻塞MQTT消费线程心跳
+                    alarmHourTime = history.getTimeStamp().withMinute(0).withSecond(0).withNano(0);
+                    needAlarmDetect = true;
                 } else {
                 }
             } catch (Exception e) {
@@ -272,6 +300,20 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
                     redissonLockClient.unlock(lockKey);
                 }
             }
+            // 累计值告警检测：在锁外、能耗计算完成后异步执行（此时小时/日/月/年累计值已落库，能查到最新值），
+            // 传入数据时间戳对齐到整点的小时时间，与 calculateEnergy 写入小时数据的 hourTime 保持一致
+            if (needAlarmDetect) {
+                Long alarmDeviceId = device.getId();
+                log.info("累计值告警检测提交, deviceCode={}, hourTime={}, deviceId={}", deviceCode, alarmHourTime, alarmDeviceId);
+                LocalDateTime finalAlarmHourTime = alarmHourTime;
+                ALARM_DETECT_EXECUTOR.submit(() -> {
+                    try {
+                        alarmRecordService.alarmDetection(alarmDeviceId, finalAlarmHourTime);
+                    } catch (Exception e) {
+                        log.error("累计值告警检测失败, deviceId={}, hourTime={}", alarmDeviceId, finalAlarmHourTime, e);
+                    }
+                });
+            }
         }
     }
 
@@ -279,7 +321,7 @@ public class MqttHistoryServiceImpl extends ServiceImpl<MqttHistoryMapper, MqttH
      * 正向有功电能表底值能耗计算：
      * 1. data_real：保存当前表底值
      * 2. 校验：若最新一条数据的结束值大于接收的表底数（表底倒退，疑似换表/重置），
-     *    仅保存实时数据，不进行分钟/小时/日/月/年计算
+     * 仅保存实时数据，不进行分钟/小时/日/月/年计算
      * 3. data_minute：无上一条则开始值=结束值=表底数；否则开始值=上一条结束值，结束值=当前表底数
      * 4. data_hour：本小时无记录则开始值=结束值=表底数；否则开始值不变，结束值=当前表底数
      * 5. data_day：今日所有小时value之和，有则更新，无则新增

@@ -6,7 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -84,8 +84,8 @@ public class MqttConsumer {
 
     @PostConstruct
     public void init() {
-        // clientId拼接随机后缀，避免相同clientId被broker互踢
-        clientId = clientIdPrefix;
+        // clientId拼接随机后缀，避免相同clientId被broker互踢（多实例部署或重启时旧连接未清理）
+        clientId = clientIdPrefix + "-" + UUID.randomUUID().toString().substring(0, 8);
         try {
             mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
@@ -96,10 +96,25 @@ public class MqttConsumer {
             options.setUserName(username);
             options.setPassword(password.toCharArray());
 
-            mqttClient.setCallback(new MqttCallback() {
+            mqttClient.setCallback(new MqttCallbackExtended() {
+                @Override
+                public void connectComplete(boolean reconnect, String serverURI) {
+                    if (reconnect) {
+                        // cleanSession=true时broker不保存订阅，自动重连成功后必须重新订阅，否则消息静默丢失
+                        try {
+                            mqttClient.subscribe(topic, qos);
+                            log.info("MQTT自动重连成功并已重新订阅, serverURI={}, topic={}", serverURI, topic);
+                        } catch (MqttException e) {
+                            log.error("MQTT重连后重新订阅失败, topic={}", topic, e);
+                        }
+                    }
+                }
+
                 @Override
                 public void connectionLost(Throwable cause) {
-                    log.error("MQTT连接丢失: {}", cause.getMessage(), cause);
+                    // 打印具体断开原因，便于排查（心跳超时/网络中断/broker主动断开/clientId互踢等）
+                    log.error("MQTT连接丢失, clientId={}, broker={}, 原因: {}", clientId, brokerUrl,
+                            cause == null ? "未知原因" : cause.getMessage(), cause);
                 }
 
                 @Override
