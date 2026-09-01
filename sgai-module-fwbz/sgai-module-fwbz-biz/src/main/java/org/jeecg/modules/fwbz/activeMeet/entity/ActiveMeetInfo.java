@@ -87,4 +87,10 @@ public class ActiveMeetInfo extends BaseEntity {
     @Excel(name = "场馆名称", width = 20)
     @TableField(exist = false)
     private String venueName;
+
+    /**
+     * 电表点位id（非数据库字段，通过关联场馆表 table_venue_info.point_id 填充）
+     */
+    @TableField(exist = false)
+    private String pointId;
 }

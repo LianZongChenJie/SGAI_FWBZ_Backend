@@ -35,4 +35,6 @@ public class MeterPointDataQueryDto {
      */
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
+
+    private String pointId;
 }

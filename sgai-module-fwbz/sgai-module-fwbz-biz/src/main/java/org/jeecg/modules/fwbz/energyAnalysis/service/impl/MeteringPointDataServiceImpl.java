@@ -1045,8 +1045,8 @@ public class MeteringPointDataServiceImpl implements IMeteringPointDataService {
      */
     @Override
     public BigDecimal findHourElectricityByDateRange(MeterPointDataQueryDto dto) {
-        String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.ENERGYMETERING_ELECTRIC_POINTID);
-        List<MeteringPointDataHour> byTimeRangeAndPointId = hourDataService.findByPointIdAndTimeRange(Long.valueOf(longByKey),dto.getStartTime(), dto.getStartTime() );
+        String longByKey = dto.getPointId();
+        List<MeteringPointDataHour> byTimeRangeAndPointId = hourDataService.findByPointIdAndTimeRange(Long.valueOf(longByKey),dto.getStartTime(), dto.getEndTime() );
         BigDecimal reduce = byTimeRangeAndPointId.stream().map(MeteringPointDataHour::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
         return reduce;
     }

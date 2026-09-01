@@ -83,4 +83,8 @@ public class VenueInfo implements Serializable {
     /**纬度*/
     @ApiModelProperty(value = "纬度")
     private java.math.BigDecimal latitude;
+
+    /**计量点id*/
+    @ApiModelProperty(value = "计量点id")
+    private Long pointId;
 }

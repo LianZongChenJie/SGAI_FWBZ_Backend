@@ -3,6 +3,7 @@ package org.jeecg.modules.fwbz.activeMeetReport.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
@@ -18,6 +19,8 @@ import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
+import org.jeecg.modules.fwbz.venue.VenueInfo;
+import org.jeecg.modules.fwbz.venue.mapper.VenueInfoMapper;
 import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
 import org.jeecg.modules.fwbz.venueVisitorFlow.mapper.VenueFlowHourMapper;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,9 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
 
     @Resource
     private ActiveMeetInfoMapper activeMeetInfoMapper;
+
+    @Resource
+    private VenueInfoMapper venueInfoMapper;
 
     @Resource
     private VenueFlowHourMapper venueFlowHourMapper;
@@ -168,6 +174,17 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
 
         if (activities == null || activities.isEmpty()) {
             return report;
+        }
+
+        // 关联场馆信息，填充计量点id（table_venue_info.point_id）
+        for (ActiveMeetInfo activity : activities) {
+            if (activity.getVenueId() == null) {
+                continue;
+            }
+            VenueInfo venueInfo = venueInfoMapper.selectById(activity.getVenueId());
+            if (venueInfo != null && venueInfo.getPointId() != null) {
+                activity.setPointId(venueInfo.getPointId().toString());
+            }
         }
 
         // 展会天数 = 活动信息条数
@@ -300,10 +317,15 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
                     .toLocalDate()
                     .atTime(activity.getEndTime().toLocalTime());
             try {
+                // pointId 为空时无法查询用电量，跳过
+                if (StringUtils.isBlank(activity.getPointId())) {
+                    continue;
+                }
                 MeterPointDataQueryDto dto = new MeterPointDataQueryDto();
+                dto.setPointId(activity.getPointId());
                 dto.setStartTime(startTime);
                 dto.setEndTime(endTime);
-                totalElectricity = service.findHourElectricityByDateRange(dto);
+                totalElectricity = totalElectricity.add(service.findHourElectricityByDateRange(dto));
             } catch (Exception e) {
                 log.error("调用sgai-tp用电量接口异常, startTime={}, endTime={}",startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), e);
             }
