@@ -136,6 +136,8 @@ public class BuildingControlServerService {
             // 读点成功后，根据 device_id 更新对应设备运行状态为在线，并更新最后采集时间
             updateDevicesOnline(newUpdateList, dataTime);
         }
+        //todo 存储属性历史，根据 newUpdateList 里是否存储标识存储到device_attribute_history表
+
         try{
             for(DeviceAttribute item : newUpdateList){
                 alarmRecordService.alarmDetection(item.getDeviceId(),item.getId(),item.getValue());

@@ -1,39 +1,29 @@
 package org.jeecg.modules.fwbz.buildingControl.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.sunwayland.pspace.entity.PsData;
-import com.sunwayland.pspace.entity.PsResult;
-import com.sunwayland.pspace.entity.PsSubRealData;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
- * 楼控系统实时数据采集服务（读点 -> 更新设备属性值表 + 保存点位历史）
+ * 楼控系统实时数据采集服务（读点 -> 更新设备属性值表）
  *
  * 通讯方式参考冷源 ColdSourceServerService：
- * 1. 启动时从 device_attribute 表读取采集编码(acquisition_coding)为数字的记录，
+ * 1. 从 device_attribute 表读取采集编码(acquisition_coding)为数字的记录，
  *    该值即楼控检测点ID(tagId)，构建 检测点ID -> 设备属性 索引；
- * 2. 每 15 分钟通过楼控 pSpace SDK realReadList 按检测点ID(tagId)读取点位值，
- *    验证是否获取成功；
+ * 2. 通过楼控 pSpace SDK realReadList 按检测点ID(tagId)读取点位值，验证是否获取成功；
  * 3. 获取成功后根据返回的检测点ID(tagId) 更新 device_attribute 表：
  *    采集编码为该检测点ID 的记录，更新 value、gather_time；
- *    同时将点位值写入 device_attribute_history 历史表，采集时间对齐到
- *    当前整十五分钟槽位（如 08:00:05 执行 -> collection_time = 08:00:00），
- *    同一属性同一槽位已有历史数据则更新。
+ *    同时根据 device_id 更新对应设备运行状态为在线，并同步更新最后采集时间。
+ *
+ * 定时调度入口：{@link org.jeecg.modules.fwbz.buildingControl.job.BuildingControlRealPushJob}（每 15 分钟，cron 错峰执行）
  */
 @Slf4j
 @Service
@@ -45,30 +35,14 @@ public class BuildingControlRealPushService {
     @Autowired
     private IDeviceAttributeService deviceAttributeService;
 
-    /** 楼控读点定时任务：每15分钟执行一次 */
-    private ScheduledExecutorService readScheduler;
-
-    @PostConstruct
-    public void init() {
-
-        // 每15分钟读取一次点位信息数据（读点）：按检测点ID(tagId)读取值，更新 device_attribute 表并保存点位历史
-        readScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "building-control-read");
-            t.setDaemon(true);
-            return t;
-        });
-        readScheduler.scheduleWithFixedDelay(this::readRealDataOnce, 0, 15, TimeUnit.MINUTES);
-        log.info("楼控读点定时任务已启动: 每 {} 分钟执行一次", 15);
-    }
-
     /**
      * 读取点位信息数据（读点）：按检测点ID(tagId)读取值
      * 每次从数据中取全部检测点ID，调用楼控读点接口并打印返回结果，验证是否获取成功；
      * 采集时间对齐到当前整十五分钟槽位（如 08:00:05 执行 -> 08:00:00），
-     * 更新设备属性表的同时写入 device_attribute_history 历史表（有则更新）。
+     * 更新设备属性表，并根据 device_id 更新设备在线状态与最后采集时间。
      */
     public void readRealDataOnce() {
-        List<DeviceAttribute>tagIds = getTagIds();
+        List<DeviceAttribute> tagIds = getTagIds();
         if (tagIds.isEmpty()) {
             log.warn("device_attribute 中没有配置数字采集编码(检测点ID)的属性，跳过楼控读点");
             return;
@@ -101,7 +75,7 @@ public class BuildingControlRealPushService {
      *
      * @return 去重后的检测点ID列表（保持查询顺序）
      */
-    public List<DeviceAttribute> getTagIds() {
+    private List<DeviceAttribute> getTagIds() {
         // 仅查询采集编码、设备id、属性id三列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
         // 说明：属性id与设备id供后续告警检测(alarmDetection)使用，必须一并查出
         List<DeviceAttribute> list = deviceAttributeService.list(new LambdaQueryWrapper<DeviceAttribute>()
@@ -125,13 +99,6 @@ public class BuildingControlRealPushService {
         }
         return tagIds;
     }
-
-
-
-
-
-
-
 
     /**
      * 值转换：Boolean -> "1"/"0"，整数不带小数，BigDecimal 去尾零，其余 toString
@@ -181,18 +148,5 @@ public class BuildingControlRealPushService {
             return "0";
         }
         return s;
-    }
-
-    private static int subIdOf(PsSubRealData data) {
-        Long subId = data.getSubId();
-        return subId == null ? 0 : subId.intValue();
-    }
-
-    private static void sleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 }
