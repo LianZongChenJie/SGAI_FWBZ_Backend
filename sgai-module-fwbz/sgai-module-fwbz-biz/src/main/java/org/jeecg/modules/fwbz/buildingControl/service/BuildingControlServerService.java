@@ -205,10 +205,17 @@ public class BuildingControlServerService {
      *
      * @param updateList 读取成功待更新的属性列表
      */
+    /** 批量更新每批最大点数：达梦驱动对单条 SQL 绑定参数数量有限制，超出会报"序列号无效" */
+    private static final int UPDATE_BATCH_SIZE = 500;
+
     private void flushUpdate(List<DeviceAttribute> updateList) {
         try {
-            // updateValueByIds 按采集编码(acquisition_coding) 批量更新
-            mdeviceAttributeMapper.updateValueByIds(updateList);
+            // 达梦驱动对单条 SQL 参数数量有限制，按批次拆分更新避免"序列号无效"异常
+            for (int i = 0; i < updateList.size(); i += UPDATE_BATCH_SIZE) {
+                List<DeviceAttribute> batch = updateList.subList(i,
+                        Math.min(i + UPDATE_BATCH_SIZE, updateList.size()));
+                mdeviceAttributeMapper.updateValueByIds(batch);
+            }
             log.info("楼控读点批量更新属性成功: 点数={}", updateList.size());
         } catch (Exception e) {
             log.error("楼控读点批量更新属性失败: 点数={}", updateList.size(), e);
