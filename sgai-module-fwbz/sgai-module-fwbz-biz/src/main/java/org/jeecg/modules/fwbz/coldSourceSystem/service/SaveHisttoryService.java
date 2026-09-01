@@ -2,6 +2,7 @@ package org.jeecg.modules.fwbz.coldSourceSystem.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sunwayland.pspace.entity.PsData;
+import com.sunwayland.pspace.entity.PsDataWithTagId;
 import com.sunwayland.pspace.entity.PsResult;
 import com.sunwayland.pspace.entity.PsSubRealData;
 import com.sunwayland.pspace.enums.PsDataTypeEnum;
@@ -19,7 +20,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -175,6 +178,32 @@ public class SaveHisttoryService {
         }
         return null;
     }
+    /**
+     * 批量读取点位真实值：
+     * <ol>
+     *   <li>优先取订阅缓存 {@link ColdSourceRealPushService#getLatestRealData}（mock/真实环境均有）；</li>
+     *   <li>缓存无值且非 mock 模式下，回退 {@code realRead} 读点；</li>
+     *   <li>mock 模式下 connect() 返回 null、realRead 不可用，返回 null（读取失败）。</li>
+     * </ol>
+     *
+     * @param tagIds 测点ID
+     * @return 测点值及数据类型；读取失败返回 null
+     */
+    public List<PsDataWithTagId> readLatestValue(List<Long> tagIds) {
+        if (!coldSourceProperties.isMock()) {
+            PsResult<PsDataWithTagId> result = coldSourceServerService.connect().realReadListV2(tagIds);
+            if (Objects.equals(result.getCode(), PsErrorCodeEnum.PSRET_OK)
+                    && result.getData() != null && !result.getData().isEmpty()) {
+                log.info("冷源历史数据 realRead 读取成功: tagId={}, data={}", tagIds, result.getData());
+                return result.getData();
+            }
+            log.warn("冷源历史数据 realRead 读取失败: tagId={}, code={}", tagIds, result.getCode());
+        } else {
+            log.warn("冷源历史数据无缓存且处于 mock 模式(connect 不可用), 无法读取: tagId={}", tagIds);
+        }
+        return null;
+    }
+
 
     /** 读取到的测点值及数据类型 */
     private static class TagValue {
@@ -190,7 +219,7 @@ public class SaveHisttoryService {
     /**
      * 值转换：Boolean -> "1"/"0"，整数不带小数，BigDecimal 去尾零，其余 toString
      */
-    private static String convertValue(Object v) {
+    public static String convertValue(Object v) {
         if (v == null) {
             return null;
         }
