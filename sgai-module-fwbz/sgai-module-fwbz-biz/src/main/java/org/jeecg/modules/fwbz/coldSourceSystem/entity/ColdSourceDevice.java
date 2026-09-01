@@ -43,7 +43,7 @@ public class ColdSourceDevice {
     private String remark;
 
     /** 最后采集时间(属性采集定时任务更新) */
-    private LocalDateTime lastCollectTime;
+    private LocalDateTime lastTime;
 
     /** 在线状态: 1在线 0离线 */
     private Integer onlineStatus;
