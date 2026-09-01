@@ -191,7 +191,6 @@ public class SaveHisttoryService {
             PsResult<PsDataWithTagId> result = coldSourceServerService.connect().realReadListV2(tagIds);
             if (Objects.equals(result.getCode(), PsErrorCodeEnum.PSRET_OK)
                     && result.getData() != null && !result.getData().isEmpty()) {
-                log.info("冷源历史数据 realRead 读取成功: tagId={}, data={}", tagIds, result.getData());
                 return result.getData();
             }
             log.warn("冷源历史数据 realRead 读取失败: tagId={}, code={}", tagIds, result.getCode());

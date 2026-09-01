@@ -21,7 +21,8 @@ import java.util.List;
  * 2. 通过楼控 pSpace SDK realReadList 按检测点ID(tagId)读取点位值，验证是否获取成功；
  * 3. 获取成功后根据返回的检测点ID(tagId) 更新 device_attribute 表：
  *    采集编码为该检测点ID 的记录，更新 value、gather_time；
- *    同时根据 device_id 更新对应设备运行状态为在线，并同步更新最后采集时间。
+ *    同时根据 device_id 更新对应设备运行状态为在线，并同步更新最后采集时间；
+ *    其中 is_save=1 的属性按时间槽位保存到 device_attribute_history 历史表。
  *
  * 定时调度入口：{@link org.jeecg.modules.fwbz.buildingControl.job.BuildingControlRealPushJob}（每 15 分钟，cron 错峰执行）
  */
@@ -39,7 +40,8 @@ public class BuildingControlRealPushService {
      * 读取点位信息数据（读点）：按检测点ID(tagId)读取值
      * 每次从数据中取全部检测点ID，调用楼控读点接口并打印返回结果，验证是否获取成功；
      * 采集时间对齐到当前整十五分钟槽位（如 08:00:05 执行 -> 08:00:00），
-     * 更新设备属性表，并根据 device_id 更新设备在线状态与最后采集时间。
+     * 更新设备属性表，并根据 device_id 更新设备在线状态与最后采集时间；
+     * 其中 is_save=1 的属性按时间槽位保存到 device_attribute_history 历史表。
      */
     public void readRealDataOnce() {
         List<DeviceAttribute> tagIds = getTagIds();
@@ -76,10 +78,10 @@ public class BuildingControlRealPushService {
      * @return 去重后的检测点ID列表（保持查询顺序）
      */
     private List<DeviceAttribute> getTagIds() {
-        // 仅查询采集编码、设备id、属性id三列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
-        // 说明：属性id与设备id供后续告警检测(alarmDetection)使用，必须一并查出
+        // 仅查询采集编码、设备id、属性id、是否存储历史(is_save)四列，避免全表返回完整实体对象（含大字段）导致内存峰值过高
+        // 说明：属性id与设备id供告警检测(alarmDetection)使用，is_save 供历史存储过滤使用，必须一并查出
         List<DeviceAttribute> list = deviceAttributeService.list(new LambdaQueryWrapper<DeviceAttribute>()
-                .select(DeviceAttribute::getAcquisitionCoding, DeviceAttribute::getId, DeviceAttribute::getDeviceId)
+                .select(DeviceAttribute::getAcquisitionCoding, DeviceAttribute::getId, DeviceAttribute::getDeviceId, DeviceAttribute::getIsSave)
                 .isNotNull(DeviceAttribute::getAcquisitionCoding)
                 .ne(DeviceAttribute::getAcquisitionCoding, ""));
         List<DeviceAttribute> tagIds = new ArrayList<>();

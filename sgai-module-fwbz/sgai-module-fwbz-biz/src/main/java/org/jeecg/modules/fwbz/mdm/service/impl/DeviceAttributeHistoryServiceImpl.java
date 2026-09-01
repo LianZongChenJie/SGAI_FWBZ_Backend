@@ -21,16 +21,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttributeHistoryMapper, DeviceAttributeHistory> implements IDeviceAttributeHistoryService {
 
-    /** 单批处理条数：历史保存按批查询已存在记录并提交，避免大批量集合驻留内存导致 OOM */
+    /** 单批处理条数：历史保存按批循环单条插入，避免大批量集合驻留内存导致 OOM */
     private static final int BATCH_SIZE = 500;
 
     private final IBusinessConfigService businessConfigService;
@@ -66,10 +63,8 @@ public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttribu
         if (deviceIds == null || deviceIds.isEmpty()) {
             return;
         }
-        // 与 MQTT/楼控链路统一：采集时间对齐到整十五分钟槽位，按槽位分批 upsert（有则更新，无则新增）。
-        // 原实现逐条 INSERT 且未对齐槽位，会导致：
-        //  1) 同一属性同时存在"原始时间记录+槽位记录"，历史数据翻倍膨胀；
-        //  2) 大批量逐条 INSERT 放大 DB 往返，且与 MQTT/楼控并发争写同一槽位时产生竞态冲突。
+        // 与 MQTT/楼控链路统一：采集时间对齐到整十五分钟槽位，按槽位直接新增（冲突时降级为更新）。
+        // 时间对齐避免同一属性同时存在"原始时间记录+槽位记录"导致历史数据翻倍膨胀。
         Map<LocalDateTime, List<DeviceAttribute>> slotGroup = new LinkedHashMap<>();
         for (DeviceAttribute attribute : attributes) {
             if (attribute.getId() == null || attribute.getDeviceId() == null
@@ -107,7 +102,7 @@ public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttribu
         if (attributes == null || attributes.isEmpty() || dataTime == null) {
             return;
         }
-        // 流式分批：逐批查询已存在记录并提交，避免全量集合驻留内存导致 OOM
+        // 流式分批：逐批循环单条插入，避免全量集合驻留内存导致 OOM
         List<DeviceAttribute> list = attributes instanceof List
                 ? (List<DeviceAttribute>) attributes
                 : new ArrayList<>(attributes);
@@ -117,64 +112,37 @@ public class DeviceAttributeHistoryServiceImpl extends ServiceImpl<DeviceAttribu
     }
 
     /**
-     * 单批历史保存：查询该批同一时间槽位已存在的历史记录（有则更新，无则新增）
+     * 单批历史保存：不做已存在记录查询，直接新增（INSERT）到历史表
+     * <p>
+     * 达梦驱动对 JDBC 批量(executeBatch)支持有缺陷，大数据量时会抛
+     * NegativeArraySizeException/index out of range，故改为循环单条插入绕开该问题
+     * （与冷源 SaveHisttoryService、海康 DoorEventServiceImpl 等保持一致）。
      *
      * @param batch    本批待保存的属性集合（不超过 BATCH_SIZE）
      * @param dataTime 采集时间（已对齐到整十五分钟槽位）
      */
     private void saveAttributeHistoryBatch(List<DeviceAttribute> batch, LocalDateTime dataTime) {
-        List<Long> attributeIds = batch.stream()
-                .map(DeviceAttribute::getId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-        if (attributeIds.isEmpty()) {
-            return;
-        }
-        // 查询该批同一时间槽位已存在的历史记录（有则更新，无则新增）
-        Map<Long, DeviceAttributeHistory> existMap = list(new LambdaQueryWrapper<DeviceAttributeHistory>()
-                        .eq(DeviceAttributeHistory::getCollectionTime, dataTime)
-                        .in(DeviceAttributeHistory::getAttributeId, attributeIds))
-                .stream()
-                .collect(Collectors.toMap(DeviceAttributeHistory::getAttributeId, Function.identity(), (a, b) -> a));
-
-        List<DeviceAttributeHistory> updateList = new ArrayList<>();
-        List<DeviceAttributeHistory> insertList = new ArrayList<>();
         for (DeviceAttribute attribute : batch) {
             if (attribute.getId() == null || attribute.getDeviceId() == null) {
                 continue;
             }
-            DeviceAttributeHistory exist = existMap.get(attribute.getId());
-            if (exist != null) {
-                exist.setDeviceId(attribute.getDeviceId());
-                exist.setValue(attribute.getValue());
-                updateList.add(exist);
-            } else {
-                DeviceAttributeHistory history = new DeviceAttributeHistory();
-                history.setAttributeId(attribute.getId());
-                history.setDeviceId(attribute.getDeviceId());
-                history.setCollectionTime(dataTime);
-                history.setValue(attribute.getValue());
-                insertList.add(history);
-            }
-        }
-        if (!updateList.isEmpty()) {
-            updateBatchById(updateList);
-        }
-        if (!insertList.isEmpty()) {
+            DeviceAttributeHistory history = new DeviceAttributeHistory();
+            history.setAttributeId(attribute.getId());
+            history.setDeviceId(attribute.getDeviceId());
+            history.setCollectionTime(dataTime);
+            history.setValue(attribute.getValue());
             try {
-                saveBatch(insertList);
+                baseMapper.insert(history);
             } catch (DuplicateKeyException e) {
-                // 并发竞态：MQTT/楼控等链路已先插入同一 (attribute_id, collection_time) 槽位记录，
-                // 降级为按槽位更新，避免批量归档中断或产生重复数据
-                log.warn("设备属性历史并发插入冲突，降级为按槽位更新: 条数={}", insertList.size());
-                for (DeviceAttributeHistory history : insertList) {
-                    update(new LambdaUpdateWrapper<DeviceAttributeHistory>()
-                            .eq(DeviceAttributeHistory::getAttributeId, history.getAttributeId())
-                            .eq(DeviceAttributeHistory::getCollectionTime, history.getCollectionTime())
-                            .set(DeviceAttributeHistory::getDeviceId, history.getDeviceId())
-                            .set(DeviceAttributeHistory::getValue, history.getValue()));
-                }
+                // 唯一键冲突：同一 (attribute_id, collection_time) 槽位记录已存在（并发竞态或历史数据），
+                // 降级为按槽位更新，避免插入中断或产生重复数据
+                log.warn("设备属性历史插入冲突，降级为按槽位更新: attributeId={}, collectionTime={}",
+                        history.getAttributeId(), history.getCollectionTime());
+                update(new LambdaUpdateWrapper<DeviceAttributeHistory>()
+                        .eq(DeviceAttributeHistory::getAttributeId, history.getAttributeId())
+                        .eq(DeviceAttributeHistory::getCollectionTime, history.getCollectionTime())
+                        .set(DeviceAttributeHistory::getDeviceId, history.getDeviceId())
+                        .set(DeviceAttributeHistory::getValue, history.getValue()));
             }
         }
     }

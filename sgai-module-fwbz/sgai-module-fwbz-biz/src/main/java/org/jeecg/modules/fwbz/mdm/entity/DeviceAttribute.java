@@ -83,6 +83,11 @@ public class DeviceAttribute extends BaseEntity {
      */
     private String valueConfig;
 
+    /**
+     * 是否存储属性历史（1=存储；0=不存储，默认不存储）
+     */
+    private String isSave;
+
     public static DeviceAttribute convert(DeviceModelAttribute data){
         DeviceAttribute res = new DeviceAttribute();
         res.setAttributeName(data.getAttributeName());

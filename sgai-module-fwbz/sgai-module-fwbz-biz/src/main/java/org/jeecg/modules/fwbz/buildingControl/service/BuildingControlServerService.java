@@ -15,6 +15,7 @@ import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.jeecg.modules.fwbz.mqtt.mapper.MDeviceAttributeMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,10 @@ public class BuildingControlServerService {
 
     @Autowired
     private IDeviceService deviceService;
+
+    @Autowired
+    private IDeviceAttributeHistoryService deviceAttributeHistoryService;
+
     @Autowired
     private final MqSendService mqSendService;
 
@@ -130,13 +135,14 @@ public class BuildingControlServerService {
                 log.warn("楼控读点异常: tagId={}", item.getAcquisitionCoding(), e);
             }
         }
-        // 全部读取完成后统一批量更新（仅更新，不保存历史）
+        // 全部读取完成后统一批量更新
         if (!newUpdateList.isEmpty()) {
             flushUpdate(newUpdateList);
             // 读点成功后，根据 device_id 更新对应设备运行状态为在线，并更新最后采集时间
             updateDevicesOnline(newUpdateList, dataTime);
         }
-        //todo 存储属性历史，根据 newUpdateList 里是否存储标识存储到device_attribute_history表
+        // 存储属性历史：仅 is_save=1 的属性按时间槽位写入 device_attribute_history（同一属性同一槽位有则更新，无则新增）
+        saveAttributeHistory(newUpdateList, dataTime);
 
         try{
             for(DeviceAttribute item : newUpdateList){
@@ -147,6 +153,30 @@ public class BuildingControlServerService {
         }
         log.info("楼控读点完成: 检测点数={}, 读取成功={}, 更新={}", newUpdateList.size(), readSuccess, updateList.size());
         return true;
+    }
+
+    /**
+     * 存储楼控属性历史：根据 newUpdateList 中的 is_save 标识（is_save=1 的）保存到 device_attribute_history 表
+     *
+     * @param newUpdateList 本次读点成功待更新的属性列表
+     * @param dataTime      采集时间（已对齐到当前整十五分钟槽位）
+     */
+    private void saveAttributeHistory(List<DeviceAttribute> newUpdateList, LocalDateTime dataTime) {
+        if (newUpdateList == null || newUpdateList.isEmpty()) {
+            return;
+        }
+        List<DeviceAttribute> historyList = newUpdateList.stream()
+                .filter(item -> "1".equals(item.getIsSave()))
+                .collect(Collectors.toList());
+        if (historyList.isEmpty()) {
+            return;
+        }
+        try {
+            deviceAttributeHistoryService.saveAttributeHistory(historyList, dataTime);
+            log.info("楼控属性历史保存成功: 点数={}, 时间槽位={}", historyList.size(), dataTime);
+        } catch (Exception e) {
+            log.error("楼控属性历史保存失败: 点数={}, 时间槽位={}", historyList.size(), dataTime, e);
+        }
     }
 
     /**
