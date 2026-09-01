@@ -28,8 +28,8 @@ import java.util.Set;
  *       读取 cold_source_device_attribute 表所有属性(tagid)的真实值，对齐整十五分钟时间槽后：
  *       <ol>
  *         <li>更新属性表 value(采集值)、gather_time(采集时间)；</li>
- *         <li>按设备维度更新 cold_source_device 最后采集时间(last_time)与在线状态(online_status)：
- *             有属性采集成功 -> 在线(1) 并刷新采集时间；全部失败 -> 离线(0)。</li>
+ *         <li>按设备维度更新 cold_source_device 最后采集时间(last_time)与在线状态(status)：
+ *             有属性采集成功 -> status=1 并刷新采集时间；全部失败 -> status=0。</li>
  *       </ol></li>
  * </ul>
  * <p>两个任务 cron 错峰且默认单线程调度器串行执行，互不冲突；
@@ -136,7 +136,7 @@ public class ColdSourceDeviceCollectJob {
                     boolean success = deviceSuccess.getOrDefault(deviceId, 0) > 0;
                     ColdSourceDevice update = new ColdSourceDevice();
                     update.setId(deviceId);
-                    update.setOnlineStatus(success ? ONLINE : OFFLINE);
+                    update.setStatus(success ? ONLINE : OFFLINE);
                     if (success) {
                         update.setLastTime(dataTime);
                     }

@@ -33,7 +33,7 @@ public class ColdSourceDevice {
     /** Niagara 路径 */
     private String niagaraPath;
 
-    /** 状态: 1启用 0停用 */
+    /** 状态: 1在线/启用 0离线/停用（属性采集定时任务更新在线状态） */
     private Integer status;
 
     /** 排序 */
@@ -44,9 +44,6 @@ public class ColdSourceDevice {
 
     /** 最后采集时间(属性采集定时任务更新) */
     private LocalDateTime lastTime;
-
-    /** 在线状态: 1在线 0离线 */
-    private Integer onlineStatus;
 
     /** 创建人 */
     private String createBy;
