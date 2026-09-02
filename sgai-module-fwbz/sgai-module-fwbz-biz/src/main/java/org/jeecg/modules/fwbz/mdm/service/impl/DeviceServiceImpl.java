@@ -271,7 +271,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         // 过滤掉备注为“电表位置”的空间（其子树因父节点不在树中而一并隐藏）
         List<Space> childSpaces = childMap.getOrDefault(spaceId, Collections.emptyList())
                 .stream()
-                .filter(space -> !isElectricMeterPositionSpace(space))
+                .filter(child -> !isElectricMeterPositionSpace(child))
                 .collect(Collectors.toList());
         for (Space child : childSpaces) {
             SpaceDeviceTreeVo childVo = buildSpaceDeviceTree(child.getId(), spaceMap, childMap, deviceMap, visited);
