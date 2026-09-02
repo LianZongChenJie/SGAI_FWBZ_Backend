@@ -461,10 +461,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public OverViewStatisticsDto overviewStatistics() {
         List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
 
-        // 设备表当前均为设备型（device_type=2），此处仍需显式查出 device_type 列，
-        // 否则实体该字段为 null，按 deviceType 分组的统计恒为空（远程控制设备数恒为0）
+        // 仅统计设备型（device_type=2）设备：在线数、远程控制设备数均出自该列表
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
-                .select(Device::getId, Device::getRunState, Device::getDeviceType));
+                .select(Device::getId, Device::getRunState)
+                .eq(Device::getDeviceType, Device.DEVICE_TYPE_EQUIPMENT));
 
 
 
