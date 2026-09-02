@@ -10,6 +10,12 @@ import java.time.LocalDateTime;
 public class MeteringPointDataDto {
 
     /**
+     * 业务配置Key
+     */
+    private String businessConfigKey;
+
+
+    /**
      * 节点id
      */
     private String energyFlowDiagramIds;

@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataMonth;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataMonthMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataMonthService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.MonthData;
-import org.jeecg.modules.fwbz.service.IMonthDataService;
+import org.jeecg.modules.fwbz.main.entity.MonthData;
+import org.jeecg.modules.fwbz.main.service.IMonthDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,7 +26,7 @@ public class MeteringPointDataMonthServiceImpl extends ServiceImpl<MeteringPoint
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "metering_point_data_month:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:metering_point_data_month:";
 
     private static final Long CACHE_TIME = 60L * 90L;
 

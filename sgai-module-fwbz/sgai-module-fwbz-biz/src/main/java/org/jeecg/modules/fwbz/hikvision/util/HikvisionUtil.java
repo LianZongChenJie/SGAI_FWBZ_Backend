@@ -45,31 +45,31 @@ public class HikvisionUtil {
      * 使用https协议时填nginx的IP:Port，使用http协议时填artemis服务的IP:Port（默认9016）
      */
 
-    private String host;
+    private String host="10.61.8.20:443";
 
     /**
      * 合作方Key
      */
 
-    private String appKey;
+    private String appKey="27912951";
 
     /**
      * 合作方Secret
      */
 
-    private String appSecret;
+    private String appSecret="nuirPZZQHO3YSVbQK4hE";
 
     /**
      * 连接超时时间(ms)
      */
 
-    private int connectTimeout;
+    private int connectTimeout=10000;
 
     /**
      * 读取超时时间(ms)
      */
 
-    private int socketTimeout;
+    private int socketTimeout=60000;
 
     /**
      * 初始化超时配置
@@ -142,7 +142,6 @@ public class HikvisionUtil {
     public String doPostJson(String apiPath, String body, boolean useHttps,
                               Map<String, String> query, Map<String, String> customHeaders) throws Exception {
         Map<String, String> path = buildPath(apiPath, useHttps);
-        log.debug("海康POST请求: path={}, body={}", path, body);
         return ArtemisHttpUtil.doPostStringArtemis(buildConfig(), path, body, query, null, "application/json", customHeaders);
     }
 
@@ -158,7 +157,7 @@ public class HikvisionUtil {
         Map<String, String> path = buildPath(proxyApiPath);
         Map<String, String> headers = new HashMap<>(2);
         headers.put("x-ca-path", ARTEMIS_PATH + realApiPath);
-        log.debug("海康代理POST请求: proxyPath={}, realPath={}, body={}", proxyApiPath, realApiPath, body);
+        log.info("海康代理POST请求: proxyPath={}, realPath={}, body={}", proxyApiPath, realApiPath, body);
         return ArtemisHttpUtil.doPostStringArtemis(buildConfig(), path, body, null, null, "application/json", headers);
     }
 
@@ -188,7 +187,7 @@ public class HikvisionUtil {
     public Response doGetResponse(String apiPath, Map<String, Object> query,
                                    Map<String, String> headers, boolean useHttps) throws Exception {
         Map<String, String> path = buildPath(apiPath, useHttps);
-        log.debug("海康GET请求: path={}, query={}", path, query);
+        log.info("海康GET请求: path={}, query={}", path, query);
         return ArtemisHttpUtil.doGetResponse(buildConfig(), path, query,  null, null,headers);
     }
 

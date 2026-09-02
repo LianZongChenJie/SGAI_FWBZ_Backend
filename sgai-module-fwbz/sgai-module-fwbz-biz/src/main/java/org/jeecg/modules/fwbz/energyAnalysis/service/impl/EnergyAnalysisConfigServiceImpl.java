@@ -2,15 +2,12 @@ package org.jeecg.modules.fwbz.energyAnalysis.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.EnergyAnalysisConfig;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.EnergyAnalysisConfigMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IEnergyAnalysisConfigService;
-import org.jeecg.modules.fwbz.patterned.entity.LinkageStrategy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,7 +16,7 @@ import java.util.List;
 public class EnergyAnalysisConfigServiceImpl extends ServiceImpl<EnergyAnalysisConfigMapper, EnergyAnalysisConfig> implements IEnergyAnalysisConfigService {
     @Override
     public void add(EnergyAnalysisConfig data) {
-        if(count(new LambdaQueryWrapper<EnergyAnalysisConfig>().eq(EnergyAnalysisConfig::getName, data.getName())) > 0){
+        if (count(new LambdaQueryWrapper<EnergyAnalysisConfig>().eq(EnergyAnalysisConfig::getName, data.getName())) > 0) {
             throw new JeecgBootException("名称重复");
         }
         data.setStatus(EnergyAnalysisConfig.STATUS_DISABLE);
@@ -28,7 +25,7 @@ public class EnergyAnalysisConfigServiceImpl extends ServiceImpl<EnergyAnalysisC
 
     @Override
     public void update(EnergyAnalysisConfig data) {
-        if(count(new LambdaQueryWrapper<EnergyAnalysisConfig>().ne(EnergyAnalysisConfig::getId,data.getId()).eq(EnergyAnalysisConfig::getName, data.getName())) > 0){
+        if (count(new LambdaQueryWrapper<EnergyAnalysisConfig>().ne(EnergyAnalysisConfig::getId, data.getId()).eq(EnergyAnalysisConfig::getName, data.getName())) > 0) {
             throw new JeecgBootException("名称重复");
         }
         data.setStatus(null);
@@ -48,7 +45,7 @@ public class EnergyAnalysisConfigServiceImpl extends ServiceImpl<EnergyAnalysisC
     @Override
     public List<EnergyAnalysisConfig> list(EnergyAnalysisConfig params) {
         return list(new LambdaQueryWrapper<EnergyAnalysisConfig>()
-                .eq(StringUtils.isNotEmpty(params.getStatus()),EnergyAnalysisConfig::getStatus,params.getStatus())
+                .eq(StringUtils.isNotEmpty(params.getStatus()), EnergyAnalysisConfig::getStatus, params.getStatus())
                 .orderByAsc(EnergyAnalysisConfig::getSort));
     }
 

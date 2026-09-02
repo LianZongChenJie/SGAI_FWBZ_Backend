@@ -3,7 +3,8 @@ package org.jeecg.modules.fwbz.dataInterface.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+
 
 /**
  * 接口协议类型

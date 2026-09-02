@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.jeecg.modules.fwbz.energyAnalysis.util.pricing.LadderPricing;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;

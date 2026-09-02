@@ -67,7 +67,8 @@ public class EventService {
     private final RedisTemplate<String,String> redisTemplate;
 
     private String getToken(){
-        String token = redisTemplate.opsForValue().get("event:token");
+        String key = "fwbz:event:token";
+        String token = redisTemplate.opsForValue().get(key);
         if(StringUtils.isNotEmpty(token)){
             return token;
         }
@@ -77,7 +78,7 @@ public class EventService {
                 .body();
         JSONObject result = JSONObject.parseObject(body);
         token = result.getJSONObject("result").getString("token");
-        redisTemplate.opsForValue().set("event:token",token,24, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(key,token,24, TimeUnit.HOURS);
         return token;
     }
 

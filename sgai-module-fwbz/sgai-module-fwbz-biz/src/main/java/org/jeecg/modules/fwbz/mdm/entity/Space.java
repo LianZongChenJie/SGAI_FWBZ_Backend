@@ -29,10 +29,10 @@ public class Space implements Serializable {
 	/**主键*/
 	@TableId(type = IdType.AUTO)
     @ApiModelProperty(value = "主键")
-    private java.lang.Long id;
+    private Long id;
 	/**创建人*/
     @ApiModelProperty(value = "创建人")
-    private java.lang.String createBy;
+    private String createBy;
 	/**创建日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
@@ -40,7 +40,7 @@ public class Space implements Serializable {
     private java.util.Date createTime;
 	/**更新人*/
     @ApiModelProperty(value = "更新人")
-    private java.lang.String updateBy;
+    private String updateBy;
 	/**更新日期*/
 	@JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
@@ -48,36 +48,36 @@ public class Space implements Serializable {
     private java.util.Date updateTime;
 	/**所属部门*/
     @ApiModelProperty(value = "所属部门")
-    private java.lang.String sysOrgCode;
+    private String sysOrgCode;
 	/**父级节点*/
 	@Excel(name = "父级节点", width = 15)
     @ApiModelProperty(value = "父级节点")
-    private java.lang.Long pid;
+    private Long pid;
 	/**是否有子节点*/
 	@Excel(name = "是否有子节点", width = 15, dicCode = "yn")
 	@Dict(dicCode = "yn")
     @ApiModelProperty(value = "是否有子节点")
-    private java.lang.String hasChild;
+    private String hasChild;
 	/**名称*/
 	@Excel(name = "名称", width = 15)
     @ApiModelProperty(value = "名称")
-    private java.lang.String spaceName;
+    private String spaceName;
 	/**排序字段*/
 	@Excel(name = "排序字段", width = 15)
     @ApiModelProperty(value = "排序字段")
-    private java.lang.Integer sort;
+    private Integer sort;
 	/**备注*/
 	@Excel(name = "备注", width = 15)
     @ApiModelProperty(value = "备注")
-    private java.lang.String remark;
+    private String remark;
 	/**空间全称*/
 	@Excel(name = "空间全称", width = 15)
     @ApiModelProperty(value = "空间全称")
-    private java.lang.String fullName;
+    private String fullName;
 	/**父级id*/
 	@Excel(name = "父级id", width = 15)
     @ApiModelProperty(value = "父级id")
-    private java.lang.String fullId;
+    private String fullId;
 
     public static SelectTreeModel convert(Space space){
         if(space == null){

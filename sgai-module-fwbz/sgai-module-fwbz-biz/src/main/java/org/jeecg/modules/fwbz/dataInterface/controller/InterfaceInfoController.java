@@ -35,7 +35,7 @@ public class InterfaceInfoController {
      * 添加
      */
     @PostMapping("/add")
-    @RequiresPermissions("fwbz:interfaceInfo:add")
+//    @RequiresPermissions("fwbz:interfaceInfo:add")
     @AutoLog(value = "接口信息-添加")
     public Result<String> add(@RequestBody InterfaceInfo param) {
         service.save(param);
@@ -46,7 +46,7 @@ public class InterfaceInfoController {
      * 编辑
      */
     @PostMapping("/edit")
-    @RequiresPermissions("fwbz:interfaceInfo:edit")
+//    @RequiresPermissions("fwbz:interfaceInfo:edit")
     @AutoLog(value = "接口信息-编辑")
     public Result<String> edit(@RequestBody InterfaceInfo param) {
         service.updateById(param);
@@ -57,7 +57,7 @@ public class InterfaceInfoController {
      * 删除
      */
     @DeleteMapping("/delete")
-    @RequiresPermissions("fwbz:interfaceInfo:delete")
+//    @RequiresPermissions("fwbz:interfaceInfo:delete")
     @AutoLog(value = "接口信息-删除")
     public Result<String> delete(@RequestParam(name = "id") Long id) {
         service.removeById(id);

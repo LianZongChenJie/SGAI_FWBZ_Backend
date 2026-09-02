@@ -2,9 +2,11 @@ package org.jeecg.modules.fwbz.activeMeet.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+import org.jeecgframework.poi.excel.annotation.Excel;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.sql.Time;
@@ -21,6 +23,7 @@ public class ActiveMeetInfo extends BaseEntity {
     /**
      * 活动名称
      */
+    @Excel(name = "活动名称", width = 25)
     private String activeName;
 
     /**
@@ -31,34 +34,63 @@ public class ActiveMeetInfo extends BaseEntity {
     /**
      * 活动层数
      */
+    @Excel(name = "活动层数", width = 15)
     private String venueFloors;
 
     /**
      * 开始日期
      */
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
+    @Excel(name = "开始日期", width = 15, format = "yyyy-MM-dd")
     private Date startDate;
 
     /**
      * 开始时间
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
+    @Excel(name = "开始时间", width = 15, format = "HH:mm:ss")
     private Time startTime;
 
     /**
      * 结束时间
      */
     @DateTimeFormat(pattern = "HH:mm:ss")
+    @JsonFormat(timezone = "GMT+8", pattern = "HH:mm:ss")
+    @Excel(name = "结束时间", width = 15, format = "HH:mm:ss")
     private Time endTime;
 
     /**
      * 预计人数
      */
+    @Excel(name = "预计人数", width = 15)
     private Long peopleQuantity;
+
+    /**
+     * 活动进展
+     */
+    @Excel(name = "活动进展", width = 15)
+    private Double activeProgress;
+
+    /**
+     * 查询用结束日期（非数据库字段）
+     */
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
+    @TableField(exist = false)
+    private Date endDate;
 
     /**
      * 场馆名称（非数据库字段）
      */
+    @Excel(name = "场馆名称", width = 20)
     @TableField(exist = false)
     private String venueName;
+
+    /**
+     * 电表点位id（非数据库字段，通过关联场馆表 table_venue_info.point_id 填充）
+     */
+    @TableField(exist = false)
+    private String pointId;
 }

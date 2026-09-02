@@ -6,12 +6,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetPreparationInfo;
+import org.jeecg.modules.fwbz.activeMeet.entity.ActiveMeetsDeviceType;
 import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetPreparationInfoMapper;
+import org.jeecg.modules.fwbz.activeMeet.mapper.ActiveMeetsDeviceTypeMapper;
 import org.jeecg.modules.fwbz.activeMeet.service.IActiveMeetInfoService;
 import org.jeecg.modules.fwbz.activeMeet.vo.WeekActivityVO;
+import org.jeecg.modules.fwbz.activeMeetReport.service.IActiveMeetReportService;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.service.IVenueInfoService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,19 +26,41 @@ import java.util.stream.Collectors;
 public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper, ActiveMeetInfo> implements IActiveMeetInfoService {
 
     private final IVenueInfoService venueInfoService;
+    private final ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper;
+    private final ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper;
+    private final IActiveMeetReportService activeMeetReportService;
 
-    public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService) {
+    public ActiveMeetInfoServiceImpl(IVenueInfoService venueInfoService,
+                                     ActiveMeetsDeviceTypeMapper activeMeetsDeviceTypeMapper,
+                                     ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper,
+                                     IActiveMeetReportService activeMeetReportService) {
         this.venueInfoService = venueInfoService;
+        this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
+        this.activeMeetPreparationInfoMapper = activeMeetPreparationInfoMapper;
+        this.activeMeetReportService = activeMeetReportService;
     }
 
     @Override
     public IPage<ActiveMeetInfo> listPage(ActiveMeetInfo params) {
+        LambdaQueryWrapper<ActiveMeetInfo> wrapper = new LambdaQueryWrapper<ActiveMeetInfo>()
+                .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
+                .eq(params.getVenueId() != null, ActiveMeetInfo::getVenueId, params.getVenueId());
+
+        // 日期范围过滤：都为空查全部；startDate有值→开始日期之后；endDate有值→开始日期之前；都有→之间
+        boolean hasStart = params.getStartDate() != null;
+        boolean hasEnd = params.getEndDate() != null;
+        if (hasStart && hasEnd) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, params.getStartDate())
+                   .le(ActiveMeetInfo::getStartDate, params.getEndDate());
+        } else if (hasStart) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, params.getStartDate());
+        } else if (hasEnd) {
+            wrapper.le(ActiveMeetInfo::getStartDate, params.getEndDate());
+        }
+
         IPage<ActiveMeetInfo> result = page(
                 new Page<ActiveMeetInfo>(params.getPageNo(), params.getPageSize()),
-                new LambdaQueryWrapper<ActiveMeetInfo>()
-                        .like(params.getActiveName() != null, ActiveMeetInfo::getActiveName, params.getActiveName())
-                        .eq(params.getVenueId() != null, ActiveMeetInfo::getVenueId, params.getVenueId())
-                        .orderByDesc(ActiveMeetInfo::getStartDate)
+                wrapper.orderByAsc(ActiveMeetInfo::getStartDate)
                         .orderByAsc(ActiveMeetInfo::getStartTime)
         );
         fillVenueName(result.getRecords());
@@ -49,10 +77,67 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     }
 
     @Override
+    public List<ActiveMeetInfo> listByDateRange(Date startDate, Date endDate) {
+        LambdaQueryWrapper<ActiveMeetInfo> wrapper = new LambdaQueryWrapper<>();
+        // 日期范围过滤：都为空查全部；startDate有值→开始日期之后；endDate有值→开始日期之前；都有→之间
+        boolean hasStart = startDate != null;
+        boolean hasEnd = endDate != null;
+        if (hasStart && hasEnd) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, startDate)
+                    .le(ActiveMeetInfo::getStartDate, endDate);
+        } else if (hasStart) {
+            wrapper.ge(ActiveMeetInfo::getStartDate, startDate);
+        } else if (hasEnd) {
+            wrapper.le(ActiveMeetInfo::getStartDate, endDate);
+        }
+        List<ActiveMeetInfo> result = list(wrapper
+                .orderByAsc(ActiveMeetInfo::getStartDate)
+                .orderByAsc(ActiveMeetInfo::getStartTime));
+        fillVenueName(result);
+        return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean save(ActiveMeetInfo entity) {
         entity.setId(null);
         check(entity);
-        return super.save(entity);
+        boolean result = super.save(entity);
+        // 创建会议后，自动将所有设备类型插入会前筹备信息表
+        initPreparationInfo(entity.getId());
+        // 同步活动总结报告：无同名报告则新建，有则按规则更新日期范围
+        activeMeetReportService.syncFromActivity(entity.getActiveName(), entity.getStartDate());
+        return result;
+    }
+
+    /**
+     * 根据所有设备类型初始化会前筹备信息
+     */
+    private void initPreparationInfo(Long activeMeetId) {
+        List<ActiveMeetsDeviceType> deviceTypes = activeMeetsDeviceTypeMapper.selectList(null);
+        if (deviceTypes == null || deviceTypes.isEmpty()) {
+            return;
+        }
+        List<ActiveMeetPreparationInfo> list = new ArrayList<>();
+        for (ActiveMeetsDeviceType deviceType : deviceTypes) {
+            ActiveMeetPreparationInfo info = new ActiveMeetPreparationInfo();
+            info.setActiveMeetId(activeMeetId);
+            info.setActiveMeetsDeviceTypeId(deviceType.getId());
+            info.setStatus(0);
+            list.add(info);
+        }
+        for (ActiveMeetPreparationInfo info : list) {
+            activeMeetPreparationInfoMapper.insert(info);
+        }
+    }
+
+    @Override
+    public boolean removeById(java.io.Serializable id) {
+        // 删除会议时同时删除关联的筹备信息
+        activeMeetPreparationInfoMapper.delete(
+                new LambdaQueryWrapper<ActiveMeetPreparationInfo>()
+                        .eq(ActiveMeetPreparationInfo::getActiveMeetId, id));
+        return super.removeById(id);
     }
 
     @Override
@@ -62,17 +147,6 @@ public class ActiveMeetInfoServiceImpl extends ServiceImpl<ActiveMeetInfoMapper,
     }
 
     private void check(ActiveMeetInfo entity) {
-        if (entity.getId() != null) {
-            ActiveMeetInfo byId = getById(entity.getId());
-            if (byId == null) {
-                throw new JeecgBootException("活动信息不存在");
-            }
-        }
-        if (count(new LambdaQueryWrapper<ActiveMeetInfo>()
-                .eq(ActiveMeetInfo::getActiveName, entity.getActiveName())
-                .ne(entity.getId() != null, ActiveMeetInfo::getId, entity.getId())) > 0) {
-            throw new JeecgBootException("已存在相同名称的活动");
-        }
         checkTimeConflict(entity);
     }
 

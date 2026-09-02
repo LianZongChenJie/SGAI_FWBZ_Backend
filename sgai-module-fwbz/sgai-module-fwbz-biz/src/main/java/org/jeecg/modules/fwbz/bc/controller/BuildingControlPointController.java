@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.config.shiro.IgnoreAuth;
 import org.jeecg.modules.fwbz.bc.entity.BuildingControlPoint;
+import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointHistoryService;
+import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointSendHistoryService;
 import org.jeecg.modules.fwbz.bc.service.IBuildingControlPointService;
 import org.jeecg.modules.fwbz.mq.send.MqSendService;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,8 @@ public class BuildingControlPointController {
 
     private final MqSendService mqSendService;
 
+    private final IBuildingControlPointSendHistoryService buildingControlPointSendHistoryService;
+
     @GetMapping("/listPage")
     public Result<Page<BuildingControlPoint>> listPage(BuildingControlPoint params){
         return Result.ok(service.listPage(params));
@@ -37,6 +41,7 @@ public class BuildingControlPointController {
 
     @PostMapping("/control")
     public Result<String> control(@RequestBody BuildingControlPoint entity){
+        buildingControlPointSendHistoryService.save(entity.getId(),entity.getValue(), LocalDateTime.now());
         mqSendService.sendBuildingControlOperation(entity.getGatewayAdr(),entity.getBacnetAdr(),entity.getValue());
         return Result.ok();
     }

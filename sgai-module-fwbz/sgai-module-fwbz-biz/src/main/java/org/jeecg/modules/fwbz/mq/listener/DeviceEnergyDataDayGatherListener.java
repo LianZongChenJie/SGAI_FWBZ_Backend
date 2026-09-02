@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.annotation.RabbitComponent;
 import org.jeecg.modules.fwbz.mq.constant.MqConstant;
-import org.jeecg.modules.fwbz.service.IDeviceDataService;
+import org.jeecg.modules.fwbz.main.service.IDeviceDataService;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 

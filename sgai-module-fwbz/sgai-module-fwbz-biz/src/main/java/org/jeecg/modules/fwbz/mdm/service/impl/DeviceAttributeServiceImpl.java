@@ -7,6 +7,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
+import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.TableData;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.TableHeader;
 import org.jeecg.modules.fwbz.mdm.dto.AttributeBindingDto;
 import org.jeecg.modules.fwbz.mdm.dto.AttributeData;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceAttributeData;
@@ -22,6 +27,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -78,7 +85,7 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
             return Collections.emptyList();
         }
         List<DeviceAttribute> list = list(new LambdaQueryWrapper<DeviceAttribute>().eq(DeviceAttribute::getDeviceId, deviceId).orderByAsc(DeviceAttribute::getSort));
-        return list.stream().map(item -> DeviceAttributeDataVo.build(deviceId, item.getId(), item.getAttributeName(), item.getAttributeCode(), item.getValue())).collect(Collectors.toList());
+        return list.stream().map(item -> DeviceAttributeDataVo.build(deviceId, item.getId(), item.getAttributeName(), item.getAttributeCode(), item.getValue(),item.getAcquisitionCoding())).collect(Collectors.toList());
     }
 
     @Override
@@ -190,16 +197,21 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
         Map<Long,Device> deviceMap = deviceService.findByDeviceIds(deviceIds)
                 .stream()
                 .collect(Collectors.toMap(Device::getId, Function.identity(),(k1,k2) -> k2));
+        List<DeviceAttribute> updateList = new ArrayList<>();
 
         for(DeviceAttribute item : list){
             Device device = deviceMap.get(item.getDeviceId());
             if(device == null){
                 continue;
             }
+            updateList.add(item);
             // 设备点位值变更
             mqSendService.sendDeviceAttributeValueChange(item.getDeviceId(),item.getId(),value);
             mqSendService.sendDeviceLastGatherTime(device.getDeviceCode(),collectionTime,collectionTime.plusMinutes(20));
         }
+        deviceAttributeHistoryService.saveAttributeHistory(updateList);
+
+
     }
 
     @Override
@@ -244,8 +256,16 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
                 .eq(DeviceAttribute::getAttributeCode,code)
                 .in(DeviceAttribute::getDeviceId,deviceIds));
     }
+    @Override
+    public DeviceAttribute findByDeviceIdAndCode(Long deviceId, String code) {
+        return getOne(new LambdaQueryWrapper<DeviceAttribute>()
+                .eq(DeviceAttribute::getAttributeCode,code)
+                .eq(DeviceAttribute::getDeviceId,deviceId));
+    }
 
     private String getBuildingControlPointKey(String gatewayAdr,String bacnetAdr){
         return gatewayAdr + "-" + bacnetAdr;
     }
+
+
 }

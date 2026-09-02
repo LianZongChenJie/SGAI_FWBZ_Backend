@@ -41,4 +41,134 @@ public class BusinessConfigConstant {
      * 碳排放分析-总量，多个点位以英文逗号分隔
      */
     public static final String CARBON_EMISSION_POINT = "carbon:carbon_emission_pointIds";
+
+    public static final String METERPOINTDATA_VENUE_NAMES = "meterPointData:venue:names";
+    /**
+     * 能源计量场馆用电量计量规则ids，多个点位以英文逗号分隔
+     */
+    public static final String METERPOINTDATA_VENUEELECTRICITY_POINTIDS = "meterPointData:venueElectricity:pointIds";
+
+    public static final String METERPOINTDATA_WATER_POINTIDS = "meterPointData:venueWater:pointIds";
+
+    /**
+     * 能源计量用能结构分析计量规则ids，多个点位以英文逗号分隔
+     */
+    public static final String METERPOINTDATA_ENERGYSTRUCTURE_POINTIDS = "meterPointData:energyStructure:pointIds";
+
+
+
+    public static final String ENERGYMETERING_ELECTRIC_POINTID = "energyMetering:electric:pointId";
+    public static final String ENERGYMETERING_WATER_POINTID = "energyMetering:water:pointId";
+
+    /**
+     *运行保障-空调机组-categoryId
+     */
+    public static final String OPERATIONSUPPORT_AIR_CATEGORYID = "operationSupport:air:categoryId";
+
+    /**
+     *运行保障-空调机组-列表配置
+     */
+    public static final String OPERATIONSUPPORT_AIR_COLUMNS = "operationSupport:air:columns";
+
+    /**
+     *运行保障-空调机组-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_AIR_POINT_ID = "operationSupport:air:pointId";
+
+    /**
+     *运行保障-空调机组-能耗曲线ids
+     */
+    public static final String OPERATIONSUPPORT_AIR_ENERGY_POINTIDS = "operationSupport:air:energyPointIds";
+
+    /**
+     *运运行保障-空调机组-送风温度
+     */
+    public static final String OPERATIONSUPPORT_AIR_SUPPLYAIR = "operationSupport:air:supplyAir";
+
+
+
+    /**
+     *运行保障-空调机组-回风温度
+     */
+    public static final String OPERATIONSUPPORT_AIR_RETURNAIR = "operationSupport:air:returnAir";
+    /**
+     *运行保障-新风机组-categoryId
+     */
+    public static final String OPERATIONSUPPORT_FRESH_AIR_CATEGORYID = "operationSupport:freshAir:categoryId";
+
+
+    /**
+     *运行保障-新风机组-列表配置
+     */
+    public static final String OPERATIONSUPPORT_FRESH_AIR_COLUMNS = "operationSupport:freshAir:columns";
+
+
+    /**
+     *运行保障-新风机组-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_POINT_ID = "operationSupport:freshAir:pointId";
+
+
+    /**
+     *运行保障-新风机组-pm25
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_PM25 = "operationSupport:freshAir:pm25";
+
+
+    /**
+     *运行保障-新风机组-送风温度
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_SUPPLYAIR = "operationSupport:freshAir:supplyAir";
+
+
+
+    /**
+     *运行保障-新风机组-回风温度
+     */
+    public static final String OPERATIONSUPPORT_FRESHAIR_RETURNAIR = "operationSupport:freshAir:returnAir";
+
+
+
+    /**
+     *运行保障-配电系统-categoryId
+     */
+    public static final String OPERATIONSUPPORT_POWER_CATEGORYID = "operationSupport:power:categoryId";
+
+
+    /**
+     *运行保障-配电系统-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_POWER_POINT_ID = "operationSupport:power:pointId";
+
+
+    /**
+     *运行保障-配电系统-列表配置
+     */
+    public static final String OPERATIONSUPPORT_POWER_COLUMNS = "operationSupport:power:columns";
+
+
+    /**
+     *运行保障-配电系统-有功功率
+     */
+    public static final String OPERATIONSUPPORT_POWER_ACTIVE = "operationSupport:power:active";
+    /**
+     *运行保障-概览-设备总览
+     */
+    public static final String OPERATIONSUPPORT_OVERVIEW_CATEGORYIDS = "operationSupport:overview:categoryIds";
+    /**
+     *运行保障-排风机-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_PF_POINT_ID = "operationSupport:pf:pointId";
+
+    /**
+     *运行保障-风机盘管-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_PG_POINT_ID = "operationSupport:pg:pointId";
+
+    /**
+     *运行保障-热回收-计量规则Id
+     */
+    public static final String OPERATIONSUPPORT_RHS_POINT_ID = "operationSupport:rhs:pointId";
+
+
 }

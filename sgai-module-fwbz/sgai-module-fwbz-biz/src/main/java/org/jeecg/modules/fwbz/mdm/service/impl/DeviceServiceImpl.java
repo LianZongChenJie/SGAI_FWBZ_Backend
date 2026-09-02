@@ -16,15 +16,13 @@ import org.jeecg.modules.fwbz.mdm.constant.DeviceConstant;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceStatusDto;
-import org.jeecg.modules.fwbz.mdm.entity.Device;
-import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
-import org.jeecg.modules.fwbz.mdm.entity.DeviceModelAttribute;
-import org.jeecg.modules.fwbz.mdm.entity.Space;
+import org.jeecg.modules.fwbz.mdm.entity.*;
 import org.jeecg.modules.fwbz.mdm.mapper.DeviceMapper;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceModelAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.service.ISpaceService;
+import org.jeecg.modules.fwbz.mdm.vo.SpaceDeviceTreeVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,6 +128,14 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         LambdaQueryWrapper<Device> wrapper = getQueryWrapper(device);
         IPage<Device> page = new Page<>(device.getPageNo(), device.getPageSize());
         return page(page, wrapper);
+
+    }
+
+    @Override
+    public List<Device> findAll(Device device) {
+        LambdaQueryWrapper<Device> wrapper = getQueryWrapper(device);
+        return list(wrapper);
+
     }
 
     @Override
@@ -190,6 +196,82 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return list(new LambdaQueryWrapper<Device>().eq(Device::getDeviceType, type));
     }
 
+    @Override
+    public List<SpaceDeviceTreeVo> findNameAndIdByCategoryIds(Collection<Long> categoryIds, Long spaceId) {
+        if (CollectionUtil.isEmpty(categoryIds)) {
+            return Collections.emptyList();
+        }
+        // 查询指定类别下的设备（仅需id、名称、空间id）
+        List<Device> devices = list(new LambdaQueryWrapper<Device>()
+                .select(Device::getId, Device::getDeviceName, Device::getSpaceId)
+                .in(Device::getCategoryId, categoryIds));
+        // 设备按空间id分组
+        Map<Long, List<Device>> deviceMap = devices.stream()
+                .filter(device -> device.getSpaceId() != null)
+                .collect(Collectors.groupingBy(Device::getSpaceId));
+
+        // 查询全部空间，按sort排序，构建父子映射
+        List<Space> allSpaces = spaceService.list().stream()
+                .sorted(Comparator.comparing(Space::getSort, Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+        Map<Long, List<Space>> childMap = allSpaces.stream()
+                .filter(space -> space.getPid() != null)
+                .collect(Collectors.groupingBy(Space::getPid));
+        Map<Long, Space> spaceMap = allSpaces.stream()
+                .collect(Collectors.toMap(Space::getId, space -> space));
+
+        List<Long> roots;
+        if (spaceId != null) {
+            // 指定空间节点：以该节点为根构建子树
+            if (!spaceMap.containsKey(spaceId)) {
+                return Collections.emptyList();
+            }
+            roots = Collections.singletonList(spaceId);
+        } else {
+            // 未指定：从根节点构建整棵树
+            roots = allSpaces.stream()
+                    .filter(space -> space.getPid() == null
+                            || ISpaceService.ROOT_PID_VALUE.equals(space.getPid()))
+                    .map(Space::getId)
+                    .collect(Collectors.toList());
+        }
+
+        List<SpaceDeviceTreeVo> tree = new ArrayList<>();
+        for (Long rootId : roots) {
+            tree.add(buildSpaceDeviceTree(rootId, spaceMap, childMap, deviceMap, new HashSet<>()));
+        }
+        return tree;
+    }
+
+    /**
+     * 递归构建空间节点：挂载该空间下的设备及子空间节点
+     */
+    private SpaceDeviceTreeVo buildSpaceDeviceTree(Long spaceId, Map<Long, Space> spaceMap,
+                                                   Map<Long, List<Space>> childMap,
+                                                   Map<Long, List<Device>> deviceMap,
+                                                   Set<Long> visited) {
+        // 防止数据异常导致死循环
+        if (!visited.add(spaceId)) {
+            return null;
+        }
+        Space space = spaceMap.get(spaceId);
+        SpaceDeviceTreeVo vo = new SpaceDeviceTreeVo();
+        vo.setSpaceId(spaceId);
+        vo.setSpaceName(space == null ? null : space.getSpaceName());
+        vo.setDevice(deviceMap.getOrDefault(spaceId, Collections.emptyList()));
+        List<SpaceDeviceTreeVo> children = new ArrayList<>();
+        List<Space> childSpaces = childMap.getOrDefault(spaceId, Collections.emptyList());
+        for (Space child : childSpaces) {
+            SpaceDeviceTreeVo childVo = buildSpaceDeviceTree(child.getId(), spaceMap, childMap, deviceMap, visited);
+            if (childVo != null) {
+                children.add(childVo);
+            }
+        }
+        visited.remove(spaceId);
+        vo.setChild(children);
+        return vo;
+    }
+
     /**
      * 计量仪表运行状态统计
      * @return 统计结果
@@ -209,12 +291,15 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public DeviceRunStateStatisticsDto statisticsRunState(Long categoryId) {
-        List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState).eq(categoryId != null, Device::getCategoryId, categoryId));
-        Map<String, Long> collect = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        List<Device> list = super.list(new LambdaQueryWrapper<Device>().select(Device::getId,Device::getRunState,Device::getSpaceId).eq(categoryId != null, Device::getCategoryId, categoryId));
+        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+        Map<String, Long> deviceTypeMap = list.stream().filter(item -> item.getDeviceType() != null).collect(Collectors.groupingBy(Device::getDeviceType, Collectors.counting()));
         DeviceRunStateStatisticsDto dto = new DeviceRunStateStatisticsDto();
         dto.setCount((long) list.size());
-        dto.setOnline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
-        dto.setOffline(collect.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+        dto.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+        dto.setMeasuringCount(deviceTypeMap.getOrDefault(EquipmentCategory.TYPE_MEASURING, 0L));
+        dto.setEquipmentCount(deviceTypeMap.getOrDefault(EquipmentCategory.TYPE_EQUIPMENT, 0L));
         return dto;
     }
 
@@ -300,6 +385,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .like(StringUtils.isNotEmpty(device.getDeviceName()),Device::getDeviceName, device.getDeviceName())
                 .eq(device.getCategoryId() != null,Device::getCategoryId, device.getCategoryId())
                 .eq(device.getSpaceId() != null,Device::getSpaceId, device.getSpaceId())
+                .eq(device.getVenueId() != null,Device::getVenueId, device.getVenueId())
+                .eq(device.getDeviceType() != null,Device::getDeviceType, device.getDeviceType())
                 .eq(StringUtils.isNotEmpty(device.getRunState()),Device::getRunState, device.getRunState())
                 .orderByAsc(Device::getSort);
     }

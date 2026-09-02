@@ -16,19 +16,14 @@ import org.jeecg.common.util.oConvertUtils;
 import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.mdm.vo.PermissionEquipmentCategoryTreeModel;
-import org.jeecg.modules.fwbz.permission.entity.RoleDataPermission;
-import org.jeecg.modules.fwbz.permission.service.RoleDataPermissionService;
-import org.jeecg.modules.fwbz.permission.vo.UserDataScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @Description: 设备类别
@@ -44,8 +39,6 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
     @Autowired
     private IEquipmentCategoryService equipmentCategoryService;
 
-    @Autowired
-    private RoleDataPermissionService roleDataPermissionService;
 
     /**
      * 树查询
@@ -107,19 +100,12 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @ApiOperation(value = "类别-权限树", notes = "根据当前用户数据权限查询类别树，父级节点会被标记为不在权限范围内")
     @GetMapping("/getPermissionTree")
-    public Result<List<PermissionEquipmentCategoryTreeModel>> getPermissionTree(@RequestParam(required = false) String type){
-        // 1. 获取当前登录用户的专业权限范围
-        UserDataScope dataScope = roleDataPermissionService.getCurrentUserDataScope();
-        Set<Long> categoryIds = dataScope.getPermissionIds(RoleDataPermission.TYPE_CATEGORY);
+    public Result<List<PermissionEquipmentCategoryTreeModel>> getPermissionTree(@RequestParam(required = false) String type) {
 
-        // 3. 如果没有权限，返回空树
-        if (categoryIds == null || categoryIds.isEmpty()) {
-            return Result.OK(new ArrayList<>());
-        }
 
         // 4. 构建类别权限树
         List<PermissionEquipmentCategoryTreeModel> tree = equipmentCategoryService.buildPermissionTree(
-                categoryIds, type);
+                null, type);
 
         return Result.OK(tree);
     }
@@ -311,7 +297,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-设备添加")
     @ApiOperation(value = "设备类别-设备添加", notes = "设备类别-设备添加")
-    @RequiresPermissions("Fwbz:equipment_category:equipment:add")
+//    @RequiresPermissions("Fwbz:equipment_category:equipment:add")
     @PostMapping(value = "/equipment/add")
     public Result<String> addForEquipment(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategory.setType(EquipmentCategory.TYPE_EQUIPMENT);
@@ -321,7 +307,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
 
     @AutoLog(value = "设备类别-仪表添加")
     @ApiOperation(value = "设备类别-仪表添加", notes = "设备类别-仪表添加")
-    @RequiresPermissions("Fwbz:equipment_category:measuring:add")
+//    @RequiresPermissions("Fwbz:equipment_category:measuring:add")
     @PostMapping("/measuring/add")
     public Result<String> addForMeasuring(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategory.setType(EquipmentCategory.TYPE_MEASURING);
@@ -337,7 +323,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-编辑")
     @ApiOperation(value = "设备类别-编辑", notes = "设备类别-编辑")
-    @RequiresPermissions("Fwbz:equipment_category:edit")
+//    @RequiresPermissions("Fwbz:equipment_category:edit")
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT, RequestMethod.POST})
     public Result<String> edit(@RequestBody EquipmentCategory equipmentCategory) {
         equipmentCategoryService.updateEquipmentCategory(equipmentCategory);
@@ -352,7 +338,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-通过id删除")
     @ApiOperation(value = "设备类别-通过id删除", notes = "设备类别-通过id删除")
-    @RequiresPermissions("Fwbz:equipment_category:delete")
+//    @RequiresPermissions("Fwbz:equipment_category:delete")
     @DeleteMapping(value = "/delete")
     public Result<String> delete(@RequestParam(name = "id", required = true) String id) {
         equipmentCategoryService.deleteEquipmentCategory(id);
@@ -367,7 +353,7 @@ public class EquipmentCategoryController extends JeecgController<EquipmentCatego
      */
     @AutoLog(value = "设备类别-批量删除")
     @ApiOperation(value = "设备类别-批量删除", notes = "设备类别-批量删除")
-    @RequiresPermissions("Fwbz:equipment_category:deleteBatch")
+//    @RequiresPermissions("Fwbz:equipment_category:deleteBatch")
     @DeleteMapping(value = "/deleteBatch")
     public Result<String> deleteBatch(@RequestParam(name = "ids", required = true) String ids) {
         this.equipmentCategoryService.removeByIds(Arrays.asList(ids.split(",")));

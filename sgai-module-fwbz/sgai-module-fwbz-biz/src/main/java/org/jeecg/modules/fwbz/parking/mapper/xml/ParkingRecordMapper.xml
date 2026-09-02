@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.fwbz.parking.mapper.ParkingRecordMapper">
+
+    <!-- 查询停车场下拉列表（去重） -->
+    <select id="selectParkingLotList" resultType="org.jeecg.modules.fwbz.parking.vo.ParkingLotVo">
+        SELECT parking_lot AS parkingLot
+        FROM table_parking_record
+        WHERE parking_lot IS NOT NULL
+        GROUP BY parking_lot
+    </select>
+
+    <!-- 查询车辆类型下拉列表（去重） -->
+    <select id="selectParkTypeList" resultType="org.jeecg.modules.fwbz.parking.vo.ParkTypeVo">
+        SELECT park_type AS parkType
+        FROM table_parking_record
+        WHERE park_type IS NOT NULL
+        GROUP BY park_type
+    </select>
+
+</mapper>

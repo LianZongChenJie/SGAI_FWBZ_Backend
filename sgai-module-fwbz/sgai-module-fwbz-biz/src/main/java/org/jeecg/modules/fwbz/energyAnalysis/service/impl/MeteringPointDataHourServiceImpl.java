@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataHour;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataHourMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataHourService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.HourData;
-import org.jeecg.modules.fwbz.service.IHourDataService;
+import org.jeecg.modules.fwbz.main.entity.HourData;
+import org.jeecg.modules.fwbz.main.service.IHourDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,7 +24,7 @@ public class MeteringPointDataHourServiceImpl extends ServiceImpl<MeteringPointD
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX_MAX = "metering_point_data_hour_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:metering_point_data_hour_max:";
 
     private final IMeteringPointRelService meteringPointRelService;
 

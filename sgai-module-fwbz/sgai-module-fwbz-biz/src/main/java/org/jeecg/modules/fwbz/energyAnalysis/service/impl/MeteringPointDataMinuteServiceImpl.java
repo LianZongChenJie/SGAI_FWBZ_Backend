@@ -21,7 +21,7 @@ public class MeteringPointDataMinuteServiceImpl extends ServiceImpl<MeteringPoin
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX_MAX = "metering_point_data_minute_max:";
+    private static final String CACHE_KEY_PREFIX_MAX = "fwbz:metering_point_data_minute_max:";
 
     @Override
     public void save(Long pointId, LocalDateTime time, BigDecimal value) {

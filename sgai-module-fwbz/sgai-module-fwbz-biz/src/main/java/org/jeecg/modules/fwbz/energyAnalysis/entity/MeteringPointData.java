@@ -18,7 +18,7 @@ public abstract class MeteringPointData {
     /**主键*/
     @TableId(type = IdType.AUTO)
     @ApiModelProperty(value = "主键")
-    private java.lang.Long id;
+    private Long id;
 
     private Long meteringPointId;
 

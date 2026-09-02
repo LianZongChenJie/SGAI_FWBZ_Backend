@@ -11,47 +11,49 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeecg.common.exception.JeecgBootException;
 import org.jeecg.modules.fwbz.alarm.dto.AlarmRecordDto;
 import org.jeecg.modules.fwbz.alarm.dto.TransferEventDto;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmLevel;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRecord;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRulePoint;
-import org.jeecg.modules.fwbz.alarm.entity.AlarmRules;
+import org.jeecg.modules.fwbz.alarm.entity.*;
 import org.jeecg.modules.fwbz.alarm.mapper.AlarmRecordMapper;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmLevelService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRecordService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRulePointService;
-import org.jeecg.modules.fwbz.alarm.service.IAlarmRulesService;
+import org.jeecg.modules.fwbz.alarm.service.*;
 import org.jeecg.modules.fwbz.alarm.vo.AlarmRecordStatisticsVo;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.AlarmRecordStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
-import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataYear;
 import org.jeecg.modules.fwbz.energyAnalysis.service.*;
-import org.jeecg.modules.fwbz.entity.DayData;
-import org.jeecg.modules.fwbz.entity.HourData;
-import org.jeecg.modules.fwbz.entity.MonthData;
-import org.jeecg.modules.fwbz.entity.YearData;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.Chat;
+import org.jeecg.modules.fwbz.energyAnalysis.vo.ChatSeries;
+import org.jeecg.modules.fwbz.main.entity.DayData;
+import org.jeecg.modules.fwbz.main.entity.HourData;
+import org.jeecg.modules.fwbz.main.entity.MonthData;
+import org.jeecg.modules.fwbz.main.entity.YearData;
 import org.jeecg.modules.fwbz.event.dto.BusinessDataDto;
 import org.jeecg.modules.fwbz.event.service.EventService;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
-import org.jeecg.modules.fwbz.service.IDayDataService;
-import org.jeecg.modules.fwbz.service.IHourDataService;
-import org.jeecg.modules.fwbz.service.IMonthDataService;
-import org.jeecg.modules.fwbz.service.IYearDataService;
+import org.jeecg.modules.fwbz.main.service.IDayDataService;
+import org.jeecg.modules.fwbz.main.service.IHourDataService;
+import org.jeecg.modules.fwbz.main.service.IMonthDataService;
+import org.jeecg.modules.fwbz.main.service.IYearDataService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @AllArgsConstructor
 @Slf4j
 public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, AlarmRecord> implements IAlarmRecordService {
     private final IAlarmLevelService alarmLevelService;
+    private final IAlarmCategoryService alarmCategoryService;
     private final IAlarmRulePointService alarmRulePointService;
     private final IAlarmRulesService alarmRulesService;
     private final IDeviceService deviceService;
@@ -79,6 +81,39 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         );
     }
 
+    @Override
+    public List<AlarmRecord> listForExport(AlarmRecordDto params) {
+        // 不分页，导出全部符合条件的数据
+        List<AlarmRecord> list = list(getQueryWrapper(params).orderByDesc(AlarmRecord::getAlarmTime));
+
+        // 联动告警类别表补全类别名称
+        Map<Long, String> categoryNameMap = alarmCategoryService.list().stream()
+                .collect(Collectors.toMap(AlarmCategory::getId, AlarmCategory::getAlarmCategoryName, (v1, v2) -> v1));
+        // 联动告警级别表补全级别名称与颜色
+        Map<Long, AlarmLevel> levelMap = alarmLevelService.list().stream()
+                .collect(Collectors.toMap(AlarmLevel::getId, level -> level, (v1, v2) -> v1));
+        for (AlarmRecord record : list) {
+            if (record.getAlarmCategoryId() != null) {
+                String categoryName = categoryNameMap.get(record.getAlarmCategoryId());
+                if (StringUtils.isNotBlank(categoryName)) {
+                    record.setAlarmCategoryName(categoryName);
+                }
+            }
+            if (record.getAlarmLevelId() != null) {
+                AlarmLevel level = levelMap.get(record.getAlarmLevelId());
+                if (level != null) {
+                    if (StringUtils.isNotBlank(level.getAlarmLevelName())) {
+                        record.setAlarmLevelName(level.getAlarmLevelName());
+                    }
+                    if (StringUtils.isNotBlank(level.getAlarmLevelColor())) {
+                        record.setAlarmLevelColor(level.getAlarmLevelColor());
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
     /**
      * 报警消除
      *
@@ -86,7 +121,23 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
      */
     @Override
     public void elimination(Long id) {
-        update(new LambdaUpdateWrapper<AlarmRecord>().set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_TREATED)
+        update(new LambdaUpdateWrapper<AlarmRecord>()
+                .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_TREATED)
+                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
+                .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_UNTREATED)
+                .eq(AlarmRecord::getId, id));
+    }
+
+    /**
+     * 报警消除
+     *
+     * @param id 报警记录id
+     */
+    @Override
+    public void confirm(Long id) {
+        update(new LambdaUpdateWrapper<AlarmRecord>()
+                .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED)
+                .set(AlarmRecord::getUpdateTime, LocalDateTime.now())
                 .eq(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_UNTREATED)
                 .eq(AlarmRecord::getId, id));
     }
@@ -106,8 +157,9 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
 
     /**
      * 查询时间范围内的告警记录
+     *
      * @param startTime 开始时间
-     * @param endTime 结束时间
+     * @param endTime   结束时间
      * @return 告警记录
      */
     @Override
@@ -139,6 +191,15 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         );
     }
 
+    @Override
+    public Long countByAlarmTimeRangeAndStatus(LocalDateTime startTime, LocalDateTime endTime, String status) {
+        return count(
+                new LambdaQueryWrapper<AlarmRecord>()
+                        .between(AlarmRecord::getAlarmTime, startTime, endTime)
+                        .eq(AlarmRecord::getAlarmStatus, status)
+        );
+    }
+
     /**
      * 设备告警检测
      *
@@ -150,7 +211,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
     public void alarmDetection(Long deviceId, Long pointId, String value) {
         // 判断设备点位是否存在告警规则
         List<AlarmRulePoint> alarmRulePoints = alarmRulePointService.getByDeviceIdAndPointId(deviceId, pointId);
-        if(CollectionUtils.isEmpty(alarmRulePoints)){
+        if (CollectionUtils.isEmpty(alarmRulePoints)) {
             return;
         }
         DeviceAttribute attribute = deviceAttributeService.getById(pointId);
@@ -168,7 +229,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
      */
     @Override
     public void alarmDetection(Long deviceId, List<DeviceAttribute> deviceAttributes) {
-        
+
     }
 
     /**
@@ -193,7 +254,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
      */
     @Override
     public void alarmDetection(Long deviceId, LocalDateTime hour) {
-        if(deviceId == null || hour == null){
+        if (deviceId == null || hour == null) {
             return;
         }
         Device device = deviceService.getDetail(deviceId);
@@ -206,20 +267,20 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 .stream()
                 .filter(rule -> AlarmRules.ENABLED_STATUS_ENABLE.equals(rule.getEnabledStatus()) && AlarmRules.POINT_TYPE_ACCUMULATE.equals(rule.getPointType()))
                 .toList();
-        if(CollectionUtils.isEmpty(rules)){
+        if (CollectionUtils.isEmpty(rules)) {
             return;
         }
 
         // 获取告警条件
-        Map<Long,List<AlarmRulePoint>> rulePointMap = alarmRulePointService.getByAlarmRuleIds(rules.stream().map(AlarmRules::getId).toList())
+        Map<Long, List<AlarmRulePoint>> rulePointMap = alarmRulePointService.getByAlarmRuleIds(rules.stream().map(AlarmRules::getId).toList())
                 .stream()
                 .filter(rulePoint -> rulePoint.getDeviceId() != null && rulePoint.getDeviceId().compareTo(deviceId) == 0)
                 .collect(Collectors.groupingBy(AlarmRulePoint::getAlarmRuleId, Collectors.toList()));
-        if(CollectionUtils.isEmpty(rulePointMap)){
+        if (CollectionUtils.isEmpty(rulePointMap)) {
             return;
         }
         // 获取规则列表
-        Map<String,BigDecimal> values = new HashMap<>();
+        Map<String, BigDecimal> values = new HashMap<>();
         for (AlarmRules rule : rules) {
             if (!rule.getEnabledStatus().equals(AlarmRules.ENABLED_STATUS_ENABLE)) {
                 continue;
@@ -230,9 +291,9 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
             List<AlarmRulePoint> rulePointList = rulePointMap.get(rule.getId());
             for (AlarmRulePoint rulePoint : rulePointList) {
                 BigDecimal v = null;
-                if(values.containsKey(rulePoint.getTimeGranularity())){
+                if (values.containsKey(rulePoint.getTimeGranularity())) {
                     v = values.get(rulePoint.getTimeGranularity());
-                }else {
+                } else {
                     // 获取值
                     switch (rulePoint.getTimeGranularity()) {
                         case "hour":
@@ -240,19 +301,19 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                             v = hourData == null ? null : hourData.getValue();
                             break;
                         case "day":
-                            DayData dayData = dayDataService.findByDeviceIdAndTime(deviceId,hour.toLocalDate().atStartOfDay());
+                            DayData dayData = dayDataService.findByDeviceIdAndTime(deviceId, hour.toLocalDate().atStartOfDay());
                             v = dayData == null ? null : dayData.getValue();
                             break;
                         case "month":
-                            MonthData monthData = monthDataService.findByDeviceIdAndTime(deviceId,hour.toLocalDate().withDayOfMonth(1).atStartOfDay());
+                            MonthData monthData = monthDataService.findByDeviceIdAndTime(deviceId, hour.toLocalDate().withDayOfMonth(1).atStartOfDay());
                             v = monthData == null ? null : monthData.getValue();
                             break;
                         case "year":
-                            YearData yearData = yearDataService.findByDeviceIdAndTime(deviceId,hour.toLocalDate().withDayOfYear(1).atStartOfDay());
+                            YearData yearData = yearDataService.findByDeviceIdAndTime(deviceId, hour.toLocalDate().withDayOfYear(1).atStartOfDay());
                             v = yearData == null ? null : yearData.getValue();
                             break;
                     }
-                    values.put(rulePoint.getTimeGranularity(),v);
+                    values.put(rulePoint.getTimeGranularity(), v);
                 }
 
                 if (v != null && operator(rulePoint, v)) {
@@ -271,7 +332,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
     @Override
     public void alarmDetectionForMeteringPoint(Long meteringPointId, LocalDateTime hour) {
         MeteringPoint meteringPoint = meteringPointService.getById(meteringPointId);
-        if(meteringPoint == null){
+        if (meteringPoint == null) {
             return;
         }
         // 获取开启的报警条件
@@ -280,12 +341,12 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 .filter(rule -> AlarmRules.ENABLED_STATUS_ENABLE.equals(rule.getEnabledStatus()) && AlarmRules.POINT_TYPE_VIRTUAL.equals(rule.getPointType()))
                 .toList();
         // 获取告警条件
-        Map<Long,List<AlarmRulePoint>> alarmRulePointMap = alarmRulePointService.getByAlarmRuleIds(rules.stream().map(AlarmRules::getId).toList())
+        Map<Long, List<AlarmRulePoint>> alarmRulePointMap = alarmRulePointService.getByAlarmRuleIds(rules.stream().map(AlarmRules::getId).toList())
                 .stream()
                 .filter(rulePoint -> rulePoint.getDeviceId() != null && rulePoint.getDeviceId().compareTo(meteringPointId) == 0)
                 .collect(Collectors.groupingBy(AlarmRulePoint::getAlarmRuleId, Collectors.toList()));
-        Map<String,BigDecimal> values = new HashMap<>();
-        for(AlarmRules rule : rules){
+        Map<String, BigDecimal> values = new HashMap<>();
+        for (AlarmRules rule : rules) {
             if (!rule.getEnabledStatus().equals(AlarmRules.ENABLED_STATUS_ENABLE)) {
                 continue;
             }
@@ -293,26 +354,26 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 continue;
             }
             List<AlarmRulePoint> rulePointList = alarmRulePointMap.get(rule.getId());
-            if(rulePointList == null || rulePointList.isEmpty()){
+            if (rulePointList == null || rulePointList.isEmpty()) {
                 continue;
             }
             for (AlarmRulePoint rulePoint : rulePointList) {
                 BigDecimal v = null;
-                if(values.containsKey(rulePoint.getTimeGranularity())){
+                if (values.containsKey(rulePoint.getTimeGranularity())) {
                     v = values.get(rulePoint.getTimeGranularity());
-                }else {
+                } else {
                     // 获取值
                     switch (rulePoint.getTimeGranularity()) {
                         case "hour":
-                            MeteringPointData hourData = meteringPointDataHourService.findByPointIdAndTime(meteringPointId,hour);
+                            MeteringPointData hourData = meteringPointDataHourService.findByPointIdAndTime(meteringPointId, hour);
                             v = hourData == null ? null : hourData.getValue();
                             break;
                         case "day":
-                            MeteringPointData dayData = meteringPointDataDayService.findByDateAndPointId(hour.toLocalDate(),meteringPointId);
+                            MeteringPointData dayData = meteringPointDataDayService.findByDateAndPointId(hour.toLocalDate(), meteringPointId);
                             v = dayData == null ? null : dayData.getValue();
                             break;
                         case "month":
-                            MeteringPointData monthData = meteringPointDataMonthService.findByDateAndPointId(hour.toLocalDate().withDayOfMonth(1),meteringPointId);
+                            MeteringPointData monthData = meteringPointDataMonthService.findByDateAndPointId(hour.toLocalDate().withDayOfMonth(1), meteringPointId);
                             v = monthData == null ? null : monthData.getValue();
                             break;
                         case "year":
@@ -320,7 +381,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                             v = yearData == null ? null : yearData.getValue();
                             break;
                     }
-                    values.put(rulePoint.getTimeGranularity(),v);
+                    values.put(rulePoint.getTimeGranularity(), v);
                 }
 
                 if (v != null && operator(rulePoint, v)) {
@@ -339,11 +400,11 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
     public void transferEvent(TransferEventDto data) {
         // 获取告警详情
         AlarmRecord record = super.getById(data.getRecordId());
-        if(record == null){
+        if (record == null) {
             throw new JeecgBootException("告警记录不存在");
         }
         String alarmStatus = record.getAlarmStatus();
-        if(!AlarmRecord.ALARM_STATUS_UNTREATED.equals(alarmStatus)){
+        if (!AlarmRecord.ALARM_STATUS_UNTREATED.equals(alarmStatus)) {
             throw new JeecgBootException("状态已变更，请刷新页面");
         }
         BusinessDataDto businessData = new BusinessDataDto();
@@ -358,6 +419,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 .eq(AlarmRecord::getId, data.getRecordId())
                 .set(AlarmRecord::getEventId, eventId)
                 .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_EVENT)
+                .set(AlarmRecord::getTransferEventTime, LocalDateTime.now())
         );
     }
 
@@ -371,6 +433,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         super.update(new LambdaUpdateWrapper<AlarmRecord>()
                 .eq(AlarmRecord::getEventId, eventId)
                 .set(AlarmRecord::getAlarmStatus, AlarmRecord.ALARM_STATUS_COMPLETED)
+                .set(AlarmRecord::getEventCompletionTime, LocalDateTime.now())
         );
     }
 
@@ -447,10 +510,11 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
 
     /**
      * 创建告警记录
+     *
      * @param meteringPoint 计量规则点位
-     * @param rule 告警规则
-     * @param point 点位配置
-     * @param value 值
+     * @param rule          告警规则
+     * @param point         点位配置
+     * @param value         值
      */
     private void createAlarmRecord(MeteringPoint meteringPoint, AlarmRules rule, AlarmRulePoint point, String value) {
         try {
@@ -460,7 +524,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
             }
             String pointType = rule.getPointType();
 
-            if(!AlarmRules.POINT_TYPE_VIRTUAL.equals(pointType)){
+            if (!AlarmRules.POINT_TYPE_VIRTUAL.equals(pointType)) {
                 return;
             }
             // 累计值.{点位名称}{时间粒度}{报警类型}，条件：{}，阈值：{}，异常值：{}
@@ -492,6 +556,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
             log.error("告警记录生成失败，计量规则点位id：{},告警规则id：{},告警设备点位id：{},值：{}", meteringPoint.getId(), rule.getId(), point.getId(), value, e);
         }
     }
+
     /**
      * 获取满足条件的告警规则id
      *
@@ -506,7 +571,7 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
         Map<Long, List<AlarmRulePoint>> rulePointMap = points.stream().collect(Collectors.groupingBy(AlarmRulePoint::getAlarmRuleId));
         // 获取规则列表
         List<AlarmRules> rules = alarmRulesService.listEnabledByIds(rulePointMap.keySet());
-        if(CollectionUtils.isEmpty(rules)){
+        if (CollectionUtils.isEmpty(rules)) {
             return;
         }
         Device device = deviceService.getDetail(deviceId);
@@ -605,6 +670,100 @@ public class AlarmRecordServiceImpl extends ServiceImpl<AlarmRecordMapper, Alarm
                 return true;
         }
         // 获取该设备该点位该时间段内是否已经生成过告警记录
-        return count(new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmRulePointId,point.getId()).gt(AlarmRecord::getAlarmTime, time)) > 0L;
+        return count(new LambdaQueryWrapper<AlarmRecord>().eq(AlarmRecord::getAlarmRulePointId, point.getId()).gt(AlarmRecord::getAlarmTime, time)) > 0L;
+    }
+
+    @Override
+    public AlarmRecordStatisticsDto statistics() {
+//      查询今日告警列表
+        LocalDate now = LocalDate.now();
+        LocalDateTime startOfDay = now.atStartOfDay();
+        LocalDateTime endOfDay = now.atTime(LocalTime.MAX);
+        List<AlarmRecord> list = list(new LambdaQueryWrapper<AlarmRecord>().between(AlarmRecord::getAlarmTime, startOfDay, endOfDay));
+        //根据状态分组
+        Map<String, List<AlarmRecord>> collect = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmStatus));
+        Map<String, Long> collect1 = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmStatus, Collectors.counting()));
+
+        Map<Long, Long> categoryIdMap= list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmCategoryId, Collectors.counting()));
+
+        Map<Long, Long> levelIdMap = list.stream().collect(Collectors.groupingBy(AlarmRecord::getAlarmLevelId, Collectors.counting()));
+
+
+        List<AlarmCategory> list2 = alarmCategoryService.list();
+        Map<String , Long> returnMap=new HashMap<>();
+        for (AlarmCategory alarmCategory : list2) {
+            Long l = categoryIdMap.get(alarmCategory.getId());
+            if(l!=null){
+                returnMap.put(alarmCategory.getAlarmCategoryName(), l);
+            }
+        }
+
+
+        List<AlarmLevel> list1 = alarmLevelService.list();
+        Long orDefault = 0L;
+        for (AlarmLevel alarmLevel : list1) {
+            if(alarmLevel.getAlarmLevelName().equals("非常紧急")){
+                orDefault = levelIdMap.getOrDefault(alarmLevel.getId(), 0L);
+            }
+        }
+
+        // 计算平均处理时长（分钟）
+        double avgMillis = 0;
+        double response = 0;
+        List<AlarmRecord> alarmRecords = collect.get(AlarmRecord.ALARM_STATUS_COMPLETED);
+        if(org.apache.commons.collections.CollectionUtils.isNotEmpty(alarmRecords)){
+            avgMillis = alarmRecords.stream()
+                    .filter(a -> a.getTransferEventTime() != null && a.getEventCompletionTime() != null)
+                    .mapToLong(map -> Duration.between(map.getTransferEventTime(), map.getEventCompletionTime()).toMinutes())
+                    .average()
+                    .orElse(0);
+
+            avgMillis = alarmRecords.stream()
+                    .filter(a -> a.getAlarmTime() != null && a.getTransferEventTime() != null)
+                    .mapToLong(map -> Duration.between(map.getAlarmTime(), map.getTransferEventTime()).toMinutes())
+                    .average()
+                    .orElse(0);
+        }
+
+
+        AlarmRecordStatisticsDto dto = new AlarmRecordStatisticsDto();
+        dto.setCount((long) list.size());
+        dto.setUntreatedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_UNTREATED,0L));
+        dto.setEventCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_EVENT,0L));
+        dto.setCompletedCount(collect1.getOrDefault(AlarmRecord.ALARM_STATUS_COMPLETED,0L));
+        dto.setAverageProcessingTime(avgMillis);
+        dto.setAverageResponseTime(response);
+        dto.setCategoryIdMap(returnMap);
+        dto.setSeriousCount(orDefault);
+        return dto;
+
+    }
+
+    /**
+     * 近七日告警趋势
+     */
+    @Override
+    public Chat alarmTrendRecently() {
+        LocalDate date = LocalDate.now();
+        // 横坐标
+        List<String> xAxis = IntStream.range(0, 7).mapToObj(i -> date.minusDays(7-i).format(DateTimeFormatter.ofPattern("MM-dd"))).collect(Collectors.toList());
+        // 获取告警数据
+        Map<Object, Long> dataMap = listByAlarmTimeRange(date.minusDays(7).atStartOfDay(), date.atStartOfDay())
+                .stream()
+                .filter(item -> item.getAlarmTime() != null)
+                .collect(Collectors.groupingBy(item -> item.getAlarmTime().format(DateTimeFormatter.ofPattern("MM-dd")),
+                        Collectors.counting()));
+        Chat chat = new Chat();
+        chat.setXAxis(xAxis);
+        List<ChatSeries> chatSeriesList = new ArrayList<>();
+        List<Object> data = new ArrayList<>();
+        for(String day : xAxis){
+            data.add(dataMap.getOrDefault(day, 0L));
+
+        }
+        ChatSeries chatSeries = new ChatSeries("告警", data);
+        chatSeriesList.add(chatSeries);
+        chat.setChatSeriesList(chatSeriesList);
+        return chat;
     }
 }

@@ -75,4 +75,16 @@ public class VenueInfo implements Serializable {
     @Excel(name = "楼层", width = 15)
     @ApiModelProperty(value = "楼层")
     private String floors;
+
+    /**经度*/
+    @ApiModelProperty(value = "经度")
+    private java.math.BigDecimal longitude;
+
+    /**纬度*/
+    @ApiModelProperty(value = "纬度")
+    private java.math.BigDecimal latitude;
+
+    /**计量点id*/
+    @ApiModelProperty(value = "计量点id")
+    private Long pointId;
 }

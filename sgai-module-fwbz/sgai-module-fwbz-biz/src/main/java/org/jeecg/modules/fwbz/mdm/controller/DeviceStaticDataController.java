@@ -3,12 +3,11 @@ package org.jeecg.modules.fwbz.mdm.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceStaticDataDto;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceStaticDataService;
-import org.jeecg.modules.fwbz.vo.DeviceStaticDataVo;
+import org.jeecg.modules.fwbz.main.vo.DeviceStaticDataVo;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +28,7 @@ public class DeviceStaticDataController {
 
     @AutoLog(value = "设备静态信息-保存")
     @ApiOperation(value = "设备静态信息-保存", notes = "设备静态信息-保存")
-    @RequiresPermissions("Fwbz:deviceStaticData:save")
+//    @RequiresPermissions("Fwbz:deviceStaticData:save")
     @PostMapping("/save")
     public Result<String> save(@RequestBody DeviceStaticDataDto data){
         service.save(data);

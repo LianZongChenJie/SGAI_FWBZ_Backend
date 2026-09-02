@@ -5,7 +5,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.mdm.dto.AttributeBindingDto;
@@ -15,7 +14,7 @@ import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.vo.DeviceAttributeDataVo;
-import org.jeecg.modules.fwbz.patterned.service.DeviceAttributeOperationService;
+import org.jeecg.modules.fwbz.main.service.DeviceAttributeOperationService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -38,7 +37,7 @@ public class DeviceAttributeController {
 
     @ApiOperation(value = "添加", notes = "添加")
     @AutoLog(value = "设备属性-新增")
-    @RequiresPermissions("Fwbz:deviceAttribute:add")
+//    @RequiresPermissions("Fwbz:deviceAttribute:add")
     @PostMapping("/add")
     public Result<String> add(@RequestBody DeviceAttribute params){
         service.save(params);
@@ -47,7 +46,7 @@ public class DeviceAttributeController {
 
     @ApiOperation(value = "编辑", notes = "编辑")
     @AutoLog(value = "设备属性-编辑")
-    @RequiresPermissions("Fwbz:deviceAttribute:edit")
+//    @RequiresPermissions("Fwbz:deviceAttribute:edit")
     @PostMapping("/edit")
     public Result<String> edit(@RequestBody DeviceAttribute params){
         service.updateById(params);
@@ -56,7 +55,7 @@ public class DeviceAttributeController {
 
     @ApiOperation(value = "删除", notes = "删除")
     @AutoLog(value = "设备属性-删除")
-    @RequiresPermissions("Fwbz:deviceAttribute:delete")
+//    @RequiresPermissions("Fwbz:deviceAttribute:delete")
     @DeleteMapping("/delete")
     public Result<String> delete(@RequestParam(name = "id")Long id){
         service.removeById(id);

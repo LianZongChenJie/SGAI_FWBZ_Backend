@@ -7,7 +7,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointData;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataHour;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointService;
 import org.jeecg.modules.fwbz.energyAnalysis.util.Jexl3Util;
-import org.jeecg.modules.fwbz.entity.MeterData;
+import org.jeecg.modules.fwbz.main.entity.MeterData;
 import org.jeecg.modules.fwbz.mdm.entity.Device;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.springframework.stereotype.Service;

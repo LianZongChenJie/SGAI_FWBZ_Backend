@@ -66,7 +66,6 @@ public class TcpHeartbeatStrategy implements HeartbeatStrategy {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT);
             long elapsed = System.currentTimeMillis() - startTime;
-            log.debug("TCP心跳在线 - {}:{}, 耗时: {}ms", host, port, elapsed);
             return HeartbeatResult.online(elapsed);
         } catch (java.net.SocketTimeoutException e) {
             long elapsed = System.currentTimeMillis() - startTime;

@@ -1,8 +1,11 @@
 server:
-  port: 7011
+  port: 7207
 spring:
   application:
     name: sgai-fwbz-dev
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
   config:
     import:
       - optional:nacos:jeecg.yaml
@@ -21,6 +24,24 @@ spring:
         username:
         password:
         group: DEFAULT_GROUP
+mqtt:
+  broker: tcp://10.61.13.131:1883
+  username: admin
+  password: zaq!@wsx
+  client-id: sgai-fwbz-mqtt-consumer
+  topic: sendData       # ← 订阅主题，默认占位，请改成实际主题
+  qos: 1
+
+# 摄像头HLS转码配置（海康RTSP -> JavaCV -> 本地HLS）
+fwbz:
+  hls:
+    output-dir: ./hls-output          # HLS切片输出目录（可通过 /hls/** 访问）
+    segment-seconds: 2                # 单个切片时长（秒），越小延迟越低
+    list-size: 5                      # m3u8列表保留的切片数量
+    idle-stop-seconds: 60             # 无人观看后延迟多少秒自动停止拉流
+    heartbeat-timeout-seconds: 120    # 前端心跳超时时间（秒），超过强制停止拉流（兜底页面异常关闭）
+    ready-wait-seconds: 15            # 获取播放地址时等待HLS流就绪的最长时间（秒）
+    # public-base-url: http://10.61.13.131:7207   # 可选：前端可访问的后端地址，不配置则取请求Host
 
 mybatis-plus:
 #  configuration:

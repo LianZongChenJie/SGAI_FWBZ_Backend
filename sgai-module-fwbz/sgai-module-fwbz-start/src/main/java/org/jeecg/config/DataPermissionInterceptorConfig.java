@@ -1,10 +1,8 @@
 package org.jeecg.config;
 
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
-import com.baomidou.mybatisplus.extension.plugins.inner.DataPermissionInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
-import org.jeecg.modules.fwbz.permission.handler.FwbzDataPermissionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
@@ -58,8 +56,6 @@ public class DataPermissionInterceptorConfig {
     @Autowired
     private MybatisPlusInterceptor mybatisPlusInterceptor;
 
-    @Autowired
-    private FwbzDataPermissionHandler dataPermissionHandler;
 
     /**
      * 在 Bean 初始化后执行
@@ -69,11 +65,11 @@ public class DataPermissionInterceptorConfig {
     @PostConstruct
     public void addDataPermissionInterceptor() {
         try {
-            // 创建 DataPermissionInterceptor 并注入自定义处理器
-            DataPermissionInterceptor interceptor = new DataPermissionInterceptor(dataPermissionHandler);
-
-            // 添加到拦截器链
-            mybatisPlusInterceptor.addInnerInterceptor(interceptor);
+//            // 创建 DataPermissionInterceptor 并注入自定义处理器
+//            DataPermissionInterceptor interceptor = new DataPermissionInterceptor(dataPermissionHandler);
+//
+//            // 添加到拦截器链
+//            mybatisPlusInterceptor.addInnerInterceptor(interceptor);
 
             // 重新排序拦截器：将 PaginationInnerInterceptor 移到最后
             reorderInterceptors();
@@ -173,7 +169,7 @@ public class DataPermissionInterceptorConfig {
                 String className = innerInterceptor.getClass().getSimpleName();
                 String fullClassName = innerInterceptor.getClass().getName();
                 System.out.println("  " + (i + 1) + ". " + className +
-                                 " (" + fullClassName + ")");
+                        " (" + fullClassName + ")");
             }
             System.out.println("========================================");
 

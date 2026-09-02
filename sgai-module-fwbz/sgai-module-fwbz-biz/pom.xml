@@ -27,6 +27,12 @@
             <artifactId>artemis-http-client-demo</artifactId>
             <version>1.1.15.RELEASE</version>
         </dependency>
+        <!--MQTT客户端-->
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>1.2.5</version>
+        </dependency>
         <!--rabbitmq消息队列-->
         <dependency>
             <groupId>org.jeecgframework.boot</groupId>
@@ -49,6 +55,26 @@
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
             <version>2.14.2</version>
+        </dependency>
+
+<!--         冷源系统 pSpace SDK -->
+        <dependency>
+            <groupId>com.sunwayland.pspace</groupId>
+            <artifactId>pSpace-javaSDK</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+
+        <!--JavaCV: 拉取RTSP流并转码为本地HLS切片（复用同一路拉流、无人观看自动停止）-->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+            <version>1.5.11</version>
+        </dependency>
+        <!--ffmpeg全平台原生库（按需裁剪：仅保留部署平台可减小体积，如ffmpeg:7.1-1.5.11:windows-x86_64）-->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>ffmpeg-platform</artifactId>
+            <version>7.1-1.5.11</version>
         </dependency>
 
     </dependencies>

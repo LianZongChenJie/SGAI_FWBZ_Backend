@@ -123,7 +123,7 @@ public class MqSendService {
         properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
         properties.setHeader("x-delay",delayTime * 1000L);
         // 设置缓存key
-        redisUtil.set("device_status:" + deviceCode,"在线",delayTime - 10L);
+        redisUtil.set("fwbz:device_status:" + deviceCode,"在线",delayTime - 10L);
         rabbitTemplate.send(MqConstant.EXCHANGE_DEVICE_DELAY, MqConstant.ROUTING_KEY_DELAY_DEVICE_STATUS, new Message(JSONObject.toJSONString(msg).getBytes(), properties));
     }
 

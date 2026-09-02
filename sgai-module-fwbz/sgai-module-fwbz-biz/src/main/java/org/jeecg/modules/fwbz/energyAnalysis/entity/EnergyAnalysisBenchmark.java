@@ -3,7 +3,7 @@ package org.jeecg.modules.fwbz.energyAnalysis.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 
 /**
  * 能效分析配置-基准配置

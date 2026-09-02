@@ -3,7 +3,8 @@ package org.jeecg.modules.fwbz.dataInterface.entity;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
+
 
 import java.util.Date;
 
@@ -78,4 +79,24 @@ public class InterfaceInfo extends BaseEntity {
      * 响应时间(ms)
      */
     private Long responseTime;
+
+    /**
+     * 测试地址
+     */
+    private String testPath;
+
+    /**
+     * 采集周期
+     */
+    private String cycle;
+
+    /**
+     * 采集点位
+     */
+    private Long collectionPointLocation;
+
+    /**
+     * 请求头（JSON格式，如 {"appKey":"xxx","appSecret":"xxx"}）
+     */
+    private String header;
 }

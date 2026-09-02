@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.boot.starter.lock.client.RedissonLockClient;
 import org.jeecg.common.annotation.RabbitComponent;
 import org.jeecg.modules.fwbz.mq.constant.MqConstant;
-import org.jeecg.modules.fwbz.service.IDeviceDataService;
+import org.jeecg.modules.fwbz.main.service.IDeviceDataService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

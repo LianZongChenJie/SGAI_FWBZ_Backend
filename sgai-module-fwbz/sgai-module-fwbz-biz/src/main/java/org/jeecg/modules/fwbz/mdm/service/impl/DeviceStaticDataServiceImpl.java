@@ -11,7 +11,7 @@ import org.jeecg.modules.fwbz.mdm.entity.DeviceStaticDataConfig;
 import org.jeecg.modules.fwbz.mdm.mapper.DeviceStaticDataMapper;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceStaticDataConfigService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceStaticDataService;
-import org.jeecg.modules.fwbz.vo.DeviceStaticDataVo;
+import org.jeecg.modules.fwbz.main.vo.DeviceStaticDataVo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;

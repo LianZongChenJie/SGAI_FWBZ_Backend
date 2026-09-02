@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
-import org.jeecg.modules.fwbz.entity.BaseEntity;
+import org.jeecg.modules.fwbz.main.entity.BaseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
@@ -82,6 +82,11 @@ public class DeviceAttribute extends BaseEntity {
      * 属性值配置
      */
     private String valueConfig;
+
+    /**
+     * 是否存储属性历史（1=存储；0=不存储，默认不存储）
+     */
+    private String isSave;
 
     public static DeviceAttribute convert(DeviceModelAttribute data){
         DeviceAttribute res = new DeviceAttribute();

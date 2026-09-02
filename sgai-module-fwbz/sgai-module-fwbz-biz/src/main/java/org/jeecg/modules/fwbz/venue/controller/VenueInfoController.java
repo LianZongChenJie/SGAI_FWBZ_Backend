@@ -66,7 +66,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
      */
     @AutoLog(value = "场馆基本信息-添加")
     @ApiOperation(value="场馆基本信息-添加", notes="场馆基本信息-添加")
-    @RequiresPermissions("fwbz:venue_info:add")
+//    @RequiresPermissions("fwbz:venue_info:add")
     @PostMapping(value = "/add")
     public Result<String> add(@RequestBody VenueInfo venueInfo) {
         venueInfoService.save(venueInfo);
@@ -81,7 +81,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
      */
     @AutoLog(value = "场馆基本信息-编辑")
     @ApiOperation(value="场馆基本信息-编辑", notes="场馆基本信息-编辑")
-    @RequiresPermissions("fwbz:venue_info:edit")
+//    @RequiresPermissions("fwbz:venue_info:edit")
     @RequestMapping(value = "/edit", method = {RequestMethod.PUT,RequestMethod.POST})
     public Result<String> edit(@RequestBody VenueInfo venueInfo) {
         venueInfoService.updateById(venueInfo);
@@ -96,7 +96,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
      */
     @AutoLog(value = "场馆基本信息-通过id删除")
     @ApiOperation(value="场馆基本信息-通过id删除", notes="场馆基本信息-通过id删除")
-    @RequiresPermissions("fwbz:venue_info:delete")
+//    @RequiresPermissions("fwbz:venue_info:delete")
     @DeleteMapping(value = "/delete")
     public Result<String> delete(@RequestParam(name="id",required=true) String id) {
         venueInfoService.removeById(id);
@@ -111,7 +111,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
      */
     @AutoLog(value = "场馆基本信息-批量删除")
     @ApiOperation(value="场馆基本信息-批量删除", notes="场馆基本信息-批量删除")
-    @RequiresPermissions("fwbz:venue_info:deleteBatch")
+//    @RequiresPermissions("fwbz:venue_info:deleteBatch")
     @DeleteMapping(value = "/deleteBatch")
     public Result<String> deleteBatch(@RequestParam(name="ids",required=true) String ids) {
         this.venueInfoService.removeByIds(Arrays.asList(ids.split(",")));
@@ -154,7 +154,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
     * @param request
     * @param venueInfo
     */
-    @RequiresPermissions("fwbz:venue_info:exportXls")
+//    @RequiresPermissions("fwbz:venue_info:exportXls")
     @RequestMapping(value = "/exportXls")
     public ModelAndView exportXls(HttpServletRequest request, VenueInfo venueInfo) {
         return super.exportXls(request, venueInfo, VenueInfo.class, "场馆基本信息");
@@ -167,7 +167,7 @@ public class VenueInfoController extends JeecgController<VenueInfo, IVenueInfoSe
     * @param response
     * @return
     */
-    @RequiresPermissions("fwbz:venue_info:importExcel")
+//    @RequiresPermissions("fwbz:venue_info:importExcel")
     @RequestMapping(value = "/importExcel", method = RequestMethod.POST)
     public Result<?> importExcel(HttpServletRequest request, HttpServletResponse response) {
         return super.importExcel(request, response, VenueInfo.class);

@@ -36,7 +36,7 @@ public class DeviceStatusListener {
             if(StrUtil.isAllEmpty(deviceCode,status)){
                 return;
             }
-            Object key = redisUtil.get("device_status:" + deviceCode);
+            Object key = redisUtil.get("fwbz:device_status:" + deviceCode);
             if(key == null) {
                 deviceService.updateStatus(deviceCode, status);
             }

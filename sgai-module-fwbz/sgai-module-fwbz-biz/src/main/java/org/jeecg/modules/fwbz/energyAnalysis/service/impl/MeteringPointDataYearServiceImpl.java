@@ -9,8 +9,8 @@ import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPointDataYear;
 import org.jeecg.modules.fwbz.energyAnalysis.mapper.MeteringPointDataYearMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataYearService;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointRelService;
-import org.jeecg.modules.fwbz.entity.YearData;
-import org.jeecg.modules.fwbz.service.IYearDataService;
+import org.jeecg.modules.fwbz.main.entity.YearData;
+import org.jeecg.modules.fwbz.main.service.IYearDataService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,7 +26,7 @@ public class MeteringPointDataYearServiceImpl extends ServiceImpl<MeteringPointD
 
     private final RedisUtil redisUtil;
 
-    private static final String CACHE_KEY_PREFIX = "metering_point_data_year:";
+    private static final String CACHE_KEY_PREFIX = "fwbz:metering_point_data_year:";
     private static final Long CACHE_TIME = 60L * 60L * 30L;
 
     private final IMeteringPointRelService meteringPointRelService;

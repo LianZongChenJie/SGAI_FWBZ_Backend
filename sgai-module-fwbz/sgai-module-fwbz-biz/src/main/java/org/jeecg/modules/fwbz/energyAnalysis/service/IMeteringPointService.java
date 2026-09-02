@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeasureRuleDto;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointDto;
+import org.jeecg.modules.fwbz.energyAnalysis.dto.MeteringPointStatisticsDto;
 import org.jeecg.modules.fwbz.energyAnalysis.entity.MeteringPoint;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointTreeVo;
 import org.jeecg.modules.fwbz.energyAnalysis.vo.PermissionMeteringPointTreeModel;
@@ -100,4 +101,10 @@ public interface IMeteringPointService extends IService<MeteringPoint> {
      * @return
      */
     boolean updateById(MeteringPoint entity);
+
+    /**
+     * 计量规则数据统计
+     * @return
+     */
+    MeteringPointStatisticsDto statistics();
 }
