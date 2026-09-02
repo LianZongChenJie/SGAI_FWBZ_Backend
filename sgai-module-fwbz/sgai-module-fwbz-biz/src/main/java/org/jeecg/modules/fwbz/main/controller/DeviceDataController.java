@@ -34,6 +34,9 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,7 +84,14 @@ public class DeviceDataController {
 
     @GetMapping("/findHourData")
     public Result<List<HourData>> findHourData(DeviceDataFindDto params) {
-        return Result.ok(hourDataService.findByDeviceIdAndTimeRange(params.getDeviceId(), params.getStartTime(), params.getEndTime()));
+        LocalDateTime startTime = params.getStartTime();
+        LocalDateTime endTime = params.getEndTime();
+        if (startTime == null && endTime == null) {
+            // 未传开始时间和结束时间时，默认查询今天 0点到23:59:59
+            startTime = LocalDate.now().atStartOfDay();
+            endTime = LocalDate.now().atTime(LocalTime.of(23, 59, 59));
+        }
+        return Result.ok(hourDataService.findByDeviceIdAndTimeRange(params.getDeviceId(), startTime, endTime));
     }
 
 
