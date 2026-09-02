@@ -461,9 +461,11 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     public OverViewStatisticsDto overviewStatistics() {
         List<SelectTreeModel> selectTreeModels = equipmentCategoryService.queryListByPid(0L);
 
-        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>().select(Device::getId, Device::getRunState));
-        Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
-        Map<String, Long> runStateMap2 = list.stream().filter(item -> item.getDeviceType() != null).collect(Collectors.groupingBy(Device::getDeviceType, Collectors.counting()));
+        // 设备表当前均为设备型（device_type=2），此处仍需显式查出 device_type 列，
+        // 否则实体该字段为 null，按 deviceType 分组的统计恒为空（远程控制设备数恒为0）
+        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
+                .select(Device::getId, Device::getRunState, Device::getDeviceType));
+
 
 
         LocalDate now = LocalDate.now();
@@ -477,8 +479,11 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         OverViewStatisticsDto dto = new OverViewStatisticsDto();
 
         dto.setCount((long) selectTreeModels.size());
-        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
-        dto.setRemoteControlEquipment(runStateMap2.getOrDefault(EquipmentCategory.TYPE_EQUIPMENT, 0L));
+        // 在线数：从设备型（device_type=2）列表中统计运行状态为"在线"的设备
+        dto.setOnline(list.stream()
+                .filter(item -> DeviceConstant.DEVICE_RUN_STATA_ONLINE.equals(item.getRunState()))
+                .count());
+        dto.setRemoteControlEquipment((long) list.size());
 
         dto.setTodayInstructionWasIssued(count);
 
