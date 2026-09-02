@@ -54,7 +54,8 @@ public interface IDeviceService extends IService<Device> {
      * 根据设备类别id查询空间树下所有设备的id和名称，返回空间树结构
      * @param categoryIds 设备类别id集合
      * @param spaceId 空间节点id，为空时返回整棵空间树
-     * @return 空间树，每个节点包含该空间下的设备列表及子空间节点
+     * @return 空间树，每个节点包含该空间下的设备列表及子空间节点；
+     *         备注包含“电表位置”的空间节点（含其子树）不返回
      */
     List<SpaceDeviceTreeVo> findNameAndIdByCategoryIds(Collection<Long> categoryIds, Long spaceId);
 

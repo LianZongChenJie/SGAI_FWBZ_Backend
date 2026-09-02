@@ -40,6 +40,11 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements IDeviceService {
 
+    /**
+     * 空间备注关键字：备注中包含“电表位置”的空间节点视为电表位置，构建空间树时需排除（含其子树）
+     */
+    private static final String SPACE_REMARK_ELECTRIC_METER_POSITION = "电表位置";
+
     private final IDeviceModelAttributeService deviceModelAttributeService;
 
     private final IDeviceAttributeService deviceAttributeService;
@@ -222,16 +227,18 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
         List<Long> roots;
         if (spaceId != null) {
-            // 指定空间节点：以该节点为根构建子树
-            if (!spaceMap.containsKey(spaceId)) {
+            // 指定空间节点：以该节点为根构建子树；该节点备注为“电表位置”则整体不返回
+            Space rootSpace = spaceMap.get(spaceId);
+            if (rootSpace == null || isElectricMeterPositionSpace(rootSpace)) {
                 return Collections.emptyList();
             }
             roots = Collections.singletonList(spaceId);
         } else {
-            // 未指定：从根节点构建整棵树
+            // 未指定：从根节点构建整棵树（排除备注为“电表位置”的根节点）
             roots = allSpaces.stream()
                     .filter(space -> space.getPid() == null
                             || ISpaceService.ROOT_PID_VALUE.equals(space.getPid()))
+                    .filter(space -> !isElectricMeterPositionSpace(space))
                     .map(Space::getId)
                     .collect(Collectors.toList());
         }
@@ -245,6 +252,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     /**
      * 递归构建空间节点：挂载该空间下的设备及子空间节点
+     * 备注为“电表位置”的子空间不构建，其子树随之隐藏
      */
     private SpaceDeviceTreeVo buildSpaceDeviceTree(Long spaceId, Map<Long, Space> spaceMap,
                                                    Map<Long, List<Space>> childMap,
@@ -260,7 +268,11 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         vo.setSpaceName(space == null ? null : space.getSpaceName());
         vo.setDevice(deviceMap.getOrDefault(spaceId, Collections.emptyList()));
         List<SpaceDeviceTreeVo> children = new ArrayList<>();
-        List<Space> childSpaces = childMap.getOrDefault(spaceId, Collections.emptyList());
+        // 过滤掉备注为“电表位置”的空间（其子树因父节点不在树中而一并隐藏）
+        List<Space> childSpaces = childMap.getOrDefault(spaceId, Collections.emptyList())
+                .stream()
+                .filter(space -> !isElectricMeterPositionSpace(space))
+                .collect(Collectors.toList());
         for (Space child : childSpaces) {
             SpaceDeviceTreeVo childVo = buildSpaceDeviceTree(child.getId(), spaceMap, childMap, deviceMap, visited);
             if (childVo != null) {
@@ -270,6 +282,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         visited.remove(spaceId);
         vo.setChild(children);
         return vo;
+    }
+
+    /**
+     * 判断空间是否为“电表位置”：备注中包含关键字“电表位置”
+     */
+    private boolean isElectricMeterPositionSpace(Space space) {
+        return space != null && StrUtil.contains(space.getRemark(), SPACE_REMARK_ELECTRIC_METER_POSITION);
     }
 
     /**

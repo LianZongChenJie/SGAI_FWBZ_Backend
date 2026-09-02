@@ -168,7 +168,7 @@ public class DeviceController extends JeecgController<Device, IDeviceService> {
         return Result.ok(service.list(params));
     }
 
-    @ApiOperation(value = "设备基础信息-根据设备类别查询空间树下所有设备名称和id", notes = "根据设备类别查询空间树下所有设备名称和id，返回空间树结构")
+    @ApiOperation(value = "设备基础信息-根据设备类别查询空间树下所有设备名称和id", notes = "根据设备类别查询空间树下所有设备名称和id，返回空间树结构，空间位置信息只保留备注不是电表位置的")
     @GetMapping("/findNameAndIdByCategory")
     public Result<List<SpaceDeviceTreeVo>> findNameAndIdByCategory(@RequestParam("categoryIds") String categoryIds,
                                                                    @RequestParam(value = "spaceId", required = false) Long spaceId) {
