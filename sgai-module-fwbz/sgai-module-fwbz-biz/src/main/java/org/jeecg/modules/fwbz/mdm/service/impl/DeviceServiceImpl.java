@@ -21,6 +21,7 @@ import org.jeecg.modules.fwbz.mdm.mapper.DeviceMapper;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceModelAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.mdm.service.ISpaceService;
 import org.jeecg.modules.fwbz.mdm.vo.SpaceDeviceTreeVo;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     private final IDeviceAttributeService deviceAttributeService;
 
     private final ISpaceService spaceService;
+
+    private final IEquipmentCategoryService equipmentCategoryService;
 
     @Override
     public IPage<Device> listPage(DeviceDto params) {
@@ -416,15 +419,27 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .like(StringUtils.isNotEmpty(params.getDeviceName()),  Device::getDeviceName, params.getDeviceName())
                 .like(StringUtils.isNotEmpty(params.getDeviceCode()),  Device::getDeviceCode, params.getDeviceCode())
                 .and(StringUtils.isNotEmpty(params.getNameOrCode()),wp -> wp.like(Device::getDeviceName, params.getNameOrCode()).or().like(Device::getDeviceCode, params.getNameOrCode()))
-                .eq(params.getCategoryId() != null,  Device::getCategoryId, params.getCategoryId())
                 .eq(params.getSpaceId() != null,  Device::getSpaceId, params.getSpaceId())
                 .eq(StringUtils.isNotEmpty(params.getRunState()),  Device::getRunState, params.getRunState())
                 .orderByDesc(Device::getSort);
         if(StringUtils.isNotEmpty(params.getSpaceIds())){
             wrapper.in(Device::getSpaceId, Arrays.stream(params.getSpaceIds().split(",")).map(Long::parseLong).collect(Collectors.toList()));
         }
-        if (StringUtils.isNotEmpty(params.getCategoryIds())){
-            wrapper.in(Device::getCategoryId, Arrays.stream(params.getCategoryIds().split(",")).map(Long::parseLong).collect(Collectors.toList()));
+        // 设备类别筛选：支持 categoryId(单个) / categoryIds(逗号分隔)，展开为自身+全部子孙类别后查询，
+        // 保证选中某类别时，其子类别下的设备一并返回
+        List<Long> categoryIds = new ArrayList<>();
+        if (params.getCategoryId() != null) {
+            categoryIds.add(params.getCategoryId());
+        }
+        if (StringUtils.isNotEmpty(params.getCategoryIds())) {
+            Arrays.stream(params.getCategoryIds().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotEmpty)
+                    .map(Long::parseLong)
+                    .forEach(categoryIds::add);
+        }
+        if (CollectionUtil.isNotEmpty(categoryIds)) {
+            wrapper.in(Device::getCategoryId, expandCategoryIds(categoryIds));
         }
         if(params.getAssociatedPoint() != null){
             String sql = "select distinct device_id from device_attribute where acquisition_coding is not null";
@@ -435,5 +450,39 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
         }
         return wrapper;
+    }
+
+    /**
+     * 将设备类别id集合展开为"自身+全部子孙类别"id集合（按 pid 内存递归，避免脏 full_id 影响）。
+     *
+     * @param categoryIds 选中的设备类别id（可包含重复）
+     * @return 含自身与全部子孙类别的id集合（已去重、保序）
+     */
+    private List<Long> expandCategoryIds(Collection<Long> categoryIds) {
+        if (CollectionUtil.isEmpty(categoryIds)) {
+            return Collections.emptyList();
+        }
+        // 类别数据量小，一次全量查出后按 pid 组装父子关系再递归
+        Map<Long, List<EquipmentCategory>> childrenMap = equipmentCategoryService.list()
+                .stream()
+                .filter(category -> category.getPid() != null)
+                .collect(Collectors.groupingBy(EquipmentCategory::getPid));
+        List<Long> result = new ArrayList<>();
+        new LinkedHashSet<>(categoryIds).forEach(id -> collectSelfAndDescendants(id, childrenMap, result));
+        return result;
+    }
+
+    /**
+     * 递归收集某类别及其全部子孙类别id。
+     */
+    private void collectSelfAndDescendants(Long id, Map<Long, List<EquipmentCategory>> childrenMap, List<Long> result) {
+        if (id == null || result.contains(id)) {
+            return;
+        }
+        result.add(id);
+        List<EquipmentCategory> children = childrenMap.get(id);
+        if (children != null) {
+            children.forEach(child -> collectSelfAndDescendants(child.getId(), childrenMap, result));
+        }
     }
 }
