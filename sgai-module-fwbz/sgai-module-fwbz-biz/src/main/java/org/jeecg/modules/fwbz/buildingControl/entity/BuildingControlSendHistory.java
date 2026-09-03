@@ -41,4 +41,7 @@ public class BuildingControlSendHistory implements Serializable {
 
     /** 控制人 */
     private String controlBy;
+
+    /** 是否成功（1-成功 0-失败） */
+    private String isOk;
 }

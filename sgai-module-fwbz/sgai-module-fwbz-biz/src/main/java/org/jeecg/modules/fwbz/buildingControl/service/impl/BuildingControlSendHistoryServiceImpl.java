@@ -17,13 +17,14 @@ public class BuildingControlSendHistoryServiceImpl
         implements IBuildingControlSendHistoryService {
 
     @Override
-    public void saveControlHistory(Long attributeId, Long deviceId, String attributeName, String value, String controlBy) {
+    public void saveControlHistory(Long attributeId, Long deviceId, String attributeName, String value, String controlBy, String isOk) {
         BuildingControlSendHistory history = new BuildingControlSendHistory();
         history.setAttributeId(attributeId);
         history.setDeviceId(deviceId);
         history.setAttributeName(attributeName);
         history.setValue(value);
         history.setControlBy(controlBy);
+        history.setIsOk(isOk);
         history.setCollectionTime(LocalDateTime.now());
         super.save(history);
     }

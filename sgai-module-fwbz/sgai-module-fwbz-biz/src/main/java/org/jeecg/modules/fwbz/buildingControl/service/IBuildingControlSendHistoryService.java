@@ -16,6 +16,7 @@ public interface IBuildingControlSendHistoryService extends IService<BuildingCon
      * @param attributeName 属性名称（device_attribute.attribute_name）
      * @param value         控制值（写点下发值）
      * @param controlBy     控制人
+     * @param isOk          是否成功（1-成功 0-失败）
      */
-    void saveControlHistory(Long attributeId, Long deviceId, String attributeName, String value, String controlBy);
+    void saveControlHistory(Long attributeId, Long deviceId, String attributeName, String value, String controlBy, String isOk);
 }
