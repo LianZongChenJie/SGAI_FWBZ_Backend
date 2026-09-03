@@ -9,6 +9,7 @@ import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataItemDto;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlService;
+import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlRealPushService;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlServerService;
 import org.jeecg.modules.fwbz.buildingControl.service.IBuildingControlSendHistoryService;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
@@ -16,6 +17,7 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -57,13 +59,48 @@ public class BuildingControlServiceImpl implements BuildingControlService {
         boolean isOk = Objects.equals(code, PsErrorCodeEnum.PSRET_OK);
         if (!isOk) {
             log.warn("楼控写点失败: tagid={}, value={}, code={}", items.getTagid(), items.getPv(), code);
+        } else {
+            // 写点成功：根据 tagId 回写设备属性采集值（写入值即采集值）与采集时间
+            updateAttributeValue(items.getTagid(), items.getPv());
         }
         // 写点成功与否都记录发送控制历史（历史记录失败仅告警，不影响主流程）
         saveSendHistory(items.getTagid(), items.getPv(), isOk);
+        if (!isOk) {
+            // 写点失败：抛出异常，由调用方返回失败结果（历史已在上面记录）
+            throw new RuntimeException("楼控写点失败: tagid=" + items.getTagid() + ", value=" + items.getPv() + ", code=" + code);
+        }
         if (result.getData() == null || result.getData().isEmpty()) {
             return "写点完成: " + code;
         }
         return result.getData().get(0).toString();
+    }
+
+    /**
+     * 写点成功后，根据 tagId（对应 device_attribute.acquisition_coding）回写该设备属性的采集值 value 与采集时间 gather_time。
+     * 写入值即采集值（Boolean 转 0/1、整数去小数、BigDecimal 去尾零，与读点链路一致）；
+     * 属性查不到或更新失败仅告警，不影响写点主流程返回。
+     *
+     * @param tagId 检测点ID（对应 device_attribute.acquisition_coding）
+     * @param pv    写点设定值（即采集值 value）
+     */
+    private void updateAttributeValue(Long tagId, Object pv) {
+        try {
+            DeviceAttribute attribute = deviceAttributeService.getOne(
+                    new LambdaQueryWrapper<DeviceAttribute>()
+                            .eq(DeviceAttribute::getAcquisitionCoding, String.valueOf(tagId)),
+                    false);
+            if (attribute == null) {
+                log.warn("楼控写点成功但未找到对应设备属性, 无法回写采集值: tagid={}, value={}", tagId, pv);
+                return;
+            }
+            attribute.setValue(BuildingControlRealPushService.convertValue(pv));
+            attribute.setGatherTime(LocalDateTime.now());
+            deviceAttributeService.updateById(attribute);
+            log.info("楼控写点成功，已回写设备属性采集值: tagid={}, attributeId={}, value={}",
+                    tagId, attribute.getId(), pv);
+        } catch (Exception e) {
+            log.error("楼控写点成功，回写设备属性采集值失败: tagid={}, value={}", tagId, pv, e);
+        }
     }
 
     /**
