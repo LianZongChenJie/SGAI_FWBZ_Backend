@@ -66,6 +66,12 @@ import static java.util.stream.Collectors.toMap;
 public class OperationSupportServiceImpl implements IOperationSupportService {
     private final DateTimeFormatter filedForMatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     * 排风机故障属性关键词（属性名需同时含"风机"与"故障"，如"排风机1故障状态"）
+     */
+    private static final String FAN_NAME_KEYWORD = "风机";
+    private static final String FAN_FAULT_KEYWORD = "故障";
+
     private final IDeviceService deviceService;
     private final IEquipmentCategoryService equipmentCategoryService;
     private final IMeteringPointService meteringPointService;
@@ -284,8 +290,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
         String longByKey = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_PF_POINT_ID);
 
+        // 排风分类（38）下含下级分类（50、58），先展开为"自身+全部子孙类别"再统一统计
+        List<Long> categoryIds = deviceService.expandCategoryIds(Collections.singletonList(Long.valueOf(longByKey)));
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
-                .eq(Device::getCategoryId, Long.valueOf(longByKey)));
+                .in(Device::getCategoryId, categoryIds));
 
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
@@ -305,12 +313,61 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         }
         ExhaustFanStatisticsDto dto = new ExhaustFanStatisticsDto();
 
-        dto.setCount((long) list.size());
-        dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setEnergyConsumption(energyConsumption);
+
+        //统计故障数：参照集水坑统计故障方法——属性名同时含"风机"与"故障"且值为1的设备即为故障设备（同一设备去重）
+        Set<Long> faultDeviceIds = new HashSet<>();
+        //分批次查询属性，防止in语句过大
+        int batch = list.size() / 1000;
+        for (int j = 0; j <= batch; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 1000; k++) {
+                int index = j * 1000 + k;
+                if (index >= list.size()) {
+                    break;
+                }
+                deviceIds.add(list.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
+            }
+            List<DeviceAttribute> attributes = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute attribute : attributes) {
+                if (attribute.getDeviceId() == null || attribute.getValue() == null) {
+                    continue;
+                }
+                //故障：排风机故障属性（如"排风机1故障状态"）任一为1即故障
+                if (isFanFaultAttribute(attribute.getAttributeName())
+                        && isSignalOn(attribute.getValue())) {
+                    faultDeviceIds.add(attribute.getDeviceId());
+                }
+            }
+        }
+        dto.setFaultCount(faultDeviceIds.size());
 
         return dto;
 
+    }
+
+    /**
+     * 判断属性是否为排风机故障类属性（属性名同时含"风机"与"故障"）
+     */
+    private boolean isFanFaultAttribute(String attributeName) {
+        if (attributeName == null) {
+            return false;
+        }
+        return attributeName.contains(FAN_NAME_KEYWORD) && attributeName.contains(FAN_FAULT_KEYWORD);
+    }
+
+    /**
+     * 判断信号值是否为1（兼容"1"、"1.0"等格式）
+     */
+    private boolean isSignalOn(String value) {
+        if (value == null) {
+            return false;
+        }
+        String trim = value.trim();
+        return "1".equals(trim) || "1.0".equals(trim) || "1.0000".equals(trim);
     }
 
     /**

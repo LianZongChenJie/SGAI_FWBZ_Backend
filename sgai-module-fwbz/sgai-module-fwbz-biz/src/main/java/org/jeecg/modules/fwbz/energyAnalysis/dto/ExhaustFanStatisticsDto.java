@@ -11,18 +11,12 @@ import java.math.BigDecimal;
 public class ExhaustFanStatisticsDto {
 
     /**
-     * 排风机总数
-     */
-    private Long count;
-
-    /**
-     * 运行中
-     */
-    private Long online;
-
-    /**
      * 今日能耗
      */
     private BigDecimal energyConsumption;
 
+    /**
+     * 故障数
+     */
+    private Integer faultCount;
 }
