@@ -10,6 +10,7 @@ import org.jeecg.modules.fwbz.energyStatistics.service.IEnergyDeviceStatisticsSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,9 +27,13 @@ public class EnergyDeviceStatisticsServiceImpl implements IEnergyDeviceStatistic
 
     @Override
     public DeviceRunStateStatisticsDto statisticsByCategoryId(Long categoryId) {
-        List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
-                .select(Device::getId, Device::getRunState)
-                .eq(categoryId != null, Device::getCategoryId, categoryId));
+        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
+                .select(Device::getId, Device::getRunState);
+        if (categoryId != null) {
+            // 展开为“自身+全部子孙类别”id集合，统计该类别时一并统计其下级类别下的设备
+            wrapper.in(Device::getCategoryId, deviceService.expandCategoryIds(Collections.singletonList(categoryId)));
+        }
+        List<Device> list = deviceService.list(wrapper);
         Map<String, Long> runStateMap = list.stream()
                 .filter(item -> item.getRunState() != null)
                 .collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));

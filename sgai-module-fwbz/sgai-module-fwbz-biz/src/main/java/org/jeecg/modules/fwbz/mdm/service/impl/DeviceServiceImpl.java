@@ -458,7 +458,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
      * @param categoryIds 选中的设备类别id（可包含重复）
      * @return 含自身与全部子孙类别的id集合（已去重、保序）
      */
-    private List<Long> expandCategoryIds(Collection<Long> categoryIds) {
+    @Override
+    public List<Long> expandCategoryIds(Collection<Long> categoryIds) {
         if (CollectionUtil.isEmpty(categoryIds)) {
             return Collections.emptyList();
         }

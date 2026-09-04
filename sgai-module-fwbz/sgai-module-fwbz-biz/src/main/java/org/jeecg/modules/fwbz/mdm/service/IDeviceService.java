@@ -60,6 +60,13 @@ public interface IDeviceService extends IService<Device> {
     List<SpaceDeviceTreeVo> findNameAndIdByCategoryIds(Collection<Long> categoryIds, Long spaceId);
 
     /**
+     * 将设备类别id集合展开为“自身+全部子孙类别”id集合
+     * @param categoryIds 设备类别id集合
+     * @return 含自身与全部子孙类别的id集合（已去重、保序）
+     */
+    List<Long> expandCategoryIds(Collection<Long> categoryIds);
+
+    /**
      * 计量仪表运行状态统计
      * @return 统计结果
      */
