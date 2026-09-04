@@ -40,6 +40,7 @@ import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
 import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
+import org.jeecg.modules.fwbz.operationSupport.vo.EquipmentCategoryStatisticsVo;
 import org.jeecg.modules.fwbz.main.service.DeviceAttributeOperationService;
 import org.jeecg.modules.fwbz.main.service.IBusinessConfigService;
 import org.jeecg.modules.fwbz.main.vo.DeviceDataVo;
@@ -907,6 +908,40 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                 .map(String::trim)
                 .filter(id -> !id.isEmpty())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EquipmentCategoryStatisticsVo> equipmentCategoryStatistics() {
+        // 查询所有一级分类为设备（type=2，pid=0）的分类
+        List<EquipmentCategory> topCategories = equipmentCategoryService.list(new LambdaQueryWrapper<EquipmentCategory>()
+                .eq(EquipmentCategory::getType, EquipmentCategory.TYPE_EQUIPMENT)
+                .eq(EquipmentCategory::getPid, 0L));
+
+        List<EquipmentCategoryStatisticsVo> result = new ArrayList<>();
+        for (EquipmentCategory category : topCategories) {
+            // 展开该一级分类及所有子孙分类ID
+            List<Long> allCategoryIds = deviceService.expandCategoryIds(Collections.singletonList(category.getId()));
+            // 查询这些分类下的所有设备
+            List<Device> devices;
+            if (CollectionUtils.isEmpty(allCategoryIds)) {
+                devices = Collections.emptyList();
+            } else {
+                devices = deviceService.list(new LambdaQueryWrapper<Device>()
+                        .select(Device::getId, Device::getRunState)
+                        .in(Device::getCategoryId, allCategoryIds));
+            }
+            Map<String, Long> runStateMap = devices.stream()
+                    .filter(item -> item.getRunState() != null)
+                    .collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
+
+            EquipmentCategoryStatisticsVo vo = new EquipmentCategoryStatisticsVo();
+            vo.setCategoryName(category.getCategoryName());
+            vo.setCount((long) devices.size());
+            vo.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+            vo.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+            result.add(vo);
+        }
+        return result;
     }
 
     private Table createTable(List<TableHeader> tableHeaderList, Map<Long, String> configs, List<DeviceAttributeHistory> meterDataList) {

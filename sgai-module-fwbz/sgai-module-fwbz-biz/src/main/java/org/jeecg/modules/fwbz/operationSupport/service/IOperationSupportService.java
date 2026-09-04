@@ -13,6 +13,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.Table;
 import org.jeecg.modules.fwbz.mdm.dto.DeviceRunStateStatisticsDto;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.main.vo.DeviceDataVo;
+import org.jeecg.modules.fwbz.operationSupport.vo.EquipmentCategoryStatisticsVo;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,5 +49,10 @@ public interface IOperationSupportService {
 
     void airControl(List<DeviceAttribute> params);
 
+    /**
+     * 设备分类统计-按一级分类统计设备总数、在线数、离线数（包含下级分类）
+     * @return
+     */
+    List<EquipmentCategoryStatisticsVo> equipmentCategoryStatistics();
 
 }

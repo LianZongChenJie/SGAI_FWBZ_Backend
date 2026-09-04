@@ -14,6 +14,7 @@ import org.jeecg.modules.fwbz.main.dto.DeviceDataFindDto;
 import org.jeecg.modules.fwbz.main.dto.DeviceHourDataAmendDto;
 import org.jeecg.modules.fwbz.main.entity.*;
 import org.jeecg.modules.fwbz.main.service.*;
+import org.jeecg.modules.fwbz.main.vo.DeviceDataMeasuringExportVo;
 import org.jeecg.modules.fwbz.main.vo.DeviceDataVo;
 import org.jeecg.modules.fwbz.main.vo.DeviceDataWaterVo;
 import org.jeecg.modules.fwbz.main.vo.HourDataVo;
@@ -70,10 +71,47 @@ public class DeviceDataController {
         return Result.ok(service.findList(params));
     }
 
-    //    
+    // 计量设备数据列表
     @GetMapping("/measuringList")
     public Result<IPage<DeviceDataVo>> measuringList(DeviceDataFindDto params) {
         return Result.ok(service.measuringListWithDayMonth(params));
+    }
+
+    /**
+     * 计量设备数据列表导出
+     * <p>入参与计量设备数据列表(measuringList)一致，将 measuringListWithDayMonth 查出的数据导出；
+     * 未传分页参数时导出全部，传了分页参数(pageNo/pageSize)时导出对应分页。</p>
+     */
+    @AutoLog(value = "计量设备数据列表导出")
+    @GetMapping("/measuringListExport")
+    public void measuringListExport(HttpServletRequest request, HttpServletResponse response, DeviceDataFindDto params) throws Exception {
+        // 未显式传分页参数时视为导出全部
+        boolean paged = StringUtils.isNotEmpty(request.getParameter("pageNo"))
+                || StringUtils.isNotEmpty(request.getParameter("pageSize"));
+        if (!paged) {
+            params.setPageNo(1);
+            params.setPageSize(Integer.MAX_VALUE);
+        }
+        IPage<DeviceDataVo> list = service.measuringListWithDayMonth(params);
+        Map<Long, String> spaceMap = spaceService.list()
+                .stream()
+                .collect(Collectors.toMap(Space::getId, Space::getFullName));
+        Map<Long, String> categoryMap = equipmentCategoryService.list()
+                .stream()
+                .collect(Collectors.toMap(EquipmentCategory::getId, EquipmentCategory::getFullName));
+        List<DeviceDataMeasuringExportVo> data = new ArrayList<>();
+        for (DeviceDataVo item : list.getRecords()) {
+            item.setCategoryName(categoryMap.get(item.getCategoryId()));
+            item.setSpaceName(spaceMap.get(item.getSpaceId()));
+            data.add(DeviceDataMeasuringExportVo.convert(item));
+        }
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("content-disposition", "attachment;filename=" + URLEncoder.encode("计量设备数据.xlsx", "UTF-8"));
+        try (Workbook workbook = ExcelExportUtil.exportExcel(
+                new ExportParams("计量设备数据", "计量设备数据", ExcelType.XSSF),
+                DeviceDataMeasuringExportVo.class, data)) {
+            workbook.write(response.getOutputStream());
+        }
     }
 
 

@@ -11,6 +11,7 @@ import org.jeecg.modules.fwbz.energyAnalysis.vo.MeteringPointDataChartVo;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.operationSupport.service.IOperationSupportService;
 import org.jeecg.modules.fwbz.main.vo.DeviceDataVo;
+import org.jeecg.modules.fwbz.operationSupport.vo.EquipmentCategoryStatisticsVo;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -228,8 +229,13 @@ public class OperationSupportController {
         return Result.ok();
     }
 
-
-
-
+    /**
+     * 设备分类统计-按一级分类统计设备总数、在线数、离线数（包含下级分类）
+     * @return
+     */
+    @GetMapping("/equipmentCategoryStatistics")
+    public Result<List<EquipmentCategoryStatisticsVo>> equipmentCategoryStatistics() {
+        return Result.ok(service.equipmentCategoryStatistics());
+    }
 
 }
