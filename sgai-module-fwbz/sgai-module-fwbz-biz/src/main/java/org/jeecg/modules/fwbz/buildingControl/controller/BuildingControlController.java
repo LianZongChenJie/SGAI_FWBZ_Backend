@@ -1,18 +1,19 @@
 package org.jeecg.modules.fwbz.buildingControl.controller;
 
+import com.sunwayland.pspace.entity.PsData;
+import com.sunwayland.pspace.entity.PsResult;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataItemDto;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataResponse;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlService;
+import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.List;
 public class BuildingControlController {
 
     private final BuildingControlService buildingControlService;
+    private final ColdSourceServerService coldSourceServerService;
 
     /**
      * 实时数据写入外部系统
@@ -48,6 +50,36 @@ public class BuildingControlController {
         } catch (Exception e) {
             log.error("实时数据写入异常", e);
             return Result.error("实时数据写入异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 读取楼控点位真实值
+     *
+     * @param tagId 测点ID（对应 device_attribute.acquisition_coding）
+     * @return 点位真实值
+     */
+    @GetMapping("/realRead")
+    @ApiOperation(value = "读取点位真实值", notes = "根据tagId读取楼控点位当前真实值")
+    public Result<Object> realRead(@ApiParam(value = "测点ID", required = true) @RequestParam Long tagId) {
+        try {
+            PsResult<PsData> result = coldSourceServerService.connect().realRead(tagId);
+            if (result.isSuccess()) {
+                List<PsData> dataList = result.getData();
+                if (dataList != null && !dataList.isEmpty()) {
+                    return Result.OK(dataList.get(0));
+                }
+                return Result.error("读取点位真实值返回数据为空");
+            } else {
+                log.warn("读取点位真实值失败: tagId={}, code={}", tagId, result.getCode());
+                return Result.error("读取点位真实值失败: " + result.getCode());
+            }
+        } catch (IllegalArgumentException e) {
+            log.warn("读取点位真实值参数校验失败：{}", e.getMessage());
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("读取点位真实值异常: tagId={}", tagId, e);
+            return Result.error("读取点位真实值异常: " + e.getMessage());
         }
     }
 }
