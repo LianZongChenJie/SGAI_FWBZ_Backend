@@ -313,6 +313,10 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
 
     }
 
+    /**
+     * 风机盘管统计
+     * @return
+     */
     @Override
     public FanCoilStatisticsDto fanCoilStatistics() {
 
@@ -324,7 +328,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         }
 
         List<Device> list = deviceService.list(new LambdaQueryWrapper<Device>()
-                .eq(Device::getCategoryId, Long.valueOf(categoryId.trim())));
+                .eq(Device::getCategoryId, Long.valueOf("40")));
 
 
         Map<String, Long> runStateMap = list.stream().filter(item -> item.getRunState() != null).collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
@@ -348,9 +352,88 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         dto.setCount((long) list.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setEnergyConsumption(energyConsumption);
-
+        // 查询风机盘管设备属性名含"温度"的属性并取平均（等价于
+        // SELECT da.* FROM device_attribute da LEFT JOIN device d ON da.device_id=d.id
+        //  WHERE d.category_id=该类别 AND da.attribute_name like '%温度%'）
+        BigDecimal Temperature = new BigDecimal(0);
+        int count = 0;
+        //分批次查询属性，防止in语句过大
+        int batch = list.size() / 1000;
+        for (int j = 0; j <= batch; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 1000; k++) {
+                int index = j * 1000 + k;
+                if (index >= list.size()) {
+                    break;
+                }
+                deviceIds.add(list.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
+            }
+            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute byDeviceId : byDeviceIds) {
+                if ("温度".equals(byDeviceId.getAttributeName()) && StringUtils.isNotEmpty(byDeviceId.getValue())) {
+                    Temperature = Temperature.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    count++;
+                }
+            }
+        }
+        if (count > 0) {
+            dto.setAverageTemperature(Temperature.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP));
+        }
         return dto;
 
+    }
+
+    /**
+     * 统计给定设备列表中，属性名包含指定关键词的属性实时值平均值。
+     * 分批查询属性防止 in 语句过大；单个属性值非数字时跳过并告警，不影响其它值。
+     *
+     * @param devices 设备列表（均为同一类别）
+     * @param nameKeyword 属性名关键词（如"温度"，等价 attribute_name like '%温度%'）
+     * @return 平均值（保留2位四舍五入）；无匹配属性/无有效值时返回 null
+     */
+    private BigDecimal averageDeviceAttributeByName(List<Device> devices, String nameKeyword) {
+        if (CollectionUtils.isEmpty(devices) || StringUtils.isBlank(nameKeyword)) {
+            return null;
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        int count = 0;
+        // 分批次查询属性，防止 in 语句过大
+        int batch = devices.size() / 1000;
+        for (int j = 0; j <= batch; j++) {
+            List<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 1000; k++) {
+                int index = j * 1000 + k;
+                if (index >= devices.size()) {
+                    break;
+                }
+                deviceIds.add(devices.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
+            }
+            List<DeviceAttribute> attributes = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute attribute : attributes) {
+                if (attribute == null || attribute.getAttributeName() == null
+                        || !attribute.getAttributeName().contains(nameKeyword)
+                        || StringUtils.isEmpty(attribute.getValue())) {
+                    continue;
+                }
+                try {
+                    total = total.add(BigDecimal.valueOf(Double.parseDouble(attribute.getValue())));
+                    count++;
+                } catch (NumberFormatException e) {
+                    log.warn("属性值非数字, 跳过求平均: deviceId={}, attributeName={}, value={}",
+                            attribute.getDeviceId(), attribute.getAttributeName(), attribute.getValue());
+                }
+            }
+        }
+        if (count == 0) {
+            return null;
+        }
+        return total.divide(new BigDecimal(count), 2, RoundingMode.HALF_UP);
     }
 
     @Override

@@ -25,4 +25,9 @@ public class FanCoilStatisticsDto {
      */
     private BigDecimal energyConsumption;
 
+    /**
+     * 平均温度
+     */
+    private BigDecimal averageTemperature;
+
 }
