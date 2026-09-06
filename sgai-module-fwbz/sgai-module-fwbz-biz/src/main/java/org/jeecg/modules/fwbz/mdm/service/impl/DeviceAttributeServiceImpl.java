@@ -94,6 +94,11 @@ public class DeviceAttributeServiceImpl extends ServiceImpl<DeviceAttributeMappe
     }
 
     @Override
+    public List<DeviceAttribute> getControlByDeviceId(Long deviceId){
+        return list(new LambdaQueryWrapper<DeviceAttribute>().eq(DeviceAttribute::getDeviceId, deviceId).eq(DeviceAttribute::getReadwriteLevel, DeviceAttribute.READWRITE_LEVEL_WRITE).orderByAsc(DeviceAttribute::getSort));
+    }
+
+    @Override
     public String getValueById(Long id) {
         DeviceAttribute entity = getById(id);
         return entity == null ? null : entity.getValue();

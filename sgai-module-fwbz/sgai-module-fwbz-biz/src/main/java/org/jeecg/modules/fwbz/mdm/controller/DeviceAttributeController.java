@@ -88,7 +88,15 @@ public class DeviceAttributeController {
     public Result<List<DeviceAttribute>> getByDeviceId(@RequestParam(name = "deviceId")Long deviceId){
         return Result.ok(service.getByDeviceId(deviceId));
     }
-
+    /**
+     * 查询设备控制点位
+     * @param deviceId 设备id
+     * @return 设备采集点位列表
+     */
+    @GetMapping("/getByDeviceId")
+    public Result<List<DeviceAttribute>> getControlByDeviceId(@RequestParam(name = "deviceId")Long deviceId){
+        return Result.ok(service.getControlByDeviceId(deviceId));
+    }
     /**
      * 属性绑定点位
      */

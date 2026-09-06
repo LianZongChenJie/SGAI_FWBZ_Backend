@@ -49,7 +49,7 @@ public class DeviceAttribute extends BaseEntity {
     private String unit;
 
     /**
-     * 读写等级 只读：1；读写：0
+     * 读写等级 只读：0；读写：1
      */
     private String readwriteLevel;
 
