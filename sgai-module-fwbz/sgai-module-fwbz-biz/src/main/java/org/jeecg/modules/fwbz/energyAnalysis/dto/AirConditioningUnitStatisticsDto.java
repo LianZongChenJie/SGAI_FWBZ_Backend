@@ -26,8 +26,8 @@ public class AirConditioningUnitStatisticsDto {
     private BigDecimal energyConsumption;
 
     /**
-     * 平均COP
+     * 平均PM2.5
      */
-    private String avgCop;
+    private BigDecimal avgPm25;
 
 }

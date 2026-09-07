@@ -216,7 +216,35 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         dto.setCount((long) list.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setEnergyConsumption(energyConsumption);
-        dto.setAvgCop("4.2");
+
+        // 平均PM2.5：查询所有空调机组设备"回风PM2.5"属性并取平均（参考新风统计）
+        BigDecimal pm25Total = BigDecimal.ZERO;
+        int pm25Count = 0;
+        // 分批次查询属性，防止in语句过大
+        int batch = list.size() / 1000;
+        for (int j = 0; j <= batch; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 1000; k++) {
+                int index = j * 1000 + k;
+                if (index >= list.size()) {
+                    break;
+                }
+                deviceIds.add(list.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
+            }
+            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute byDeviceId : byDeviceIds) {
+                if ("回风PM2.5".equals(byDeviceId.getAttributeName()) && StringUtils.isNotEmpty(byDeviceId.getValue())) {
+                    pm25Total = pm25Total.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    pm25Count++;
+                }
+            }
+        }
+        if (pm25Count > 0) {
+            dto.setAvgPm25(pm25Total.divide(new BigDecimal(pm25Count), 2, RoundingMode.HALF_UP));
+        }
 
         return dto;
 
