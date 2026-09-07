@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * 集中水冷系统 Service
@@ -25,6 +27,10 @@ public class CentralizedWaterCoolingService {
     /** 冷量累计 tagid */
     private static final long TAG_ID_COOLING_CAPACITY = 577L;
 
+    /** 今日累计用电 tagid 组 */
+    private static final long[] TAG_ID_TODAY_POWER =
+            {6712L, 6714L, 6716L, 6718L, 6720L, 6722L, 6724L, 6726L, 6728L};
+
     private final CentralizedWaterCoolingMapper centralizedWaterCoolingMapper;
 
     /**
@@ -32,7 +38,7 @@ public class CentralizedWaterCoolingService {
      * - 系统总功率：冷源历史表 tagid=578 最新一条
      * - 当前制冷量：冷源历史表 tagid=577 今天最新的数 - 今天零点的数
      * - 系统效能COP：制冷量 / 总功率
-     * - 今日累计用电量：暂返回 0
+     * - 今日累计用电量：各 tagid(最新 - 今日最早) 差值之和
      */
     public CentralizedWaterCoolingOverviewDto getOverview() {
         CentralizedWaterCoolingOverviewDto dto = new CentralizedWaterCoolingOverviewDto();
@@ -62,9 +68,44 @@ public class CentralizedWaterCoolingService {
         }
         dto.setCop(cop);
 
-        // 4. 今日累计用电量：暂返回 0
-        dto.setTodayPowerConsumption(BigDecimal.ZERO);
+        // 4. 今日累计用电量：各 tagid(最新 - 今日最早) 差值之和
+        Map<Long, TableColdSourceHistory> powerLatest =
+                centralizedWaterCoolingMapper.selectLatestByTagIds(Arrays.asList(toLongArray(TAG_ID_TODAY_POWER)));
+        Map<Long, TableColdSourceHistory> powerFirstToday =
+                centralizedWaterCoolingMapper.selectFirstTodayByTagIds(
+                        Arrays.asList(toLongArray(TAG_ID_TODAY_POWER)), dayStart);
+        BigDecimal todayPower = BigDecimal.ZERO;
+        for (long tid : TAG_ID_TODAY_POWER) {
+            todayPower = todayPower.add(diffToday(powerLatest, powerFirstToday, tid));
+        }
+        dto.setTodayPowerConsumption(scale(todayPower, 0));
         return dto;
+    }
+
+    /** 单 tagid：最新值 - 今日最早值；任一为空则贡献 0；负值兜底为 0 */
+    private BigDecimal diffToday(Map<Long, TableColdSourceHistory> latest,
+                                 Map<Long, TableColdSourceHistory> firstToday,
+                                 long tagId) {
+        TableColdSourceHistory latestRow = latest.get(tagId);
+        TableColdSourceHistory firstRow = firstToday.get(tagId);
+        if (latestRow == null || firstRow == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal cur = parseValue(latestRow.getValue());
+        BigDecimal base = parseValue(firstRow.getValue());
+        if (cur == null || base == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal diff = cur.subtract(base);
+        return diff.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : diff;
+    }
+
+    private Long[] toLongArray(long[] arr) {
+        Long[] result = new Long[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            result[i] = arr[i];
+        }
+        return result;
     }
 
     /**
