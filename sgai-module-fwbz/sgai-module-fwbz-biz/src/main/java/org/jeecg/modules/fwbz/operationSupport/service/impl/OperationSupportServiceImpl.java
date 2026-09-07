@@ -962,11 +962,15 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
                     .filter(item -> item.getRunState() != null)
                     .collect(Collectors.groupingBy(Device::getRunState, Collectors.counting()));
 
+            long total = devices.size();
+            long onlineCount = runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L);
+
             EquipmentCategoryStatisticsVo vo = new EquipmentCategoryStatisticsVo();
             vo.setCategoryName(category.getCategoryName());
-            vo.setCount((long) devices.size());
-            vo.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
+            vo.setCount(total);
+            vo.setOnline(onlineCount);
             vo.setOffline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_OFFLINE, 0L));
+            vo.setOnlineRate(total > 0 ? (int) (onlineCount * 100 / total) : 0);
             result.add(vo);
         }
         return result;

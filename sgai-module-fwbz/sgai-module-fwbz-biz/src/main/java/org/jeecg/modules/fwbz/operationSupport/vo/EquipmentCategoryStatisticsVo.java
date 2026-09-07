@@ -27,4 +27,9 @@ public class EquipmentCategoryStatisticsVo {
      * 离线
      */
     private Long offline;
+
+    /**
+     * 在线率（百分比整数，如100表示100%）
+     */
+    private Integer onlineRate;
 }
