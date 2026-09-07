@@ -2,22 +2,27 @@ package org.jeecg.modules.fwbz.buildingControl.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sunwayland.pspace.entity.Base;
+import com.sunwayland.pspace.entity.PsData;
 import com.sunwayland.pspace.entity.PsResult;
 import com.sunwayland.pspace.enums.PsErrorCodeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.jeecg.common.system.vo.LoginUser;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataItemDto;
+import org.jeecg.modules.fwbz.buildingControl.dto.UpdateValueTypeResponseDto;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlService;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlRealPushService;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlServerService;
 import org.jeecg.modules.fwbz.buildingControl.service.IBuildingControlSendHistoryService;
+import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.jeecg.modules.fwbz.mdm.entity.DeviceAttribute;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -32,6 +37,9 @@ public class BuildingControlServiceImpl implements BuildingControlService {
 
     @Autowired
     private BuildingControlServerService buildingControlServerService;
+
+    @Autowired
+    private ColdSourceServerService coldSourceServerService;
 
     @Autowired
     private IDeviceAttributeService deviceAttributeService;
@@ -73,6 +81,68 @@ public class BuildingControlServiceImpl implements BuildingControlService {
             return "写点完成: " + code;
         }
         return result.getData().get(0).toString();
+    }
+
+    /**
+     * 更新设备属性数据类型：
+     * 1. 查询 device_attribute 中采集编码(acquisition_coding)非空的属性，过滤出纯数字编码；
+     * 2. 以编码作为 tagId 逐点 realRead，取返回 PsData 的 dataType；
+     * 3. 按采集编码回写 value_type（仅更新该字段，不覆盖采集值/采集时间）。
+     *
+     * @return 更新统计结果（总数/成功/失败及失败明细）
+     */
+    @Override
+    public UpdateValueTypeResponseDto updateAttributeValueType() {
+        UpdateValueTypeResponseDto response = new UpdateValueTypeResponseDto();
+        List<DeviceAttribute> attributes = deviceAttributeService.list(
+                new LambdaQueryWrapper<DeviceAttribute>()
+                        .isNotNull(DeviceAttribute::getAcquisitionCoding)
+                        .ne(DeviceAttribute::getAcquisitionCoding, ""));
+        int total = 0;
+        int success = 0;
+        int failed = 0;
+        for (DeviceAttribute attr : attributes) {
+            String coding = attr.getAcquisitionCoding() == null ? "" : attr.getAcquisitionCoding().trim();
+            if (!StringUtils.isNumeric(coding)) {
+                continue;
+            }
+            total++;
+            Long tagId;
+            try {
+                tagId = Long.valueOf(coding);
+            } catch (NumberFormatException e) {
+                failed++;
+                response.getFailDetails().add("tagId=" + coding + " 非法数字");
+                continue;
+            }
+            try {
+                PsResult<PsData> result = coldSourceServerService.connect().realRead(tagId);
+                if (result.isSuccess() && result.getData() != null && !result.getData().isEmpty()) {
+                    PsData psData = result.getData().get(0);
+                    String dataType = psData.getDataType() == null ? null : psData.getDataType().name();
+                    if (StringUtils.isNotBlank(dataType)) {
+                        attr.setValueType(dataType);
+                        deviceAttributeService.updateById(attr);
+                        success++;
+                    } else {
+                        failed++;
+                        response.getFailDetails().add("tagId=" + tagId + " dataType为空");
+                    }
+                } else {
+                    failed++;
+                    response.getFailDetails().add("tagId=" + tagId + " code=" + result.getCode());
+                }
+            } catch (Exception e) {
+                failed++;
+                response.getFailDetails().add("tagId=" + tagId + " 异常: " + e.getMessage());
+                log.warn("更新属性数据类型读点失败: tagId={}", tagId, e);
+            }
+        }
+        response.setTotal(total);
+        response.setSuccess(success);
+        response.setFailed(failed);
+        log.info("更新设备属性数据类型完成: 总数={}, 成功={}, 失败={}", total, success, failed);
+        return response;
     }
 
     /**

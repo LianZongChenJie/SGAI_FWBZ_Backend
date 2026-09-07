@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jeecg.common.api.vo.Result;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataItemDto;
 import org.jeecg.modules.fwbz.buildingControl.dto.UpdRealDataResponse;
+import org.jeecg.modules.fwbz.buildingControl.dto.UpdateValueTypeResponseDto;
 import org.jeecg.modules.fwbz.buildingControl.service.BuildingControlService;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.ColdSourceServerService;
 import org.springframework.validation.annotation.Validated;
@@ -80,6 +81,21 @@ public class BuildingControlController {
         } catch (Exception e) {
             log.error("读取点位真实值异常: tagId={}", tagId, e);
             return Result.error("读取点位真实值异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新设备属性数据类型：读取 device_attribute 中采集编码为数字的所有属性，
+     * 逐点 realRead 获取返回的 dataType，回写 value_type。
+     */
+    @PostMapping("/updateValueType")
+    @ApiOperation(value = "更新设备属性数据类型", notes = "遍历采集编码为数字的属性，通过 realRead 读取 dataType 并回写 value_type")
+    public Result<UpdateValueTypeResponseDto> updateValueType() {
+        try {
+            return Result.ok(buildingControlService.updateAttributeValueType());
+        } catch (Exception e) {
+            log.error("更新设备属性数据类型异常", e);
+            return Result.error("更新设备属性数据类型异常: " + e.getMessage());
         }
     }
 }
