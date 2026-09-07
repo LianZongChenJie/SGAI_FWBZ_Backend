@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.jeecg.modules.fwbz.mqtt.entity.MqttHistory;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -75,4 +76,32 @@ public interface MqttHistoryMapper extends BaseMapper<MqttHistory> {
             "</foreach>" +
             "</script>")
     int updateBatch(@Param("list") List<MqttHistory> list);
+
+    /**
+     * 按设备ID列表 + desc 模糊匹配 + 时间范围查询遥测历史（用于趋势图）
+     * <p>desc 为达梦保留字，必须转义；desc 模糊搜索用于匹配"总有功功率"等测点含义。</p>
+     *
+     * @param deviceIds   设备ID列表（可为空，为空时不限制设备）
+     * @param descKeyword 测点含义关键字（模糊匹配）
+     * @param startTime   起始时间（可为空）
+     * @param endTime     结束时间（可为空）
+     * @return 遥测历史记录（按时间升序）
+     */
+    @Select("<script>" +
+            "SELECT id, device_id, time_stamp, attribute_id, \"desc\", value FROM table_mqtt_history " +
+            "<where>" +
+            "  <if test='descKeyword != null and descKeyword != \"\"'> AND \"desc\" LIKE CONCAT('%', #{descKeyword}, '%') </if>" +
+            "  <if test='deviceIds != null and deviceIds.size() > 0'>" +
+            "    AND device_id IN " +
+            "    <foreach collection='deviceIds' item='did' open='(' separator=',' close=')'>#{did}</foreach>" +
+            "  </if>" +
+            "  <if test='startTime != null'> AND time_stamp &gt;= #{startTime} </if>" +
+            "  <if test='endTime != null'> AND time_stamp &lt;= #{endTime} </if>" +
+            "</where>" +
+            "ORDER BY time_stamp ASC" +
+            "</script>")
+    List<MqttHistory> selectActivePowerHistory(@Param("deviceIds") List<Long> deviceIds,
+                                               @Param("descKeyword") String descKeyword,
+                                               @Param("startTime") LocalDateTime startTime,
+                                               @Param("endTime") LocalDateTime endTime);
 }

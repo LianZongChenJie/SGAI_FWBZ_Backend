@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.jeecg.common.api.vo.Result;
+import org.jeecg.modules.fwbz.echarts.dto.ActivePowerTrendQueryDto;
 import org.jeecg.modules.fwbz.echarts.dto.ReturnAirCo2TrendQueryDto;
 import org.jeecg.modules.fwbz.echarts.service.IReturnAirCo2TrendService;
 import org.jeecg.modules.fwbz.echarts.vo.ReturnAirCo2TrendVo;
@@ -37,5 +38,18 @@ public class ReturnAirCo2TrendController {
     @ApiOperation("查询回风二氧化碳趋势数据")
     public Result<ReturnAirCo2TrendVo> query(@Valid ReturnAirCo2TrendQueryDto query) {
         return Result.ok(service.getReturnAirCo2Trend(query));
+    }
+
+    /**
+     * 根据设备ID列表查询电表"总有功功率"历史趋势，返回 ECharts 折线图所需数据。
+     * <p>
+     * 数据源：table_mqtt_history（按 device_id + desc 模糊匹配"总有功功率" + 时间范围取遥测值）。
+     * <p>
+     * 示例：{@code GET /fwbz/echarts/returnAirCo2Trend/activePowerTrend?deviceIds=1,2,3,4&startTime=2025-09-02 00:00:00&endTime=2025-09-02 23:59:59&granularity=hour}
+     */
+    @GetMapping("/activePowerTrend")
+    @ApiOperation("查询电表总有功功率趋势数据")
+    public Result<ReturnAirCo2TrendVo> activePowerTrend(@Valid ActivePowerTrendQueryDto query) {
+        return Result.ok(service.getActivePowerTrend(query));
     }
 }

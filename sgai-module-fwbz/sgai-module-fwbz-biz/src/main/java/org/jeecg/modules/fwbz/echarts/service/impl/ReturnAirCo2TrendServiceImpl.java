@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jeecg.modules.fwbz.echarts.dto.ActivePowerTrendQueryDto;
 import org.jeecg.modules.fwbz.echarts.dto.ReturnAirCo2TrendQueryDto;
 import org.jeecg.modules.fwbz.echarts.service.IReturnAirCo2TrendService;
 import org.jeecg.modules.fwbz.echarts.vo.ReturnAirCo2TrendVo;
@@ -15,6 +16,8 @@ import org.jeecg.modules.fwbz.mdm.entity.DeviceAttributeHistory;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeHistoryService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceAttributeService;
 import org.jeecg.modules.fwbz.mdm.service.IDeviceService;
+import org.jeecg.modules.fwbz.mqtt.entity.MqttHistory;
+import org.jeecg.modules.fwbz.mqtt.mapper.MqttHistoryMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -46,6 +49,10 @@ public class ReturnAirCo2TrendServiceImpl implements IReturnAirCo2TrendService {
     private final IDeviceAttributeService deviceAttributeService;
     private final IDeviceAttributeHistoryService deviceAttributeHistoryService;
     private final IDeviceService deviceService;
+    private final MqttHistoryMapper mqttHistoryMapper;
+
+    /** 电表总有功功率测点含义关键字 */
+    private static final String ACTIVE_POWER_DESC = "总有功功率";
 
     @Override
     public ReturnAirCo2TrendVo getReturnAirCo2Trend(ReturnAirCo2TrendQueryDto query) {
@@ -181,6 +188,103 @@ public class ReturnAirCo2TrendServiceImpl implements IReturnAirCo2TrendService {
         return vo;
     }
 
+    @Override
+    public ReturnAirCo2TrendVo getActivePowerTrend(ActivePowerTrendQueryDto query) {
+        // 0. 入参校验 & 默认值
+        if (query == null || CollectionUtil.isEmpty(query.getDeviceIds())) {
+            return emptyPowerResult(query);
+        }
+        if (StringUtils.isBlank(query.getGranularity())) {
+            query.setGranularity("hour");
+        }
+        normalizeTimeRange(query);
+
+        // 1. 从 table_mqtt_history 按设备ID + desc 模糊匹配"总有功功率" + 时间范围取遥测历史
+        List<MqttHistory> histories = mqttHistoryMapper.selectActivePowerHistory(
+                query.getDeviceIds(), ACTIVE_POWER_DESC, query.getStartTime(), query.getEndTime());
+
+        // 2. 取设备信息（图例名取设备名/编号）
+        List<Device> devices = deviceService.findByDeviceIds(query.getDeviceIds());
+        Map<Long, Device> deviceMap = devices.stream()
+                .collect(Collectors.toMap(Device::getId, Function.identity(), (k1, k2) -> k2));
+
+        // 3. 构造时间桶 xAxis
+        int granMinutes = granularityMinutes(query.getGranularity());
+        List<LocalDateTime> buckets = buildBuckets(query.getStartTime(), query.getEndTime(), granMinutes);
+        List<String> xAxis = buckets.stream()
+                .map(t -> formatBucket(t, query.getGranularity()))
+                .collect(Collectors.toList());
+
+        // 4. 按 deviceId 分组聚合（桶内多值取平均）
+        Map<Long, Map<Integer, List<Double>>> grouped = new LinkedHashMap<>();
+        for (Long did : query.getDeviceIds()) {
+            grouped.computeIfAbsent(did, k -> new LinkedHashMap<>());
+        }
+        if (CollectionUtil.isNotEmpty(histories)) {
+            for (MqttHistory h : histories) {
+                if (h.getValue() == null || h.getTimeStamp() == null || h.getDeviceId() == null) {
+                    continue;
+                }
+                int idx = locateBucket(buckets, h.getTimeStamp(), granMinutes);
+                if (idx < 0) {
+                    continue;
+                }
+                Double val = parseDouble(h.getValue());
+                if (val == null) {
+                    continue;
+                }
+                grouped.computeIfAbsent(h.getDeviceId(), k -> new LinkedHashMap<>())
+                        .computeIfAbsent(idx, k -> new ArrayList<>())
+                        .add(val);
+            }
+        }
+
+        // 5. 拼装 series（按入参设备顺序输出，便于前端稳定展示）
+        List<ReturnAirCo2TrendVo.TrendSeries> seriesList = new ArrayList<>();
+        List<String> legend = new ArrayList<>();
+        int bucketCount = buckets.size();
+        for (Long did : query.getDeviceIds()) {
+            Device dev = deviceMap.get(did);
+            String seriesName = dev == null
+                    ? ("设备-" + did)
+                    : (StringUtils.isNotBlank(dev.getDeviceName()) ? dev.getDeviceName() : dev.getDeviceCode());
+            legend.add(seriesName);
+
+            ReturnAirCo2TrendVo.TrendSeries series = new ReturnAirCo2TrendVo.TrendSeries();
+            series.setName(seriesName);
+            series.setDeviceId(did);
+            List<Double> data = new ArrayList<>(Collections.nCopies(bucketCount, 0.0));
+            Map<Integer, List<Double>> bucketMap = grouped.getOrDefault(did, Collections.emptyMap());
+            for (Map.Entry<Integer, List<Double>> e : bucketMap.entrySet()) {
+                int i = e.getKey();
+                if (i < 0 || i >= bucketCount) {
+                    continue;
+                }
+                List<Double> values = e.getValue();
+                if (values == null || values.isEmpty()) {
+                    continue;
+                }
+                double sum = 0;
+                for (Double d : values) {
+                    sum += d;
+                }
+                double avg = sum / values.size();
+                data.set(i, Math.round(avg * 10.0) / 10.0);
+            }
+            series.setData(data);
+            seriesList.add(series);
+        }
+
+        // 6. 组装返回
+        ReturnAirCo2TrendVo vo = new ReturnAirCo2TrendVo();
+        vo.setTitle(ACTIVE_POWER_DESC);
+        vo.setUnit("kW");
+        vo.setXAxis(xAxis);
+        vo.setLegend(legend);
+        vo.setSeries(seriesList);
+        return vo;
+    }
+
     // ---------------- private helpers ----------------
 
     /**
@@ -202,6 +306,26 @@ public class ReturnAirCo2TrendServiceImpl implements IReturnAirCo2TrendService {
             q.setEndTime(tmp);
         }
         // 对齐到 15 分钟网格：start 向下取整、end 向上取整
+        q.setStartTime(alignDown15Min(q.getStartTime()));
+        q.setEndTime(alignUp15Min(q.getEndTime()));
+    }
+
+    /**
+     * 电表趋势默认时间范围：当天 00:00:00 ~ 23:59:59，并对齐到 15 分钟网格。
+     */
+    private void normalizeTimeRange(ActivePowerTrendQueryDto q) {
+        LocalDate today = LocalDate.now();
+        if (q.getStartTime() == null) {
+            q.setStartTime(today.atStartOfDay());
+        }
+        if (q.getEndTime() == null) {
+            q.setEndTime(today.atTime(23, 59, 59));
+        }
+        if (q.getStartTime().isAfter(q.getEndTime())) {
+            LocalDateTime tmp = q.getStartTime();
+            q.setStartTime(q.getEndTime());
+            q.setEndTime(tmp);
+        }
         q.setStartTime(alignDown15Min(q.getStartTime()));
         q.setEndTime(alignUp15Min(q.getEndTime()));
     }
@@ -302,6 +426,16 @@ public class ReturnAirCo2TrendServiceImpl implements IReturnAirCo2TrendService {
         vo.setTitle(q == null || q.getAttributeName() == null ? "回风二氧化碳" : q.getAttributeName());
         vo.setUnit("ppm");
         vo.setThreshold(q == null ? null : q.getThreshold());
+        vo.setXAxis(Collections.emptyList());
+        vo.setLegend(Collections.emptyList());
+        vo.setSeries(Collections.emptyList());
+        return vo;
+    }
+
+    private ReturnAirCo2TrendVo emptyPowerResult(ActivePowerTrendQueryDto q) {
+        ReturnAirCo2TrendVo vo = new ReturnAirCo2TrendVo();
+        vo.setTitle(ACTIVE_POWER_DESC);
+        vo.setUnit("kW");
         vo.setXAxis(Collections.emptyList());
         vo.setLegend(Collections.emptyList());
         vo.setSeries(Collections.emptyList());
