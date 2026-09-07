@@ -75,15 +75,8 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper
         long yesterdayPeakAvg = yesterdayLatest.isEmpty() ? 0L :
                 Math.round(yesterdayLatest.stream().mapToLong(v -> nvl(v.getMaxCount())).average().orElse(0));
 
-        // 平均时长 = 各馆最新 averageDuration 的平均值
-        double todayAvgDuration = todayLatest.stream()
-                .filter(v -> v.getAverageDuration() != null)
-                .mapToDouble(VenueFlowHour::getAverageDuration)
-                .average().orElse(0);
-        double yesterdayAvgDuration = yesterdayLatest.stream()
-                .filter(v -> v.getAverageDuration() != null)
-                .mapToDouble(VenueFlowHour::getAverageDuration)
-                .average().orElse(0);
+        // 平均在场 = 当前在场总人数 / 10 个场馆
+        double todayAvgVisitor = todayNowTotal / 10.0;
 
         return Arrays.asList(
                 buildCard("今日总客流", todayInTotal, "",
@@ -92,8 +85,8 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper
                         compareRate(todayNowTotal, yesterdayNowTotal) + " 较昨日"),
                 buildCard("峰值客流", todayPeakAvg, "",
                         compareRate(todayPeakAvg, yesterdayPeakAvg) + " 较昨日"),
-                buildCard("平均停留", round(todayAvgDuration, 1), "h",
-                        compareChange(todayAvgDuration, yesterdayAvgDuration) + " 较昨日")
+                buildCard("平均在场", round(todayAvgVisitor, 1), "",
+                        compareRate(todayNowTotal, yesterdayNowTotal) + " 较昨日")
         );
     }
 
@@ -138,17 +131,12 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper
         List<VenueFlowHour> todayLatest = getLatestPerVenue(LocalDate.now());
         List<VenueFlowHour> yesterdayLatest = getLatestPerVenue(LocalDate.now().minusDays(1));
 
-        double todayVal = todayLatest.stream()
-                .filter(v -> v.getAverageDuration() != null)
-                .mapToDouble(VenueFlowHour::getAverageDuration)
-                .average().orElse(0);
-        double yesterdayVal = yesterdayLatest.stream()
-                .filter(v -> v.getAverageDuration() != null)
-                .mapToDouble(VenueFlowHour::getAverageDuration)
-                .average().orElse(0);
+        long todayNowTotal = todayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
+        long yesterdayNowTotal = yesterdayLatest.stream().mapToLong(v -> nvl(v.getTodayNowCount())).sum();
 
-        return buildCard("平均停留", round(todayVal, 1), "h",
-                compareChange(todayVal, yesterdayVal) + " 较昨日");
+        double todayAvg = todayNowTotal / 10.0;
+        return buildCard("平均在场", round(todayAvg, 1), "",
+                compareRate(todayNowTotal, yesterdayNowTotal) + " 较昨日");
     }
 
     // ==================== 数据获取：取每个场馆当日最新一条记录 ====================
@@ -181,20 +169,6 @@ public class VenueVisitorFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper
         String arrow = rate >= 0 ? "↑" : "↓";
         double abs = Math.abs(rate);
         return arrow + (abs == (long) abs ? String.valueOf((long) abs) : String.format("%.1f", abs)) + "%";
-    }
-
-    private String compareChange(double today, double yesterday) {
-        if (yesterday == 0) {
-            return today == 0 ? "—" : "↑" + formatValue(today) + "h";
-        }
-        double change = today - yesterday;
-        String arrow = change >= 0 ? "↑" : "↓";
-        double abs = Math.abs(change);
-        return arrow + (abs == (long) abs ? String.valueOf((long) abs) : String.format("%.1f", abs)) + "h";
-    }
-
-    private String formatValue(double value) {
-        return value == (long) value ? String.valueOf((long) value) : String.format("%.1f", value);
     }
 
     private double round(double value, int scale) {
