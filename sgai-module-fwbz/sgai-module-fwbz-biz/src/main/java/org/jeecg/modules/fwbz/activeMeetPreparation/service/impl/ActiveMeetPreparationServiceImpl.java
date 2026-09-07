@@ -28,6 +28,8 @@ import org.jeecg.modules.fwbz.hikvision.mapper.AcsDeviceMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraGroupMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.CameraInfoMapper;
 import org.jeecg.modules.fwbz.hikvision.mapper.DoorResourceMapper;
+import org.jeecg.modules.fwbz.mdm.entity.EquipmentCategory;
+import org.jeecg.modules.fwbz.mdm.service.IEquipmentCategoryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +50,7 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
     private final AcsDeviceMapper acsDeviceMapper;
     private final SmokeDetectorMapper smokeDetectorMapper;
     private final LightingCircuitMapper lightingCircuitMapper;
+    private final IEquipmentCategoryService equipmentCategoryService;
 
     public ActiveMeetPreparationServiceImpl(ActiveMeetInfoMapper activeMeetInfoMapper,
                                             ActiveMeetPreparationInfoMapper activeMeetPreparationInfoMapper,
@@ -59,7 +62,8 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
                                             DoorResourceMapper doorResourceMapper,
                                             AcsDeviceMapper acsDeviceMapper,
                                             SmokeDetectorMapper smokeDetectorMapper,
-                                            LightingCircuitMapper lightingCircuitMapper) {
+                                            LightingCircuitMapper lightingCircuitMapper,
+                                            IEquipmentCategoryService equipmentCategoryService) {
         this.activeMeetInfoMapper = activeMeetInfoMapper;
         this.activeMeetPreparationInfoMapper = activeMeetPreparationInfoMapper;
         this.activeMeetsDeviceTypeMapper = activeMeetsDeviceTypeMapper;
@@ -71,6 +75,7 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
         this.acsDeviceMapper = acsDeviceMapper;
         this.smokeDetectorMapper = smokeDetectorMapper;
         this.lightingCircuitMapper = lightingCircuitMapper;
+        this.equipmentCategoryService = equipmentCategoryService;
     }
 
     @Override
@@ -235,13 +240,17 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
      */
     private CountResult computeCount(ActiveMeetsDeviceType dt) {
         if (dt.getDeviceTypeId() != null) {
-            // 从device表统计（category_id = device_type_id）
+            // 从device表统计（category_id = device_type_id 及其下级分类）
+            List<Long> categoryIds = expandCategoryIds(dt.getDeviceTypeId());
+            if (categoryIds.isEmpty()) {
+                return CountResult.ZERO;
+            }
             long total = deviceMapper.selectCount(
                     new LambdaQueryWrapper<Device>()
-                            .eq(Device::getCategoryId, dt.getDeviceTypeId()));
+                            .in(Device::getCategoryId, categoryIds));
             long online = deviceMapper.selectCount(
                     new LambdaQueryWrapper<Device>()
-                            .eq(Device::getCategoryId, dt.getDeviceTypeId())
+                            .in(Device::getCategoryId, categoryIds)
                             .eq(Device::getRunState, "在线"));
             return new CountResult(total, online);
         } else {
@@ -266,6 +275,36 @@ public class ActiveMeetPreparationServiceImpl implements IActiveMeetPreparationS
                 default:
                     return CountResult.ZERO;
             }
+        }
+    }
+
+    /**
+     * 将设备类别id展开为"自身+全部子孙类别"id集合（按 pid 内存递归）。
+     */
+    private List<Long> expandCategoryIds(Long categoryId) {
+        if (categoryId == null) {
+            return Collections.emptyList();
+        }
+        Map<Long, List<EquipmentCategory>> childrenMap = equipmentCategoryService.list()
+                .stream()
+                .filter(category -> category.getPid() != null)
+                .collect(Collectors.groupingBy(EquipmentCategory::getPid));
+        List<Long> result = new ArrayList<>();
+        collectSelfAndDescendants(categoryId, childrenMap, result);
+        return result;
+    }
+
+    /**
+     * 递归收集某类别及其全部子孙类别id。
+     */
+    private void collectSelfAndDescendants(Long id, Map<Long, List<EquipmentCategory>> childrenMap, List<Long> result) {
+        if (id == null || result.contains(id)) {
+            return;
+        }
+        result.add(id);
+        List<EquipmentCategory> children = childrenMap.get(id);
+        if (children != null) {
+            children.forEach(child -> collectSelfAndDescendants(child.getId(), childrenMap, result));
         }
     }
 
