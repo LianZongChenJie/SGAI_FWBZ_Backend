@@ -15,6 +15,7 @@ import org.jeecg.modules.fwbz.main.service.IBusinessConfigService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -76,7 +77,7 @@ public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
         EnergyMeteringStatisticsDto dto = new EnergyMeteringStatisticsDto();
         dto.setCount((long) list.size());
         if(addCount==0){
-            dto.setAddCount("0个");
+            dto.setAddCount("新增0个");
         }else{
             dto.setAddCount("↑"+addCount+"个");
         }
@@ -84,7 +85,8 @@ public class EnergyMeteringServiceImpl implements IEnergyMeteringService {
 
 
         dto.setElectricCount(todayElectricValue +"kWh");
-        dto.setWaterCount(todayWaterValue);
+        // 平均耗电量 = 总耗电量 / 3
+        dto.setWaterCount(todayElectricValue.divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP));
         dto.setElectricCountDoD(CalculationUtil.calculateMomToString(todayElectricValue, yestodayElectricValue)+"%");
         dto.setWaterCountDoD(CalculationUtil.calculateMomToString(todayWaterValue, yestodayWaterValue)+"%");
 
