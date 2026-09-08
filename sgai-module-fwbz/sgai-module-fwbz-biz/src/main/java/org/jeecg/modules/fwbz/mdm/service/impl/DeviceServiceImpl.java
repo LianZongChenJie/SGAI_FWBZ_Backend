@@ -209,10 +209,12 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         if (CollectionUtil.isEmpty(categoryIds)) {
             return Collections.emptyList();
         }
-        // 查询指定类别下的设备（仅需id、名称、空间id）
+        // 将设备类别id展开为“自身+全部子孙类别”id集合（包含下级分类的设备）
+        List<Long> expandedCategoryIds = expandCategoryIds(categoryIds);
+        // 查询指定类别及其下级类别下的设备（仅需id、名称、空间id）
         List<Device> devices = list(new LambdaQueryWrapper<Device>()
                 .select(Device::getId, Device::getDeviceName, Device::getSpaceId)
-                .in(Device::getCategoryId, categoryIds));
+                .in(Device::getCategoryId, expandedCategoryIds));
         // 设备按空间id分组
         Map<Long, List<Device>> deviceMap = devices.stream()
                 .filter(device -> device.getSpaceId() != null)
