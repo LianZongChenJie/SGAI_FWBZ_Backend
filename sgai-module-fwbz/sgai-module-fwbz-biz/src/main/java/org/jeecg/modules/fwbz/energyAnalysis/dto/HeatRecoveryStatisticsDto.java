@@ -25,4 +25,9 @@ public class HeatRecoveryStatisticsDto {
      */
     private BigDecimal energyConsumption;
 
+    /**
+     * 平均回风温度
+     */
+    private BigDecimal avgReturnAirTemperature;
+
 }

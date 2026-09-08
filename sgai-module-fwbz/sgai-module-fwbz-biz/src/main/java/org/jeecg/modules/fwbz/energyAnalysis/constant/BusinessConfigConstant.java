@@ -170,5 +170,9 @@ public class BusinessConfigConstant {
      */
     public static final String OPERATIONSUPPORT_RHS_POINT_ID = "operationSupport:rhs:pointId";
 
+    /**
+     *运行保障-热回收-列表配置
+     */
+    public static final String OPERATIONSUPPORT_RHS_CATEGORYID = "operationSupport:rhs:categoryId";
 
 }

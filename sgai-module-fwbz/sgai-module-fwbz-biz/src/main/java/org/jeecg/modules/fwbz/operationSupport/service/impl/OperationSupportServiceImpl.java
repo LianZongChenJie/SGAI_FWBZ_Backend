@@ -525,7 +525,7 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
     @Override
     public HeatRecoveryStatisticsDto heatRecoveryStatistics() {
 
-        String categoryId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_RHS_POINT_ID);
+        String categoryId = businessConfigService.getValueByKey(BusinessConfigConstant.OPERATIONSUPPORT_RHS_CATEGORYID);
 
         if (StringUtils.isBlank(categoryId)) {
             log.warn("热回收统计配置缺失, key={}", BusinessConfigConstant.OPERATIONSUPPORT_RHS_POINT_ID);
@@ -557,6 +557,35 @@ public class OperationSupportServiceImpl implements IOperationSupportService {
         dto.setCount((long) list.size());
         dto.setOnline(runStateMap.getOrDefault(DeviceConstant.DEVICE_RUN_STATA_ONLINE, 0L));
         dto.setEnergyConsumption(energyConsumption);
+
+        // 平均回风温度：查询所有热回收机组设备"回风温度"属性并取平均（参考新风统计平均pm2.5）
+        BigDecimal returnAirTotal = BigDecimal.ZERO;
+        int returnAirCount = 0;
+        // 分批次查询属性，防止in语句过大
+        int batch = list.size() / 1000;
+        for (int j = 0; j <= batch; j++) {
+            ArrayList<Long> deviceIds = new ArrayList<>();
+            for (int k = 0; k < 1000; k++) {
+                int index = j * 1000 + k;
+                if (index >= list.size()) {
+                    break;
+                }
+                deviceIds.add(list.get(index).getId());
+            }
+            if (CollectionUtils.isEmpty(deviceIds)) {
+                continue;
+            }
+            List<DeviceAttribute> byDeviceIds = deviceAttributeService.findByDeviceIds(deviceIds);
+            for (DeviceAttribute byDeviceId : byDeviceIds) {
+                if ("回风温度".equals(byDeviceId.getAttributeName()) && StringUtils.isNotEmpty(byDeviceId.getValue())) {
+                    returnAirTotal = returnAirTotal.add(BigDecimal.valueOf(Double.parseDouble(byDeviceId.getValue())));
+                    returnAirCount++;
+                }
+            }
+        }
+        if (returnAirCount > 0) {
+            dto.setAvgReturnAirTemperature(returnAirTotal.divide(new BigDecimal(returnAirCount), 2, RoundingMode.HALF_UP));
+        }
 
         return dto;
 
