@@ -404,15 +404,19 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     private LambdaQueryWrapper<Device> getQueryWrapper(Device device){
-        return new LambdaQueryWrapper<Device>()
+        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<Device>()
                 .like(StringUtils.isNotEmpty(device.getDeviceCode()),Device::getDeviceCode, device.getDeviceCode())
                 .like(StringUtils.isNotEmpty(device.getDeviceName()),Device::getDeviceName, device.getDeviceName())
-                .eq(device.getCategoryId() != null,Device::getCategoryId, device.getCategoryId())
                 .eq(device.getSpaceId() != null,Device::getSpaceId, device.getSpaceId())
                 .eq(device.getVenueId() != null,Device::getVenueId, device.getVenueId())
                 .eq(device.getDeviceType() != null,Device::getDeviceType, device.getDeviceType())
                 .eq(StringUtils.isNotEmpty(device.getRunState()),Device::getRunState, device.getRunState())
                 .orderByAsc(Device::getSort);
+        // 设备类别筛选：展开为自身+全部子孙类别后查询，保证选中某类别时，其子类别下的设备一并返回
+        if (device.getCategoryId() != null) {
+            wrapper.in(Device::getCategoryId, expandCategoryIds(Collections.singletonList(device.getCategoryId())));
+        }
+        return wrapper;
     }
 
     private LambdaQueryWrapper<Device> getQueryWrapper(DeviceDto params){
