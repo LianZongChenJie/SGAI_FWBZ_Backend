@@ -71,4 +71,48 @@ public interface TableColdSourceHistoryMapper extends BaseMapper<TableColdSource
                                                     @Param("descName") String descName,
                                                     @Param("startTime") LocalDateTime startTime,
                                                     @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 查询指定 tagid 列表在 startTime（含）之后每个 tagid 最早一条记录的值（即"0点数据"）
+     *
+     * @param tagIds    采集点id列表
+     * @param startTime 起始时间（今日0点）
+     * @return 仅填充 tagId / value / dataTime
+     */
+    @Select("<script>"
+            + "SELECT h.tag_id AS tagId, h.value AS value, h.data_time AS dataTime "
+            + "FROM \"FWBZ\".\"table_cold_source_history\" h "
+            + "INNER JOIN ("
+            + "  SELECT tag_id, MIN(data_time) AS ext_time "
+            + "  FROM \"FWBZ\".\"table_cold_source_history\" "
+            + "  WHERE tag_id IN "
+            + "  <foreach collection='tagIds' item='tid' open='(' separator=',' close=')'>#{tid}</foreach>"
+            + "  AND data_time &gt;= #{startTime} "
+            + "  GROUP BY tag_id"
+            + ") m ON h.tag_id = m.tag_id AND h.data_time = m.ext_time"
+            + "</script>")
+    List<TableColdSourceHistory> selectDayFirstValues(@Param("tagIds") List<Long> tagIds,
+                                                      @Param("startTime") LocalDateTime startTime);
+
+    /**
+     * 查询指定 tagid 列表在 startTime（含）之后每个 tagid 最新一条记录的值
+     *
+     * @param tagIds    采集点id列表
+     * @param startTime 起始时间（今日0点）
+     * @return 仅填充 tagId / value / dataTime
+     */
+    @Select("<script>"
+            + "SELECT h.tag_id AS tagId, h.value AS value, h.data_time AS dataTime "
+            + "FROM \"FWBZ\".\"table_cold_source_history\" h "
+            + "INNER JOIN ("
+            + "  SELECT tag_id, MAX(data_time) AS ext_time "
+            + "  FROM \"FWBZ\".\"table_cold_source_history\" "
+            + "  WHERE tag_id IN "
+            + "  <foreach collection='tagIds' item='tid' open='(' separator=',' close=')'>#{tid}</foreach>"
+            + "  AND data_time &gt;= #{startTime} "
+            + "  GROUP BY tag_id"
+            + ") m ON h.tag_id = m.tag_id AND h.data_time = m.ext_time"
+            + "</script>")
+    List<TableColdSourceHistory> selectDayLatestValues(@Param("tagIds") List<Long> tagIds,
+                                                       @Param("startTime") LocalDateTime startTime);
 }

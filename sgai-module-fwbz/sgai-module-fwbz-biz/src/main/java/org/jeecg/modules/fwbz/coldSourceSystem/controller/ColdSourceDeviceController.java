@@ -15,9 +15,13 @@ import org.jeecg.common.aspect.annotation.AutoLog;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceDeviceDetailDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceDevicePageDto;
 import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceDeviceQueryDto;
+import org.jeecg.modules.fwbz.coldSourceSystem.dto.ColdSourceDeviceStatsDto;
+import org.jeecg.modules.fwbz.coldSourceSystem.entity.ColdSourceDevice;
 import org.jeecg.modules.fwbz.coldSourceSystem.entity.ColdSourceDeviceAttribute;
+import org.jeecg.modules.fwbz.coldSourceSystem.entity.TableColdSourceHistory;
 import org.jeecg.modules.fwbz.coldSourceSystem.mapper.ColdSourceDeviceAttributeMapper;
 import org.jeecg.modules.fwbz.coldSourceSystem.mapper.ColdSourceDeviceMapper;
+import org.jeecg.modules.fwbz.coldSourceSystem.mapper.TableColdSourceHistoryMapper;
 import org.jeecg.modules.fwbz.coldSourceSystem.service.SaveHisttoryService;
 import org.jeecgframework.poi.excel.ExcelExportUtil;
 import org.jeecgframework.poi.excel.entity.ExportParams;
@@ -29,9 +33,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +61,14 @@ public class ColdSourceDeviceController {
     private final ColdSourceDeviceAttributeMapper coldSourceDeviceAttributeMapper;
 
     private final SaveHisttoryService saveHisttoryService;
+
+    private final TableColdSourceHistoryMapper tableColdSourceHistoryMapper;
+
+    /** 今日制冷量统计 tagid（制冷量累计） */
+    private static final List<Long> COOLING_CAPACITY_TAG_IDS = Arrays.asList(542L, 549L, 556L, 563L, 577L);
+
+    /** 今日功率统计 tagid */
+    private static final List<Long> POWER_TAG_IDS = Arrays.asList(543L, 550L, 557L, 564L, 578L);
 
     /**
      * 查询冷源设备列表（分页）
@@ -180,5 +198,88 @@ public class ColdSourceDeviceController {
             log.error("查询冷源设备详情异常", e);
             return Result.error("查询冷源设备详情异常: " + e.getMessage());
         }
+    }
+
+    /**
+     * 冷源设备统计（首页统计卡片）
+     * 返回: 冷源机组总数 / 在线 / 离线（cold_source_device 表 status 统计）；
+     * 今日制冷量（table_cold_source_history 中 tagid 542/549/556/563/577 今日最新值 - 今日0点值 之和）；
+     * 平均COP（今日制冷量 / 总功率，功率为 tagid 543/550/557/564/578 今日最新值之和）
+     */
+    @GetMapping("/stats")
+    @ApiOperation(value = "冷源设备统计", notes = "返回机组总数/在线/离线/今日制冷量/平均COP")
+    public Result<ColdSourceDeviceStatsDto> stats() {
+        try {
+            ColdSourceDeviceStatsDto stats = new ColdSourceDeviceStatsDto();
+            // 1. 设备数量统计（cold_source_device: 1在线 / 0离线）
+            Long total = coldSourceDeviceMapper.selectCount(null);
+            Long online = coldSourceDeviceMapper.selectCount(
+                    new LambdaQueryWrapper<ColdSourceDevice>().eq(ColdSourceDevice::getStatus, 1));
+            stats.setDeviceTotal(total == null ? 0L : total);
+            stats.setOnlineCount(online == null ? 0L : online);
+            stats.setOfflineCount(Math.max(0L, stats.getDeviceTotal() - stats.getOnlineCount()));
+
+            // 2. 今日制冷量 / 功率（table_cold_source_history）
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            Map<Long, BigDecimal> firstMap = toValueMap(
+                    tableColdSourceHistoryMapper.selectDayFirstValues(COOLING_CAPACITY_TAG_IDS, startOfDay));
+            Map<Long, BigDecimal> latestCoolingMap = toValueMap(
+                    tableColdSourceHistoryMapper.selectDayLatestValues(COOLING_CAPACITY_TAG_IDS, startOfDay));
+            Map<Long, BigDecimal> latestPowerMap = toValueMap(
+                    tableColdSourceHistoryMapper.selectDayLatestValues(POWER_TAG_IDS, startOfDay));
+
+            BigDecimal coolingCapacity = BigDecimal.ZERO;
+            for (Long tagId : COOLING_CAPACITY_TAG_IDS) {
+                BigDecimal latest = latestCoolingMap.get(tagId);
+                BigDecimal first = firstMap.get(tagId);
+                if (latest == null) {
+                    continue;
+                }
+                // 无0点数据时按0点值为0处理（即今日增量）
+                coolingCapacity = coolingCapacity.add(latest.subtract(first == null ? BigDecimal.ZERO : first));
+            }
+            stats.setTodayCoolingCapacity(coolingCapacity);
+
+            BigDecimal power = BigDecimal.ZERO;
+            boolean hasPower = false;
+            for (Long tagId : POWER_TAG_IDS) {
+                BigDecimal v = latestPowerMap.get(tagId);
+                if (v != null) {
+                    hasPower = true;
+                    power = power.add(v);
+                }
+            }
+            stats.setTodayPower(hasPower ? power : null);
+
+            // 3. 平均COP = 今日制冷量 / 总功率
+            if (hasPower && power.compareTo(BigDecimal.ZERO) > 0) {
+                stats.setAvgCop(coolingCapacity.divide(power, 2, RoundingMode.HALF_UP));
+            }
+            return Result.ok(stats);
+        } catch (Exception e) {
+            log.error("冷源设备统计异常", e);
+            return Result.error("冷源设备统计异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 历史记录列表转 tagid -> 值(BigDecimal) 映射，value 无法解析的忽略
+     */
+    private Map<Long, BigDecimal> toValueMap(List<TableColdSourceHistory> list) {
+        Map<Long, BigDecimal> map = new HashMap<>();
+        if (list == null) {
+            return map;
+        }
+        for (TableColdSourceHistory history : list) {
+            if (history == null || history.getTagId() == null || history.getValue() == null) {
+                continue;
+            }
+            try {
+                map.put(history.getTagId(), new BigDecimal(history.getValue().trim()));
+            } catch (NumberFormatException ignore) {
+                log.warn("冷源设备统计: tagid={} 值 {} 无法转换为数字", history.getTagId(), history.getValue());
+            }
+        }
+        return map;
     }
 }
