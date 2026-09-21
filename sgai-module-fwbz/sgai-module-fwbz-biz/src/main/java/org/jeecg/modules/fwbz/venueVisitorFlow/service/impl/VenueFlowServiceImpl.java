@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * 各场馆客流统计 Service 实现
  * <p>
  * 数据来源：table_venue_flow_hour（各场馆客流分时统计表）。
- * 查询逻辑：按日期 + venueId 分组，取每个场馆最新一条记录展示。
+ * 查询逻辑：按日期 + venueId 分组，取每个场馆"今日进场人数最大、且时间最新"的一条记录展示。
  * </p>
  *
  * @author fwbz
@@ -61,7 +61,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
         this.venueInfoService = venueInfoService;
     }
 
-    // ==================== 查询（从 table_venue_flow_hour 取各场馆最新一条） ====================
+    // ==================== 查询（从 table_venue_flow_hour 取各场馆进场最大且时间最新的一条） ====================
 
     @Override
     public List<VenueFlowVO> queryToday() {
@@ -78,17 +78,17 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
             return new ArrayList<>();
         }
 
-        // 按 venueId 分组，取每组中 id 最大的（最新记录）
+        // 按 venueId 分组，取每组中"今日进场人数最大、且时间最新"的那一条
         Map<Long, VenueFlowHour> latestMap = all.stream()
                 .collect(Collectors.toMap(
                         VenueFlowHour::getVenueId,
                         v -> v,
-                        (a, b) -> a.getId() > b.getId() ? a : b));
+                        (a, b) -> pickLatestMaxIn(a, b)));
 
         // 场馆名称映射
         Map<Long, String> venueNameMap = buildVenueNameMap();
 
-        // 昨日数据（也取各场馆最新）
+        // 昨日数据（同样取各场馆"进场人数最大、时间最新"的一条）
         LocalDate yesterday = date.minusDays(1);
         List<VenueFlowHour> yesterdayAll = list(new LambdaQueryWrapper<VenueFlowHour>()
                 .eq(VenueFlowHour::getDataDate, yesterday));
@@ -98,7 +98,7 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
                     .collect(Collectors.toMap(
                             VenueFlowHour::getVenueId,
                             v -> v,
-                            (a, b) -> a.getId() > b.getId() ? a : b));
+                            (a, b) -> pickLatestMaxIn(a, b)));
         }
 
         List<VenueFlowVO> result = new ArrayList<>();
@@ -121,6 +121,42 @@ public class VenueFlowServiceImpl extends ServiceImpl<VenueFlowHourMapper, Venue
             result.add(vo);
         }
         return result;
+    }
+
+    /**
+     * 从同一场馆的多条分时记录中挑选展示记录：
+     * 优先取"今日进场人数"最大的一条；进场人数相同时取时间（dataHour）最新的一条；
+     * dataHour 也相同时取 id 最大（最后写入）的一条。
+     */
+    private VenueFlowHour pickLatestMaxIn(VenueFlowHour a, VenueFlowHour b) {
+        long inA = nvl(a.getTodayInCount());
+        long inB = nvl(b.getTodayInCount());
+        if (inA != inB) {
+            return inA > inB ? a : b;
+        }
+        int hourCmp = compareTime(a.getDataHour(), b.getDataHour());
+        if (hourCmp != 0) {
+            return hourCmp > 0 ? a : b;
+        }
+        long idA = a.getId() == null ? 0L : a.getId();
+        long idB = b.getId() == null ? 0L : b.getId();
+        return idA >= idB ? a : b;
+    }
+
+    /**
+     * 比较两个时间（时/分/秒），空值视为最早。
+     */
+    private int compareTime(Time a, Time b) {
+        if (a == null && b == null) {
+            return 0;
+        }
+        if (a == null) {
+            return -1;
+        }
+        if (b == null) {
+            return 1;
+        }
+        return a.compareTo(b);
     }
 
     /**
