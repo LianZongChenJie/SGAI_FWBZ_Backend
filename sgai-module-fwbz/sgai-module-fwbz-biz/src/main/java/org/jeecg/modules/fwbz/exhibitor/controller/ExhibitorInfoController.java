@@ -184,6 +184,22 @@ public class ExhibitorInfoController extends JeecgController<ExhibitorInfo, IExh
     }
 
     /**
+     * 根据展会总结报告id查询参展厂商列表
+     * <p>
+     * 报告id -> 报告活动名称 -> 该活动名称下所有会展活动 -> 所有活动所在场馆id -> 参展厂商列表
+     *
+     * @param reportId 展会总结报告id
+     * @return
+     */
+    //@AutoLog(value = "参展厂商信息-根据展会总结报告id查询列表")
+    @ApiOperation(value="参展厂商信息-根据展会总结报告id查询列表", notes="参展厂商信息-根据展会总结报告id查询列表")
+    @GetMapping(value = "/listByReportId")
+    public Result<List<ExhibitorInfo>> listByReportId(@RequestParam(name="reportId", required=true) Long reportId) {
+        List<ExhibitorInfo> list = exhibitorInfoService.getListByReportId(reportId);
+        return Result.OK(list);
+    }
+
+    /**
     * 导出excel
     *
     * @param request

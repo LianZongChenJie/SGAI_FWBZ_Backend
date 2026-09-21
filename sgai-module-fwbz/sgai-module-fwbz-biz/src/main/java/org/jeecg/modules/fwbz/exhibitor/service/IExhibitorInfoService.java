@@ -37,4 +37,14 @@ public interface IExhibitorInfoService extends IService<ExhibitorInfo> {
      */
     Map<Long, Long> countGroupByVenueId(List<Long> venueIds);
 
+    /**
+     * 根据展会总结报告id查询参展厂商列表
+     * <p>
+     * 展会总结报告id -> 报告活动名称 -> 该活动名称下所有会展活动 -> 所有活动所在场馆id -> 参展厂商列表
+     *
+     * @param reportId 展会总结报告id
+     * @return 参展厂商列表
+     */
+    List<ExhibitorInfo> getListByReportId(Long reportId);
+
 }

@@ -19,6 +19,7 @@ import org.jeecg.modules.fwbz.complaint.mapper.ComplaintInfoMapper;
 import org.jeecg.modules.fwbz.complaint.mapper.ComplaintTypeMapper;
 import org.jeecg.modules.fwbz.energyAnalysis.dto.MeterPointDataQueryDto;
 import org.jeecg.modules.fwbz.energyAnalysis.service.IMeteringPointDataService;
+import org.jeecg.modules.fwbz.exhibitor.service.IExhibitorInfoService;
 import org.jeecg.modules.fwbz.venue.VenueInfo;
 import org.jeecg.modules.fwbz.venue.mapper.VenueInfoMapper;
 import org.jeecg.modules.fwbz.venueVisitorFlow.entity.VenueFlowHour;
@@ -34,6 +35,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @Description: 展会总结报告
@@ -64,6 +68,9 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
     private AlarmRecordMapper alarmRecordMapper;
     @Resource
     private SgaiTpApi sgaiTpApi;
+
+    @Resource
+    private IExhibitorInfoService exhibitorInfoService;
 
     private final IMeteringPointDataService service;
 
@@ -228,10 +235,8 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
                 : consumptionElectricity;
         report.setPersonEnergyConsumption(personEnergyConsumption);
 
-        // 参展商数：直接取库，空为0
-        if (report.getExhibitors() == null) {
-            report.setExhibitors(0L);
-        }
+        // 参展商数：取库中所有活动所在场馆的参展商数量之和，空为0
+        report.setExhibitors(calcExhibitors(activities));
 
         return report;
     }
@@ -331,6 +336,26 @@ public class ActiveMeetReportServiceImpl extends ServiceImpl<ActiveMeetReportMap
             }
         }
         return Double.parseDouble(totalElectricity.toString());
+    }
+
+    /**
+     * 统计参展商数量：取库中所有活动所在场馆的参展商数量之和
+     * 无活动或无场馆时返回0
+     */
+    private long calcExhibitors(List<ActiveMeetInfo> activities) {
+        if (activities == null || activities.isEmpty()) {
+            return 0L;
+        }
+        List<Long> venueIds = activities.stream()
+                .map(ActiveMeetInfo::getVenueId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (venueIds.isEmpty()) {
+            return 0L;
+        }
+        Map<Long, Long> countMap = exhibitorInfoService.countGroupByVenueId(venueIds);
+        return countMap.values().stream().mapToLong(Long::longValue).sum();
     }
 
     /**
