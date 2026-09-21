@@ -155,7 +155,7 @@ public class VenueFlowHourServiceImpl extends ServiceImpl<VenueFlowHourMapper, V
     // ==================== 日度趋势通用方法 ====================
 
     /**
-     * 查询指定日期范围内的日度客流趋势（按天聚合，取每天各馆最新在场人数）。
+     * 查询指定日期范围内的日度客流趋势（按天聚合，每天每馆取"进场人数最大、时间最新"的一条）。
      *
      * @param startDate 开始日期（含）
      * @param endDate   结束日期（含）
@@ -173,13 +173,12 @@ public class VenueFlowHourServiceImpl extends ServiceImpl<VenueFlowHourMapper, V
 
         Map<Long, String> venueNameMap = buildVenueNameMap();
 
-        // 按 (dataDate, venueId) 分组，每组取 dataHour 最大的那条（每天每馆最新）
+        // 按 (dataDate, venueId) 分组，每组取"进场人数最大、且时间最新"的那条（每天每馆一条）
         Map<LocalDate, Map<Long, VenueFlowHour>> dailyVenueLatest = new LinkedHashMap<>();
         for (VenueFlowHour row : list) {
             dailyVenueLatest
                     .computeIfAbsent(row.getDataDate(), k -> new HashMap<>())
-                    .merge(row.getVenueId(), row,
-                            (old, neu) -> old.getDataHour().after(neu.getDataHour()) ? old : neu);
+                    .merge(row.getVenueId(), row, this::pickLatestMaxIn);
         }
 
         List<Long> sortedVenueIds = list.stream()
@@ -272,6 +271,42 @@ public class VenueFlowHourServiceImpl extends ServiceImpl<VenueFlowHourMapper, V
     private Map<Long, String> buildVenueNameMap() {
         return venueInfoService.list().stream()
                 .collect(Collectors.toMap(VenueInfo::getId, VenueInfo::getVenueName, (a, b) -> a));
+    }
+
+    /**
+     * 从同一场馆同一日期/同一天的多条分时记录中挑选展示记录：
+     * 优先取"今日进场人数"最大的一条；进场人数相同时取时间（dataHour）最新的一条；
+     * dataHour 也相同时取 id 最大（最后写入）的一条。
+     */
+    private VenueFlowHour pickLatestMaxIn(VenueFlowHour a, VenueFlowHour b) {
+        long inA = a.getTodayInCount() == null ? 0L : a.getTodayInCount();
+        long inB = b.getTodayInCount() == null ? 0L : b.getTodayInCount();
+        if (inA != inB) {
+            return inA > inB ? a : b;
+        }
+        int hourCmp = compareTime(a.getDataHour(), b.getDataHour());
+        if (hourCmp != 0) {
+            return hourCmp > 0 ? a : b;
+        }
+        long idA = a.getId() == null ? 0L : a.getId();
+        long idB = b.getId() == null ? 0L : b.getId();
+        return idA >= idB ? a : b;
+    }
+
+    /**
+     * 比较两个时间（时/分/秒），空值视为最早。
+     */
+    private int compareTime(Time a, Time b) {
+        if (a == null && b == null) {
+            return 0;
+        }
+        if (a == null) {
+            return -1;
+        }
+        if (b == null) {
+            return 1;
+        }
+        return a.compareTo(b);
     }
 
     private VenueHourlyTrendVO emptyTrend() {
